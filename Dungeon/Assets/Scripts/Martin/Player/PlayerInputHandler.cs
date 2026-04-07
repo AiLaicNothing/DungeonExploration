@@ -16,6 +16,7 @@ public class PlayerInputHandler : MonoBehaviour
     {
         if(context.started)
         {
+            Debug.Log("Has jumped");
             hasJumped = true;
         }
     }
