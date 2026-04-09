@@ -68,7 +68,7 @@ public class PlayerController : MonoBehaviour
 
         rb.linearVelocity = velocity;
 
-        HandleRotation(moveDir);
+        HandleRotation();
     }
 
     public void Jump()
@@ -84,27 +84,9 @@ public class PlayerController : MonoBehaviour
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
     }
 
-    private void HandleRotation(Vector3 move)
+    void HandleRotation()
     {
-        if (move.magnitude < 0.1f)
-        {
-            return;
-        }
 
-        Vector3 dir;
-
-        //--> Change camera depending
-        if (input.isAiming)
-        {
-
-        }
-        else
-        {
-
-        }
-
-        //Quaternion targetRot = Quaternion.LookRotation(dir);
-        //transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, rotSpeed * Time.deltaTime);
     }
 
     private void CheckGround()
