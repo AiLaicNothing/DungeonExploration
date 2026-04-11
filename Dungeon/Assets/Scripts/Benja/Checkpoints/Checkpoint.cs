@@ -1,22 +1,19 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-public class Checkpoint : MonoBehaviour
+public class Checkpoint : MonoBehaviour , IInteractable
 {
     public Transform spawnPoint;
     public string checkpointName;
     public GameObject activateUI;
     public GameObject openPanelUI;
 
-    private bool playerInside = false;
-    private bool activated = false;
+    private bool activated = false; 
 
     public CheckpointVisual visual;
 
     public void Interact()
     {
-        if (!playerInside) return;
-
         if (!activated)
         {
             ActivateCheckpoint();
@@ -29,7 +26,7 @@ public class Checkpoint : MonoBehaviour
 
     void ActivateCheckpoint()
     {
-        Debug.Log("Activado");
+        Debug.Log($"Checkpoint '{checkpointName}' activado");
 
         activated = true;
 
@@ -50,31 +47,21 @@ public class Checkpoint : MonoBehaviour
 
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
-        {
-            playerInside = true;
+        if (!other.CompareTag("Player")) return;
 
-            if (activated)
-            {
-                openPanelUI.SetActive(true);
-            }
-            else
-            {
-                activateUI.SetActive(true);
-            }
-        }
+        if (activated)
+            openPanelUI.SetActive(true);
+        else
+            activateUI.SetActive(true);
     }
 
     void OnTriggerExit(Collider other)
     {
-        if (other.CompareTag("Player"))
-        {
-            playerInside = false;
+        if (!other.CompareTag("Player")) return;
 
-            activateUI.SetActive(false);
-            openPanelUI.SetActive(false);
+        activateUI.SetActive(false);
+        openPanelUI.SetActive(false);
 
-            CheckpointManager.Instance.CloseTeleportPanel();
-        }
+        CheckpointManager.Instance.CloseTeleportPanel();
     }
 }
