@@ -64,9 +64,16 @@ public class Enemigo : MonoBehaviour
             transform.position = Vector3.MoveTowards(transform.position, destino, velocidad * Time.deltaTime);
 
             Vector3 direccion = (destino - transform.position).normalized;
-            if (direccion != Vector3.zero)
+            /*if (direccion != Vector3.zero)
             {
                 transform.forward = direccion;
+            }*/
+
+            direccion.y = 0;
+
+            if (direccion.magnitude > 0.1f)
+            {
+                transform.rotation = Quaternion.LookRotation(direccion);
             }
         }
     }
