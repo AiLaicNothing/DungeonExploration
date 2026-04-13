@@ -1,11 +1,14 @@
 using UnityEngine;
 
-public class PlayerIddle_State : PlayerStates
+public class PlayerMove_State : PlayerStates
 {
-    public PlayerIddle_State(PlayerController player) : base(player) { }
-
+    public PlayerMove_State(PlayerController player) : base(player) { }
     public override void OnEnter()
     {
+        if (player.isPerformingAction)
+        {
+            return;
+        }
         //--> Play the animation
     }
 
@@ -16,13 +19,13 @@ public class PlayerIddle_State : PlayerStates
             player.ChangeState(player.fall_State);
         }
 
-        if(player.Input.moveInput.magnitude > 0.1f)
+        if (player.Input.moveInput.magnitude < 0.1f)
         {
-            player.ChangeState(player.move_State);
+            player.ChangeState(player.iddle_State);
             return;
         }
 
-        if(player.Input.hasJumped)
+        if (player.Input.hasJumped)
         {
             player.ChangeState(player.jump_State);
         }

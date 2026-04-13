@@ -6,6 +6,11 @@ public class PlayerJump_State : PlayerStates
 
     public override void OnEnter()
     {
+        Debug.Log("Enter Jump State");
+        if (player.isPerformingAction)
+        {
+            return;
+        }
         player.Jump();
     }
 
@@ -15,5 +20,9 @@ public class PlayerJump_State : PlayerStates
         {
             player.ChangeState(player.fall_State);
         }
+    }
+    public override void OnExit()
+    {
+        Debug.Log("Exit Fall State");
     }
 }

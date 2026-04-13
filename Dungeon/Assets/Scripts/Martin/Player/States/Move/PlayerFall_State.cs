@@ -6,6 +6,12 @@ public class PlayerFall_State : PlayerStates
 
     public override void OnEnter()
     {
+        Debug.Log("Enter Fall State");
+
+        if (player.isPerformingAction)
+        {
+            return;
+        }
     }
 
     public override void OnUpdate()
@@ -18,8 +24,13 @@ public class PlayerFall_State : PlayerStates
             }
             else
             {
-                player.ChangeState(player.fall_State);
+                player.ChangeState(player.iddle_State);
             }
         }
+    }
+
+    public override void OnExit()
+    {
+        Debug.Log("Exit Fall State");
     }
 }
