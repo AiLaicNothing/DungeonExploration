@@ -8,10 +8,11 @@ public class PlayerInputHandler : MonoBehaviour
 
     public Vector2 moveInput { get; private set; }
     public bool hasJumped { get; private set; }
+    public bool hasDashed {  get; private set; }
     public bool isAiming {  get; private set; }
     public bool attackPressed { get; private set; }
     public bool AttackBuffered => attackBufferCounter > 0;
-
+    public bool skill1Pressed { get; private set; }
     public void OnMove(InputAction.CallbackContext context)
     {
         moveInput = context.ReadValue<Vector2>();
@@ -21,8 +22,15 @@ public class PlayerInputHandler : MonoBehaviour
     {
         if(context.started)
         {
-            Debug.Log("Has jumped");
             hasJumped = true;
+        }
+    }
+    public void OnDash(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            hasDashed = true;
+            Debug.Log("Has dashed");
         }
     }
 
@@ -37,6 +45,14 @@ public class PlayerInputHandler : MonoBehaviour
         {
             attackBufferCounter = attackBufferTime;
             attackPressed = true;
+        }
+    }
+
+    public void OnSkill1Pressed(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            skill1Pressed = true;
         }
     }
 
@@ -57,5 +73,7 @@ public class PlayerInputHandler : MonoBehaviour
     {
         hasJumped = false;
         attackPressed = false;
+        hasDashed = false;
+        skill1Pressed = false;
     }
 }

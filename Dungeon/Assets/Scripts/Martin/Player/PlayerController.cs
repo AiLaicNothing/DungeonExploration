@@ -2,12 +2,23 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
+    public float currentHealth;
+    public float currentStamina;
+    public float currentMana;
+
     //--> Variables
-    [Header("Variables")]
+    [Header("Movement")]
     [SerializeField] private float moveSpeed = 10f;
     [SerializeField] private float jumpForce = 8f;
     [SerializeField] private float rotSpeed = 10f;
     [SerializeField] private float moveMultiplier = 1f;
+
+    [Header("Dash")]
+    [SerializeField] private float dashDistance = 5f;
+    [SerializeField] private float dashDuration = 0.3f;
+    [SerializeField] private float dashCost = 20f;
+
+    [SerializeField] private float maxStamina;
 
     //-->Combat variables
     [Header("Combat")]
@@ -17,16 +28,30 @@ public class PlayerController : MonoBehaviour
     public bool hasUsedDash = false;
     public bool hasUsedAirAttack = false;
 
+    [Header("Skills")]
+    [SerializeField] private int maxSkillSlots = 4;
+    [SerializeField] private Skill[] skills;
+    private float[] skillsCooldown;
+
     //--> References
     [Header("Component References")]
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private PlayerInputHandler input;
     [SerializeField] private Transform playerModel;
+    public GameObject hitboxPrefab;
 
     public Rigidbody Rb => rb;
+    public Transform PlayerModel => playerModel;
     public PlayerInputHandler Input => input;
     public BasicComboData ComboData => basicComboData;
+
+    //--> make data accesible to other scripts that has acces to this one.
+    public float CurrentStamina => currentStamina;
+    public float MaxStamina => maxStamina;
+    public float DashDistance => dashDistance;
+    public float DashDuration => dashDuration;
+    public float DashCost => dashCost;
 
     //-->States for movements
     PlayerStateMachine movementSM;
@@ -39,7 +64,9 @@ public class PlayerController : MonoBehaviour
     PlayerStateMachine actionSM;
     public PlayerIddleAction iddeAction_State;
     public PlayerBasicAttack basicAttack_State;
-    public PlayerAirAttack AirAttack_State;
+    public PlayerAirAttack airAttack_State;
+    public PlayerDash dash_State;
+    public PlayerSkill skill_State;
 
     private void Awake()
     {
@@ -53,7 +80,11 @@ public class PlayerController : MonoBehaviour
 
         iddeAction_State = new PlayerIddleAction(this);
         basicAttack_State = new PlayerBasicAttack(this);
-        AirAttack_State = new PlayerAirAttack(this);
+        airAttack_State = new PlayerAirAttack(this);
+        dash_State = new PlayerDash(this);
+        skill_State = new PlayerSkill(this);
+
+        skillsCooldown = new float[skills.Length];
     }
 
     private void Start()
@@ -65,13 +96,26 @@ public class PlayerController : MonoBehaviour
     {
         CheckGround();
         movementSM.Update();
+        actionSM.Update();
+
+        for (int i = 0; i < skillsCooldown.Length; i++)
+        {
+            if (skillsCooldown[i] > 0)
+            {
+                skillsCooldown[i] -= Time.deltaTime;
+            }
+        }
     }
 
     private void FixedUpdate()
     {
-        Movement();
+        if (!isPerformingAction)
+        {
+            Movement();
+        }
 
         movementSM.FixedUpdate();
+        actionSM.FixedUpdate();
     }
 
     public void ChangeState(PlayerStates nextState)
@@ -116,6 +160,16 @@ public class PlayerController : MonoBehaviour
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
     }
 
+    public bool HasStamina(float cost)
+    {
+        return currentStamina >= cost;
+    }
+
+    public void ConsumeStamina(float cost)
+    {
+        currentStamina -= cost;
+    }
+
     void HandleRotation(Vector3 moveDir)
     {
         Vector3 lookDir;
@@ -145,5 +199,62 @@ public class PlayerController : MonoBehaviour
     private void CheckGround()
     {
         isGrounded = Physics.Raycast(groundCheck.position, Vector3.down, 1.1f);
+    }
+
+    //---SECTION RELATED TO SKILLS---
+    public Skill GetSkill(int index)
+    {
+        if (index < 0 || index >= skills.Length)
+        {
+            return null;
+        }
+        return skills[index];
+    }
+
+    public bool HasResource(ResourceType type, float cost)
+    {
+        switch(type)
+        {
+            case ResourceType.Stamina:
+                return currentStamina >= cost;
+            case ResourceType.Mana:
+                return currentMana >= cost;
+            case ResourceType.Health:
+                return currentHealth >= cost;
+        }
+
+        return true;
+    }
+
+    public void ConsumreResource(ResourceType type, float cost)
+    {
+        switch (type)
+        {
+            case ResourceType.Stamina: 
+                currentStamina -= cost; break;
+            case ResourceType.Mana: 
+                currentMana -= cost; break;
+            case ResourceType.Health:
+                currentHealth -= cost; break;
+        }
+    }
+    public bool IsSkillReady(int index)
+    {
+        return skillsCooldown[index] <= 0;
+    }
+
+    public void TriggerCooldown(int index)
+    {
+        skillsCooldown[index] = skills[index].cooldown;
+    }
+
+    //---TEMPORAL---
+    public void ShowHitbox(Vector3 center, Vector3 size, Quaternion rot)
+    {
+        GameObject box = GameObject.Instantiate(hitboxPrefab, center, rot);
+
+        box.transform.localScale = size;
+
+        Destroy(box, 0.2f);
     }
 }

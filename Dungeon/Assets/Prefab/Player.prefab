@@ -474,18 +474,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa46c6b2449e8534f853ac3be58670bd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  currentHealth: 0
+  currentStamina: 1000
+  currentMana: 0
   moveSpeed: 10
   jumpForce: 8
   rotSpeed: 10
   moveMultiplier: 1
+  dashDistance: 5
+  dashDuration: 0.3
+  dashCost: 20
+  maxStamina: 1000
   basicComboData: {fileID: 11400000, guid: 6b9667d3b4e69a7499fc08b57c6d41c5, type: 2}
   isPerformingAction: 0
   hasUsedDash: 0
   hasUsedAirAttack: 0
+  maxSkillSlots: 4
+  skills: []
   rb: {fileID: 71265052130629953}
   groundCheck: {fileID: 6714165563697598249}
   input: {fileID: 4412126337141054394}
   playerModel: {fileID: 459833000716062552}
+  hitboxPrefab: {fileID: 65547742025389114, guid: e1a6382669a4d2d49901cfb4464b71df, type: 3}
 --- !u!54 &71265052130629953
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -587,17 +597,45 @@ MonoBehaviour:
     m_ActionId: 9872dc04-5561-4b63-8b12-bc38460a370f
     m_ActionName: 'PlayerInput/Aim[/Mouse/rightButton]'
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 4412126337141054394}
+        m_TargetAssemblyTypeName: PlayerInputHandler, Assembly-CSharp
+        m_MethodName: OnAttack
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: 7b5ec449-3cc6-42c2-9e92-04488f153b1a
     m_ActionName: 'PlayerInput/Attack[/Mouse/leftButton]'
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 4412126337141054394}
+        m_TargetAssemblyTypeName: PlayerInputHandler, Assembly-CSharp
+        m_MethodName: OnDash
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: a9d628ba-3aa6-44f7-8555-cdc8a6e03f44
     m_ActionName: 'PlayerInput/Dash[/Keyboard/leftShift]'
   - m_PersistentCalls:
       m_Calls: []
     m_ActionId: 7eb77d42-09af-4e68-84f5-291dd1392523
     m_ActionName: 'PlayerInput/Look[/Mouse/delta]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: d7abcdf9-1b5c-4478-8070-d1a1738ae338
+    m_ActionName: 'PlayerInput/Interact[/Keyboard/e]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: PlayerInput

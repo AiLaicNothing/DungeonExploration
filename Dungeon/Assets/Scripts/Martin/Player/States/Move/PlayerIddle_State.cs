@@ -16,6 +16,7 @@ public class PlayerIddle_State : PlayerStates
 
     public override void OnUpdate()
     {
+
         if (!player.isGrounded)
         {
             player.ChangeState(player.fall_State);

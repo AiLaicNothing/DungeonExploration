@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class PlayerBasicAttack : PlayerStates
 {
@@ -7,22 +8,38 @@ public class PlayerBasicAttack : PlayerStates
     int comboIndex;
     float timer;
     bool canCombo;
+    bool hasHit;
     public override void OnEnter()
     {
         comboIndex = 0;
 
         Debug.Log("Enter Basic Attack State");
+
+        StartAttack();
     }
 
     public override void OnUpdate()
     {
+        if (player.Input.hasDashed && player.HasStamina(player.DashCost))
+        {
+            player.ChangeActionState(player.dash_State);
+            return;
+        }
+
         var attackSteps = player.ComboData.attackSteps[comboIndex];
+
         timer -= Time.deltaTime;
 
         float elapsed = attackSteps.duration - timer;
 
+        if (elapsed >= attackSteps.hitTime && !hasHit)
+        {
+            DoHit(attackSteps);
+            hasHit = true;
+        }
+
         //--> Check if it can continue combo / recive input window to continue
-        if (elapsed <= attackSteps.comboWindowStart && elapsed >= attackSteps.comboWindowEnd)
+        if (elapsed >= attackSteps.comboWindowStart && elapsed <= attackSteps.comboWindowEnd)
         {
             canCombo = true;
         }
@@ -41,19 +58,14 @@ public class PlayerBasicAttack : PlayerStates
         }
 
         //--> The attack end when the window to continue combo end
-        if (elapsed <= attackSteps.comboWindowEnd)
+        if (elapsed > attackSteps.comboWindowEnd)
         {
-            OnExit();
+            player.ChangeActionState(player.iddeAction_State);
         }
     }
-
-    
-
     public override void OnExit()
     {
         player.isPerformingAction = false;
-
-        player.ChangeActionState(player.iddeAction_State);
     }
 
     private void StartAttack()
@@ -62,10 +74,31 @@ public class PlayerBasicAttack : PlayerStates
 
         timer = attackSteps.duration;
         canCombo = false;
+        hasHit = false;
 
         player.isPerformingAction = true;
 
         //--> Play animation
         Debug.Log($"Player attacked with {attackSteps.name}");
+
+    }
+
+    private void DoHit(AttackSteps attack)
+    {
+        Vector3 center = player.PlayerModel.transform.position + player.PlayerModel.transform.forward * attack.hitBoxOffSet.z + Vector3.up * attack.hitBoxOffSet.y;
+
+        Collider[] hits = Physics.OverlapBox(center, attack.hitBoxSize * 0.5f, player.PlayerModel.transform.rotation);
+
+        player.ShowHitbox(center, attack.hitBoxSize, player.PlayerModel.transform.rotation);
+
+        foreach (var hit in hits)
+        {
+            if (hit.CompareTag("Enemy"))
+            {
+                Debug.Log($"Hit Enemy: {hit.name}");
+
+                //Add damage logic
+            }
+        }
     }
 }

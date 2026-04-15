@@ -28,11 +28,17 @@ public class PlayerAirAttack : PlayerStates
 
     public override void OnUpdate()
     {
+        if (player.Input.hasDashed && player.HasStamina(player.DashCost))
+        {
+            player.ChangeActionState(player.dash_State);
+            return;
+        }
+
         timer -= Time.deltaTime;
 
         if (timer <= 0)
         {
-            OnExit();
+            player.ChangeActionState(player.iddeAction_State);
         }
     }
 
@@ -41,7 +47,5 @@ public class PlayerAirAttack : PlayerStates
         player.Rb.useGravity = true;
 
         player.isPerformingAction = false;
-
-        player.ChangeActionState(player.iddeAction_State);
     }
 }

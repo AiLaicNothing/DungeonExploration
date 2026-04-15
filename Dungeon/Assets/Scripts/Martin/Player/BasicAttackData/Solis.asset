@@ -16,12 +16,21 @@ MonoBehaviour:
   - name: Attack_1
     duration: 0.6
     comboWindowStart: 0.3
-    comboWindowEnd: 0.7
+    comboWindowEnd: 0.8
+    hitTime: 0.2
+    hitBoxSize: {x: 2, y: 2.5, z: 2}
+    hitBoxOffSet: {x: 0, y: 0, z: 1}
   - name: Attack_2
     duration: 0.8
     comboWindowStart: 0.4
     comboWindowEnd: 0.9
+    hitTime: 0.2
+    hitBoxSize: {x: 2.5, y: 2.5, z: 2}
+    hitBoxOffSet: {x: 0, y: 0, z: 1}
   - name: Attack_3
     duration: 0.7
     comboWindowStart: 0.4
     comboWindowEnd: 0.8
+    hitTime: 0.3
+    hitBoxSize: {x: 3, y: 3, z: 2.5}
+    hitBoxOffSet: {x: 0, y: 0, z: 1.5}
