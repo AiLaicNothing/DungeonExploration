@@ -34,7 +34,7 @@ public class LobbyManager : MonoBehaviour
         {
             MaxPlayers = 2,
             IsPrivate = false,
-        };
+        }.WithRelayNetwork();
 
         options.Name = roomName;
 
