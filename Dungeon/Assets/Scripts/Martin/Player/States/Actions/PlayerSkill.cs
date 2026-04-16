@@ -33,7 +33,7 @@ public class PlayerSkill : PlayerStates
             return;
         }
 
-        player.ConsumreResource(currentSkill.resourceType, currentSkill.cost);
+        player.ConsumeResource(currentSkill.resourceType, currentSkill.cost);
 
         player.isPerformingAction = true;
 

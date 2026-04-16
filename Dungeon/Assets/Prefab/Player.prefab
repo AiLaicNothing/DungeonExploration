@@ -653,9 +653,9 @@ GameObject:
   - component: {fileID: 101071227114384438}
   - component: {fileID: 6232389183748973929}
   - component: {fileID: 2205418975378975974}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Player_Model
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -799,9 +799,9 @@ GameObject:
   - component: {fileID: 2906449108332737618}
   - component: {fileID: 4286072561060797544}
   - component: {fileID: 2702306298779544388}
-  m_Layer: 0
+  m_Layer: 11
   m_Name: Cube
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

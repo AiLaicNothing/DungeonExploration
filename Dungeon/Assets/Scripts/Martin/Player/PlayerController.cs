@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    public float currentHealth;
-    public float currentStamina;
-    public float currentMana;
+    //public float currentHealth;
+    //public float currentStamina;
+    //public float currentMana;
 
     //--> Variables
     [Header("Movement")]
@@ -18,7 +18,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float dashDuration = 0.3f;
     [SerializeField] private float dashCost = 20f;
 
-    [SerializeField] private float maxStamina;
+    //[SerializeField] private float maxStamina;
 
     //-->Combat variables
     [Header("Combat")]
@@ -47,8 +47,8 @@ public class PlayerController : MonoBehaviour
     public BasicComboData ComboData => basicComboData;
 
     //--> make data accesible to other scripts that has acces to this one.
-    public float CurrentStamina => currentStamina;
-    public float MaxStamina => maxStamina;
+    public float CurrentStamina => PlayerStats.Instance.Stamina.CurrentValue;
+    public float MaxStamina => PlayerStats.Instance.Stamina.Max;
     public float DashDistance => dashDistance;
     public float DashDuration => dashDuration;
     public float DashCost => dashCost;
@@ -160,15 +160,11 @@ public class PlayerController : MonoBehaviour
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
     }
 
-    public bool HasStamina(float cost)
-    {
-        return currentStamina >= cost;
-    }
+    public bool HasStamina(float cost) =>
+        PlayerStats.Instance.Stamina.CurrentValue >= cost;
 
-    public void ConsumeStamina(float cost)
-    {
-        currentStamina -= cost;
-    }
+    public void ConsumeStamina(float cost) =>
+        PlayerStats.Instance.Stamina.Modify(-cost);
 
     void HandleRotation(Vector3 moveDir)
     {
@@ -213,29 +209,22 @@ public class PlayerController : MonoBehaviour
 
     public bool HasResource(ResourceType type, float cost)
     {
-        switch(type)
+        return type switch
         {
-            case ResourceType.Stamina:
-                return currentStamina >= cost;
-            case ResourceType.Mana:
-                return currentMana >= cost;
-            case ResourceType.Health:
-                return currentHealth >= cost;
-        }
-
-        return true;
+            ResourceType.Stamina => PlayerStats.Instance.Stamina.CurrentValue >= cost,
+            ResourceType.Mana => PlayerStats.Instance.Mana.CurrentValue >= cost,
+            ResourceType.Health => PlayerStats.Instance.Health.CurrentValue >= cost,
+            _ => true
+        };
     }
 
-    public void ConsumreResource(ResourceType type, float cost)
+    public void ConsumeResource(ResourceType type, float cost)  // corregí el typo "ConsumreResource"
     {
         switch (type)
         {
-            case ResourceType.Stamina: 
-                currentStamina -= cost; break;
-            case ResourceType.Mana: 
-                currentMana -= cost; break;
-            case ResourceType.Health:
-                currentHealth -= cost; break;
+            case ResourceType.Stamina: PlayerStats.Instance.Stamina.Modify(-cost); break;
+            case ResourceType.Mana: PlayerStats.Instance.Mana.Modify(-cost); break;
+            case ResourceType.Health: PlayerStats.Instance.Health.Modify(-cost); break;
         }
     }
     public bool IsSkillReady(int index)
