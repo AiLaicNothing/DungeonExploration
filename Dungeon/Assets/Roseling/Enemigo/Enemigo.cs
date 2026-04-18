@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class Enemigo : MonoBehaviour
 {
@@ -10,8 +11,18 @@ public class Enemigo : MonoBehaviour
     public float rangoDeteccion = 5f;
     public float rangoPersecucion = 8f;
 
-    private Transform objetivoActual;
+    public float rangoAtaque = 2.5f;
+    public float tiempoCast = 2f;
+
+    public GameObject ataquePrefab;
+    public Transform brazo;
+
+    public bool esFantasma = false;
+
+    private bool casteando = false;  
     private bool persiguiendo = false;
+
+    private Transform objetivoActual;
 
     void Start()
     {
@@ -20,7 +31,15 @@ public class Enemigo : MonoBehaviour
 
     void Update()
     {
+        if (casteando) return;
+
         float distanciaPlayer = Vector3.Distance(transform.position, player.position);
+
+        if (distanciaPlayer <= rangoAtaque)
+        {
+            StartCoroutine(Castear());
+            return;
+        }
 
         if (distanciaPlayer < rangoDeteccion)
         {
@@ -74,6 +93,37 @@ public class Enemigo : MonoBehaviour
             if (direccion.magnitude > 0.1f)
             {
                 transform.rotation = Quaternion.LookRotation(direccion);
+            }
+        }
+
+        IEnumerator Castear()
+        {
+            casteando = true;
+
+            Vector3 mirar = player.position - transform.position;
+            mirar.y = 0;
+
+            if (mirar != Vector3.zero)
+            {
+                transform.rotation = Quaternion.LookRotation(mirar);
+            }
+
+            yield return new WaitForSeconds(tiempoCast);
+
+            Atacar();
+
+            yield return new WaitForSeconds(1f);
+
+            casteando = false;
+        }
+
+        void Atacar()
+        {
+            GameObject ataque = Instantiate(ataquePrefab, brazo.position, brazo.rotation);
+
+            if (esFantasma == false)
+            {
+                Destroy(ataque, 2f);
             }
         }
     }

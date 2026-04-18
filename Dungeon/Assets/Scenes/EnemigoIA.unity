@@ -244,6 +244,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Player
       objectReference: {fileID: 0}
+    - target: {fileID: 2424911801295206994, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.98095244
+      objectReference: {fileID: 0}
+    - target: {fileID: 2424911801295206994, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.19424808
+      objectReference: {fileID: 0}
     - target: {fileID: 5195984443101771771, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -338,6 +346,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7275876683289001779, guid: 62f917eeb02e21d489e6ffe3517e00d7, type: 3}
+      propertyPath: brazo
+      value: 
+      objectReference: {fileID: 1405518373}
+    - target: {fileID: 7275876683289001779, guid: 62f917eeb02e21d489e6ffe3517e00d7, type: 3}
       propertyPath: player
       value: 
       objectReference: {fileID: 1394985100}
@@ -349,6 +361,18 @@ PrefabInstance:
       propertyPath: puntoB
       value: 
       objectReference: {fileID: 1646925876}
+    - target: {fileID: 7275876683289001779, guid: 62f917eeb02e21d489e6ffe3517e00d7, type: 3}
+      propertyPath: tiempoCast
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7275876683289001779, guid: 62f917eeb02e21d489e6ffe3517e00d7, type: 3}
+      propertyPath: ataquePrefab
+      value: 
+      objectReference: {fileID: 2318735194664723290, guid: 972a8e790fc77e44d8c747ca1bea5c1e, type: 3}
+    - target: {fileID: 7275876683289001779, guid: 62f917eeb02e21d489e6ffe3517e00d7, type: 3}
+      propertyPath: cuadradoAtaque
+      value: 
+      objectReference: {fileID: 2318735194664723290, guid: 972a8e790fc77e44d8c747ca1bea5c1e, type: 3}
     - target: {fileID: 7441154473018654111, guid: 62f917eeb02e21d489e6ffe3517e00d7, type: 3}
       propertyPath: m_Name
       value: Enemigo
@@ -358,6 +382,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 62f917eeb02e21d489e6ffe3517e00d7, type: 3}
+--- !u!4 &957076545 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5152678280106407280, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
+  m_PrefabInstance: {fileID: 7060070355718771395}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1089699528
 GameObject:
   m_ObjectHideFlags: 0
@@ -400,6 +429,7 @@ GameObject:
   - component: {fileID: 1259839307}
   - component: {fileID: 1259839306}
   - component: {fileID: 1259839305}
+  - component: {fileID: 1259839308}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -481,6 +511,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1259839308
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1259839304}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
+  m_RenderShadows: 1
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1 &1322035021
 GameObject:
   m_ObjectHideFlags: 0
@@ -613,6 +687,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5195984443101771771, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
   m_PrefabInstance: {fileID: 332247865}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &1405518373 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6081458707447898657, guid: 62f917eeb02e21d489e6ffe3517e00d7, type: 3}
+  m_PrefabInstance: {fileID: 446151185}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1594717131
 GameObject:
   m_ObjectHideFlags: 0
@@ -715,6 +794,10 @@ PrefabInstance:
     m_TransformParent: {fileID: 0}
     m_Modifications:
     - target: {fileID: 1059588725721188090, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
+      propertyPath: brazo
+      value: 
+      objectReference: {fileID: 957076545}
+    - target: {fileID: 1059588725721188090, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
       propertyPath: player
       value: 
       objectReference: {fileID: 1394985100}
@@ -726,6 +809,18 @@ PrefabInstance:
       propertyPath: puntoB
       value: 
       objectReference: {fileID: 1594717132}
+    - target: {fileID: 1059588725721188090, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
+      propertyPath: esFantasma
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1059588725721188090, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
+      propertyPath: tiempoCast
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1059588725721188090, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
+      propertyPath: ataquePrefab
+      value: 
+      objectReference: {fileID: 7885307304022035477, guid: 853955db38f1dbc45947c530a2a4dec3, type: 3}
     - target: {fileID: 2647653479590083940, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
       propertyPath: m_Name
       value: Enemigo2

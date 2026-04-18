@@ -2,7 +2,6 @@ using UnityEngine;
 
 public class Enemigo2 : MonoBehaviour
 {
-    
     public float altura = 0.5f;
     public float velocidad = 2f;
 
