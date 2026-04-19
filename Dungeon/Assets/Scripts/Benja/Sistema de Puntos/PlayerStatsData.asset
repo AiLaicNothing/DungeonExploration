@@ -1,0 +1,80 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c5cb048a77c7a5a4c8fa712817166add, type: 3}
+  m_Name: PlayerStatsData
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStatsData
+  stats:
+  - id: health
+    displayName: Vida
+    baseValue: 100
+    minValue: 10
+    maxValue: 500
+    valuePerPoint: 10
+    upgradeCost: 2
+    downgradeValue: 1
+  - id: mana
+    displayName: "Man\xE1"
+    baseValue: 50
+    minValue: 0
+    maxValue: 300
+    valuePerPoint: 10
+    upgradeCost: 1
+    downgradeValue: 1
+  - id: stamina
+    displayName: Stamina
+    baseValue: 100
+    minValue: 10
+    maxValue: 300
+    valuePerPoint: 10
+    upgradeCost: 1
+    downgradeValue: 1
+  - id: physicalDamage
+    displayName: "Da\xF1o F\xEDsico"
+    baseValue: 10
+    minValue: 1
+    maxValue: 200
+    valuePerPoint: 2
+    upgradeCost: 2
+    downgradeValue: 1
+  - id: magicalDamage
+    displayName: "Da\xF1o M\xE1gico"
+    baseValue: 10
+    minValue: 1
+    maxValue: 200
+    valuePerPoint: 2
+    upgradeCost: 2
+    downgradeValue: 1
+  - id: healthRegen
+    displayName: Regen. Vida
+    baseValue: 1
+    minValue: 0
+    maxValue: 50
+    valuePerPoint: 1
+    upgradeCost: 2
+    downgradeValue: 1
+  - id: staminaRegen
+    displayName: Regen. Stamina
+    baseValue: 5
+    minValue: 0
+    maxValue: 50
+    valuePerPoint: 1
+    upgradeCost: 1
+    downgradeValue: 1
+  - id: manaRegen
+    displayName: Regen. Mana
+    baseValue: 2
+    minValue: 0
+    maxValue: 50
+    valuePerPoint: 1
+    upgradeCost: 1
+    downgradeValue: 1
+  startingPoints: 0
