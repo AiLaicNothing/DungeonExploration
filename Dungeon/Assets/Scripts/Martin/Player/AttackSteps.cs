@@ -12,8 +12,16 @@ public class AttackSteps
     public float comboWindowEnd;
 
     [Header("HitBox")]
+    public float damageMultiplier = 1f;
     public float hitTime;
     public Vector3 hitBoxSize = new Vector3(1, 1, 2);
     public Vector3 hitBoxOffSet = new Vector3(0, 0, 1);
 
+    [Header("AttackType")]
+    public ThrowType throwType;
+    public float stunDuration = 0.1f;
+
+    [Header("Air Control")]
+    public bool keepsInAir;     
+    public float airLiftForce = 2f;
 }

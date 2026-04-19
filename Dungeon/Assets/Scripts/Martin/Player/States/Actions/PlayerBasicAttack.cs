@@ -98,6 +98,15 @@ public class PlayerBasicAttack : PlayerStates
                 Debug.Log($"Hit Enemy: {hit.name}");
 
                 //Add damage logic
+
+                IDamageable damageable = hit.GetComponent<IDamageable>();
+
+                if (damageable != null)
+                {
+                    Vector3 hitDir = player.PlayerModel.transform.forward;
+
+                    damageable.TakeDamage(10f, attack.throwType, hitDir, attack.stunDuration, attack.keepsInAir, attack.airLiftForce);
+                }
             }
         }
     }

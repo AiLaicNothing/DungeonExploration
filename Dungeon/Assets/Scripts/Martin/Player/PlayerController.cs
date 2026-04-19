@@ -23,6 +23,7 @@ public class PlayerController : MonoBehaviour
     //-->Combat variables
     [Header("Combat")]
     [SerializeField] private BasicComboData basicComboData;
+    [SerializeField] private BasicComboData airComboData;
     public bool isGrounded { get; private set; }
     public bool isPerformingAction = false;
     public bool hasUsedDash = false;
@@ -45,6 +46,7 @@ public class PlayerController : MonoBehaviour
     public Transform PlayerModel => playerModel;
     public PlayerInputHandler Input => input;
     public BasicComboData ComboData => basicComboData;
+    public BasicComboData AirComboData => airComboData;
 
     //--> make data accesible to other scripts that has acces to this one.
     public float CurrentStamina => PlayerStats.Instance.Stamina.CurrentValue;
@@ -194,7 +196,14 @@ public class PlayerController : MonoBehaviour
 
     private void CheckGround()
     {
+        bool previous = isGrounded;
+
         isGrounded = Physics.Raycast(groundCheck.position, Vector3.down, 1.1f);
+
+        if(!previous && isGrounded)
+        {
+            hasUsedAirAttack = false;
+        }
     }
 
     //---SECTION RELATED TO SKILLS---
