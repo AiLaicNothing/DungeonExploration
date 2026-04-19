@@ -40,6 +40,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Transform groundCheck;
     [SerializeField] private PlayerInputHandler input;
     [SerializeField] private Transform playerModel;
+    [SerializeField] private PlatformRider platformRider;   
+
     public GameObject hitboxPrefab;
 
     public Rigidbody Rb => rb;
@@ -133,7 +135,7 @@ public class PlayerController : MonoBehaviour
     {
         Vector2 inputDir = input.moveInput.normalized;
 
-        Vector3 camForward = Camera.main.transform.forward ;
+        Vector3 camForward = Camera.main.transform.forward;
         camForward.y = 0;
         camForward.Normalize();
 
@@ -144,12 +146,20 @@ public class PlayerController : MonoBehaviour
         Vector3 moveDir = camForward * inputDir.y + camRight * inputDir.x;
 
         Vector3 velocity = moveDir * moveSpeed * moveMultiplier;
-        velocity.y = rb.linearVelocity.y;  
+        velocity.y = rb.linearVelocity.y;
+
+        if (platformRider != null && platformRider.IsOnPlatform)
+        {
+            velocity.x += platformRider.CurrentPlatformVelocity.x;
+            velocity.z += platformRider.CurrentPlatformVelocity.z;
+            // ascensor
+            // velocity.y += platformRider.CurrentPlatformVelocity.y;
+        }
+
         rb.linearVelocity = velocity;
 
         HandleRotation(moveDir);
     }
-
     public void Jump()
     {
         if (!isGrounded)

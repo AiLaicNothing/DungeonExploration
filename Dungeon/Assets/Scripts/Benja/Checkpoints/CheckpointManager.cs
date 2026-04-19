@@ -1,4 +1,4 @@
-    using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CheckpointManager : MonoBehaviour
@@ -6,9 +6,7 @@ public class CheckpointManager : MonoBehaviour
     public static CheckpointManager Instance;
 
     public List<Checkpoint> unlockedCheckpoints = new List<Checkpoint>();
-
     public Checkpoint activeCheckpoint;
-
     public GameObject teleportPanel;
 
     void Awake()
@@ -17,6 +15,48 @@ public class CheckpointManager : MonoBehaviour
             Instance = this;
         else
             Destroy(gameObject);
+    }
+
+    void Start()
+    {
+
+        if (Savesystem.Instance != null)
+        {
+            Savesystem.Instance.OnLoaded += SyncFromSaveSystem;
+
+            SyncFromSaveSystem();
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (Savesystem.Instance != null)
+            Savesystem.Instance.OnLoaded -= SyncFromSaveSystem;
+    }
+
+
+    public void SyncFromSaveSystem()
+    {
+        if (Savesystem.Instance == null) return;
+
+        Checkpoint[] allCheckpoints = FindObjectsByType<Checkpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+
+        string activeName = Savesystem.Instance.GetActiveCheckpointName();
+
+        foreach (var cp in allCheckpoints)
+        {
+            if (cp == null || string.IsNullOrEmpty(cp.checkpointName)) continue;
+
+            if (Savesystem.Instance.IsCheckpointActivated(cp.checkpointName))
+            {
+                RegisterCheckpoint(cp);
+
+                if (cp.checkpointName == activeName)
+                    activeCheckpoint = cp;
+            }
+        }
+
+        Debug.Log($"[CheckpointManager] Sincronización: {unlockedCheckpoints.Count} checkpoints desbloqueados.");
     }
 
     public void SetActiveCheckpoint(Checkpoint checkpoint)
@@ -40,7 +80,6 @@ public class CheckpointManager : MonoBehaviour
         if (teleportPanel != null)
             teleportPanel.SetActive(true);
     }
-
 
     public void CloseTeleportPanel()
     {

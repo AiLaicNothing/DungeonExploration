@@ -3,41 +3,73 @@ using UnityEngine.InputSystem;
 
 public class Checkpoint : MonoBehaviour , IInteractable
 {
+    [Header("Info")]
+    public string checkpointName; 
     public Transform spawnPoint;
-    public string checkpointName;
+
+    [Header("UI")]
     public GameObject activateUI;
     public GameObject openPanelUI;
 
-    private bool activated = false; 
+    [Header("Recompensa")]
+    public int upgradePointsReward = 5;
 
+    [Header("Visual")]
     public CheckpointVisual visual;
+
+    private bool activated = false;
+
+    void Start()
+    {
+        RefreshFromSaveSystem();
+
+        if (Savesystem.Instance != null)
+            Savesystem.Instance.OnLoaded += RefreshFromSaveSystem;
+    }
+
+    void OnDestroy()
+    {
+        if (Savesystem.Instance != null)
+            Savesystem.Instance.OnLoaded -= RefreshFromSaveSystem;
+    }
+
+    void RefreshFromSaveSystem()
+    {
+        if (Savesystem.Instance == null) return;
+
+        activated = Savesystem.Instance.IsCheckpointActivated(checkpointName);
+
+        if (activated && visual != null)
+            visual.ActivateVisual();
+    }
 
     public void Interact()
     {
         if (!activated)
-        {
             ActivateCheckpoint();
-        }
         else
-        {
             OpenCheckpointPanel();
-        }
     }
 
     void ActivateCheckpoint()
     {
-        Debug.Log($"Checkpoint '{checkpointName}' activado");
-
         activated = true;
+
+        Savesystem.Instance.MarkCheckpointActivated(checkpointName);
+        Savesystem.Instance.SetActiveCheckpoint(checkpointName);
+
+        PlayerStats.Instance.AddUpgradePoints(upgradePointsReward);
 
         CheckpointManager.Instance.SetActiveCheckpoint(this);
         CheckpointManager.Instance.RegisterCheckpoint(this);
 
-        if (visual != null)
-            visual.ActivateVisual();
+        if (visual != null) visual.ActivateVisual();
 
         activateUI.SetActive(false);
         openPanelUI.SetActive(true);
+
+        if (Savesystem.Instance.autoSaveOnCheckpoint)
+            Savesystem.Instance.Save();
     }
 
     void OpenCheckpointPanel()
@@ -61,7 +93,6 @@ public class Checkpoint : MonoBehaviour , IInteractable
 
         activateUI.SetActive(false);
         openPanelUI.SetActive(false);
-
         CheckpointManager.Instance.CloseTeleportPanel();
     }
 }

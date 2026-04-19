@@ -1,25 +1,53 @@
 using UnityEngine;
+[RequireComponent(typeof(Rigidbody))]
 
 public class MovingPlatform : MonoBehaviour, IActivatable
 {
+    [Header("Movimiento")]
     public Transform pointA;
     public Transform pointB;
     public float speed = 2f;
+
+    [Header("Audio")]
     public AudioSource audioSource;
 
+    public Vector3 CurrentVelocity { get; private set; }
+
+    private Rigidbody _rb;
     private bool _moving = false;
     private Transform _target;
+    private Vector3 _prevPosition;
 
-    void Start() => _target = pointA;
-
-    void Update()
+    void Awake()
     {
-        if (!_moving) return;
+        _rb = GetComponent<Rigidbody>();
+        _rb.isKinematic = true;
+        _rb.interpolation = RigidbodyInterpolation.Interpolate;
+    }
 
-        transform.position = Vector3.MoveTowards(
-            transform.position, _target.position, speed * Time.deltaTime);
+    void Start()
+    {
+        _target = pointA;
+        _prevPosition = _rb.position;
+    }
 
-        if (Vector3.Distance(transform.position, _target.position) < 0.01f)
+    void FixedUpdate()
+    {
+        if (!_moving)
+        {
+            CurrentVelocity = Vector3.zero;
+            return;
+        }
+
+        Vector3 newPosition = Vector3.MoveTowards(
+            _rb.position, _target.position, speed * Time.fixedDeltaTime);
+
+        _rb.MovePosition(newPosition);
+
+        CurrentVelocity = (newPosition - _prevPosition) / Time.fixedDeltaTime;
+        _prevPosition = newPosition;
+
+        if (Vector3.Distance(newPosition, _target.position) < 0.01f)
             _moving = false;
     }
 
@@ -34,5 +62,18 @@ public class MovingPlatform : MonoBehaviour, IActivatable
     {
         _target = pointA;
         _moving = true;
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+
+        var rider = collision.collider.GetComponentInParent<PlatformRider>();
+        if (rider != null) rider.SetPlatform(this);
+    }
+
+    void OnCollisionExit(Collision collision)
+    {
+        var rider = collision.collider.GetComponentInParent<PlatformRider>();
+        if (rider != null) rider.ClearPlatform(this);
     }
 }
