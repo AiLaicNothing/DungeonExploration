@@ -474,9 +474,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa46c6b2449e8534f853ac3be58670bd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
-  currentHealth: 0
-  currentStamina: 1000
-  currentMana: 0
   moveSpeed: 10
   jumpForce: 8
   rotSpeed: 10
@@ -484,8 +481,8 @@ MonoBehaviour:
   dashDistance: 5
   dashDuration: 0.3
   dashCost: 20
-  maxStamina: 1000
   basicComboData: {fileID: 11400000, guid: 6b9667d3b4e69a7499fc08b57c6d41c5, type: 2}
+  airComboData: {fileID: 11400000, guid: 7a8e1b5267f86bf46ad3b01c2ac82ba3, type: 2}
   isPerformingAction: 0
   hasUsedDash: 0
   hasUsedAirAttack: 0
@@ -495,6 +492,7 @@ MonoBehaviour:
   groundCheck: {fileID: 6714165563697598249}
   input: {fileID: 4412126337141054394}
   playerModel: {fileID: 459833000716062552}
+  platformRider: {fileID: 0}
   hitboxPrefab: {fileID: 65547742025389114, guid: e1a6382669a4d2d49901cfb4464b71df, type: 3}
 --- !u!54 &71265052130629953
 Rigidbody:
