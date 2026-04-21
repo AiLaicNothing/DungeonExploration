@@ -20,7 +20,7 @@ public class PlayerIddleAction : PlayerStates
         if (player.Input.attackPressed)
         {
             //--> If is not touching the ground and has not attacked in the air
-            if(!player.isGrounded && !player.hasUsedAirAttack)
+            if (!player.isGrounded && !player.hasUsedAirAttack)
             {
                 //-->Do airAttack
                 player.ChangeActionState(player.airAttack_State);
@@ -32,15 +32,17 @@ public class PlayerIddleAction : PlayerStates
             }
         }
 
-        if (player.Input.skill1Pressed)
-        {
-            var skill = player.GetSkill(0);
+        int index = player.Input.skillPressedIndex;
 
-            if(skill != null && player.IsSkillReady(0))
+        if (index != -1)
+        {
+            var skill = player.GetSkill(index);
+
+            if (skill != null && player.IsSkillReady(index))
             {
-                player.skill_State.SetSkill(skill, 0);
+                player.skill_State.SetSkill(skill, index);
                 player.ChangeActionState(player.skill_State);
-                return ;
+                return;
             }
         }
     }

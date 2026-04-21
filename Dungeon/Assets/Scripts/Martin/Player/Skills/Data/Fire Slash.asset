@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 23b19d4998c74564eb795cdc417e733c, type: 3}
+  m_Name: Fire Slash
+  m_EditorClassIdentifier: Assembly-CSharp::FireSlashSkill
+  skillName: Fire slash
+  resourceType: 0
+  cost: 0
+  castTime: 0
+  cooldown: 0
+  castAnimation: 
+  actionAnimation: 
+  proyectilePrefab: {fileID: 7664227392648269801, guid: b2865a1976e633e429bc16f9bb0d919c, type: 3}
+  proyectileSpeed: 15
+  spawnOffset: {x: 0, y: 1, z: 1.5}
+  damage: 10
+  hitData:
+    damageMultiplier: 1
+    throwType: 0
+    stunDuration: 0
+    keepInAir: 1
+    airLiftForce: 2

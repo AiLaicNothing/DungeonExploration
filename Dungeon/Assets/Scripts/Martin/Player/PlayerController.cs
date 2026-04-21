@@ -40,6 +40,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private Transform groundCheck;
     [SerializeField] private PlayerInputHandler input;
     [SerializeField] private Transform playerModel;
+    [SerializeField] private LockOnTarget lockOnTarget;
     [SerializeField] private PlatformRider platformRider;   
 
     public GameObject hitboxPrefab;
@@ -182,7 +183,14 @@ public class PlayerController : MonoBehaviour
     {
         Vector3 lookDir;
 
-        if (!input.isAiming)
+        if (input.isAiming || lockOnTarget.isTargeting)
+        {
+            // Mirar hacia adelante (dirección de la cámara)
+            lookDir = Camera.main.transform.forward; // Usa la referencia 'mainCamera' que ya tienes en tu script
+            lookDir.y = 0;
+            lookDir.Normalize();
+        }
+        else
         {
             if (moveDir.magnitude < 0.1f)
             {
@@ -191,14 +199,6 @@ public class PlayerController : MonoBehaviour
 
             lookDir = moveDir;
         }
-        else
-        {
-            //look foward
-            lookDir = Camera.main.transform.forward;
-            lookDir.y = 0;
-            lookDir.Normalize();
-        }
-
         Quaternion targetRotation = Quaternion.LookRotation(lookDir);
         playerModel.rotation = Quaternion.Slerp(playerModel.rotation, targetRotation, rotSpeed * Time.deltaTime);
 

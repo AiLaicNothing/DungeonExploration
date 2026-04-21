@@ -419,10 +419,11 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5195984443101771771}
+  - component: {fileID: 71265052130629953}
   - component: {fileID: 4412126337141054394}
   - component: {fileID: 7187626322008412461}
-  - component: {fileID: 71265052130629953}
   - component: {fileID: 7648726316778184223}
+  - component: {fileID: 2229039772079444906}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -449,6 +450,33 @@ Transform:
   - {fileID: 2070676529920893986}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!54 &71265052130629953
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075475488835863185}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 1
+  m_IsKinematic: 0
+  m_Interpolate: 1
+  m_Constraints: 112
+  m_CollisionDetection: 1
 --- !u!114 &4412126337141054394
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -494,33 +522,6 @@ MonoBehaviour:
   playerModel: {fileID: 459833000716062552}
   platformRider: {fileID: 0}
   hitboxPrefab: {fileID: 65547742025389114, guid: e1a6382669a4d2d49901cfb4464b71df, type: 3}
---- !u!54 &71265052130629953
-Rigidbody:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2075475488835863185}
-  serializedVersion: 5
-  m_Mass: 1
-  m_LinearDamping: 0
-  m_AngularDamping: 0.05
-  m_CenterOfMass: {x: 0, y: 0, z: 0}
-  m_InertiaTensor: {x: 1, y: 1, z: 1}
-  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ImplicitCom: 1
-  m_ImplicitTensor: 1
-  m_UseGravity: 1
-  m_IsKinematic: 0
-  m_Interpolate: 1
-  m_Constraints: 112
-  m_CollisionDetection: 1
 --- !u!114 &7648726316778184223
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -627,18 +628,67 @@ MonoBehaviour:
     m_ActionId: a9d628ba-3aa6-44f7-8555-cdc8a6e03f44
     m_ActionName: 'PlayerInput/Dash[/Keyboard/leftShift]'
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 4412126337141054394}
+        m_TargetAssemblyTypeName: PlayerInputHandler, Assembly-CSharp
+        m_MethodName: OnLook
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: 7eb77d42-09af-4e68-84f5-291dd1392523
     m_ActionName: 'PlayerInput/Look[/Mouse/delta]'
   - m_PersistentCalls:
       m_Calls: []
     m_ActionId: d7abcdf9-1b5c-4478-8070-d1a1738ae338
     m_ActionName: 'PlayerInput/Interact[/Keyboard/e]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 4412126337141054394}
+        m_TargetAssemblyTypeName: PlayerInputHandler, Assembly-CSharp
+        m_MethodName: OnLockTarget
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 220837d1-6e2f-423c-bcbe-e86374028bd3
+    m_ActionName: 'PlayerInput/LockOn[/Keyboard/q]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: PlayerInput
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
+--- !u!114 &2229039772079444906
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075475488835863185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c3cd23c6b443b64aac2a0c6d0c31a9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LockOnTarget
+  mainCamera: {fileID: 0}
+  freeLook: {fileID: 0}
+  input: {fileID: 0}
+  aimIcon: {fileID: 0}
+  enemyTag: Enemy
+  targetLockOffset: {x: 0, y: 0}
+  minDistance: 1.5
+  maxDistance: 15
+  lockSpeed: 3
 --- !u!1 &2185094164459535946
 GameObject:
   m_ObjectHideFlags: 0

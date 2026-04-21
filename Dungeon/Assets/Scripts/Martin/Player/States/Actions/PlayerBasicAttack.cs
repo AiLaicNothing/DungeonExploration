@@ -105,7 +105,7 @@ public class PlayerBasicAttack : PlayerStates
                 {
                     Vector3 hitDir = player.PlayerModel.transform.forward;
 
-                    damageable.TakeDamage(10f, attack.throwType, hitDir, attack.stunDuration, attack.keepsInAir, attack.airLiftForce);
+                    damageable.TakeDamage(10f * attack.hitData.damageMultiplier, attack.hitData.throwType, hitDir, attack.hitData.stunDuration, attack.hitData.keepInAir, attack.hitData.airLiftForce);
                 }
             }
         }

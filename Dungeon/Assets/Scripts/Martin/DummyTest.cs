@@ -5,7 +5,7 @@ public class DummyTest : MonoBehaviour, IDamageable
 {
     [Header("Stats")]
     public float maxHP = 100f;
-    float currentHP;
+    [SerializeField] private float currentHP;
 
     [Header("Behavior")]
     public bool canBeAffected = true;
