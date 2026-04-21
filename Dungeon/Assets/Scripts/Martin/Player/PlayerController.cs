@@ -1,10 +1,12 @@
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : MonoBehaviour, IDamageable
 {
-    //public float currentHealth;
+    public float maxHealth;
+    public float currentHealth;
     //public float currentStamina;
-    //public float currentMana;
+    public float maxMana;
+    public float currentMana;
 
     //--> Variables
     [Header("Movement")]
@@ -54,6 +56,9 @@ public class PlayerController : MonoBehaviour
     //--> make data accesible to other scripts that has acces to this one.
     public float CurrentStamina => PlayerStats.Instance.Stamina.CurrentValue;
     public float MaxStamina => PlayerStats.Instance.Stamina.Max;
+
+    public float MaxMana => PlayerStats.Instance.Mana.Max;
+    public float CurrentMana => PlayerStats.Instance.Mana.CurrentValue;
     public float DashDistance => dashDistance;
     public float DashDuration => dashDuration;
     public float DashCost => dashCost;
@@ -90,6 +95,9 @@ public class PlayerController : MonoBehaviour
         skill_State = new PlayerSkill(this);
 
         skillsCooldown = new float[skills.Length];
+
+        currentHealth = maxHealth;
+        currentMana = maxMana;
     }
 
     private void Start()
@@ -99,6 +107,11 @@ public class PlayerController : MonoBehaviour
     }
     private void Update()
     {
+        if(currentHealth <= 0)
+        {
+            Destroy(gameObject);
+        }
+
         CheckGround();
         movementSM.Update();
         actionSM.Update();
@@ -178,6 +191,12 @@ public class PlayerController : MonoBehaviour
 
     public void ConsumeStamina(float cost) =>
         PlayerStats.Instance.Stamina.Modify(-cost);
+
+    public bool HasMana(float cost) =>
+        PlayerStats.Instance.Mana.CurrentValue >= cost;
+
+    public void ConsumeMana(float cost) =>
+        PlayerStats.Instance.Mana.Modify(-cost);
 
     void HandleRotation(Vector3 moveDir)
     {
@@ -264,5 +283,10 @@ public class PlayerController : MonoBehaviour
         box.transform.localScale = size;
 
         Destroy(box, 0.2f);
+    }
+
+    public void TakeDamage(float damage, ThrowType throwType, Vector3 hitDir, float stunDuration, bool keepOnAir, float airLift)
+    {
+        currentHealth -= damage;   
     }
 }

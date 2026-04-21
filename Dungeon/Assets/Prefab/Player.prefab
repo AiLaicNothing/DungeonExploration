@@ -424,6 +424,9 @@ GameObject:
   - component: {fileID: 7187626322008412461}
   - component: {fileID: 7648726316778184223}
   - component: {fileID: 2229039772079444906}
+  - component: {fileID: 584156341421039838}
+  - component: {fileID: 2847600396805864418}
+  - component: {fileID: 1418290108865835629}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -523,7 +526,7 @@ MonoBehaviour:
   input: {fileID: 4412126337141054394}
   playerModel: {fileID: 459833000716062552}
   lockOnTarget: {fileID: 2229039772079444906}
-  platformRider: {fileID: 0}
+  platformRider: {fileID: 2847600396805864418}
   hitboxPrefab: {fileID: 65547742025389114, guid: e1a6382669a4d2d49901cfb4464b71df, type: 3}
 --- !u!114 &7648726316778184223
 MonoBehaviour:
@@ -647,7 +650,19 @@ MonoBehaviour:
     m_ActionId: 7eb77d42-09af-4e68-84f5-291dd1392523
     m_ActionName: 'PlayerInput/Look[/Mouse/delta]'
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 584156341421039838}
+        m_TargetAssemblyTypeName: PlayerInteraction, Assembly-CSharp
+        m_MethodName: OnInteract
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: d7abcdf9-1b5c-4478-8070-d1a1738ae338
     m_ActionName: 'PlayerInput/Interact[/Keyboard/e]'
   - m_PersistentCalls:
@@ -757,6 +772,42 @@ MonoBehaviour:
   minDistance: 1.5
   maxDistance: 15
   lockSpeed: 3
+--- !u!114 &584156341421039838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075475488835863185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26073f37062df8e43a51b67aa1a08fb3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInteraction
+--- !u!114 &2847600396805864418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075475488835863185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b45b66c8d12794c4b8e4ae3f725813df, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlatformRider
+--- !u!114 &1418290108865835629
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075475488835863185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db93f9b7606a6c84b893f32f078686c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::HpPlaceHolder
 --- !u!1 &2185094164459535946
 GameObject:
   m_ObjectHideFlags: 0
