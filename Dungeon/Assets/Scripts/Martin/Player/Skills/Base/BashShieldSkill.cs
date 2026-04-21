@@ -34,6 +34,8 @@ public class BashShieldSkill : Skill
 
             Collider[] hits = Physics.OverlapBox(center, hitBoxSize * 0.5f, player.PlayerModel.transform.rotation);
 
+            player.ShowHitbox(center, hitBoxSize, player.PlayerModel.transform.rotation);
+
             foreach (var hit in hits)
             {
                 if (hit.CompareTag("Enemy"))

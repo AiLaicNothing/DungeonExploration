@@ -504,7 +504,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   moveSpeed: 10
   jumpForce: 8
-  rotSpeed: 10
+  rotSpeed: 60
   moveMultiplier: 1
   dashDistance: 5
   dashDuration: 0.3
@@ -515,11 +515,14 @@ MonoBehaviour:
   hasUsedDash: 0
   hasUsedAirAttack: 0
   maxSkillSlots: 4
-  skills: []
+  skills:
+  - {fileID: 11400000, guid: e44cbdc44a1a45a4c858140296414556, type: 2}
+  - {fileID: 11400000, guid: a9efe79e2cc66d44bbf9feb7b1c94465, type: 2}
   rb: {fileID: 71265052130629953}
   groundCheck: {fileID: 6714165563697598249}
   input: {fileID: 4412126337141054394}
   playerModel: {fileID: 459833000716062552}
+  lockOnTarget: {fileID: 2229039772079444906}
   platformRider: {fileID: 0}
   hitboxPrefab: {fileID: 65547742025389114, guid: e1a6382669a4d2d49901cfb4464b71df, type: 3}
 --- !u!114 &7648726316778184223
@@ -663,6 +666,70 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 220837d1-6e2f-423c-bcbe-e86374028bd3
     m_ActionName: 'PlayerInput/LockOn[/Keyboard/q]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 4412126337141054394}
+        m_TargetAssemblyTypeName: PlayerInputHandler, Assembly-CSharp
+        m_MethodName: OnSkill1
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: ac1244c9-f32d-4588-b39e-7b200cb7b60e
+    m_ActionName: 'PlayerInput/Skill_1[/Keyboard/1]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 4412126337141054394}
+        m_TargetAssemblyTypeName: PlayerInputHandler, Assembly-CSharp
+        m_MethodName: OnSkill2
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: dcdb3c76-2641-4db8-aec5-baf43d606a63
+    m_ActionName: 'PlayerInput/Skill_2[/Keyboard/2]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 4412126337141054394}
+        m_TargetAssemblyTypeName: PlayerInputHandler, Assembly-CSharp
+        m_MethodName: OnSkill3
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: db647b9a-a3fe-408e-b6bd-fbe433e2f407
+    m_ActionName: 'PlayerInput/Skill_3[/Keyboard/3]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 4412126337141054394}
+        m_TargetAssemblyTypeName: PlayerInputHandler, Assembly-CSharp
+        m_MethodName: OnSkill4
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 6e329bce-e710-4fee-84ce-7b246ad1332e
+    m_ActionName: 'PlayerInput/Skill_4[/Keyboard/4]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: PlayerInput
@@ -681,8 +748,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LockOnTarget
   mainCamera: {fileID: 0}
-  freeLook: {fileID: 0}
-  input: {fileID: 0}
+  freeLook: {fileID: 760489869447179111}
+  input: {fileID: 4412126337141054394}
+  inputProvider: {fileID: 8906698682413446178}
   aimIcon: {fileID: 0}
   enemyTag: Enemy
   targetLockOffset: {x: 0, y: 0}
@@ -788,7 +856,7 @@ CapsuleCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2185094164459535946}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: 0d48eb2732e5f1f4189587ff78d37fbd, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0

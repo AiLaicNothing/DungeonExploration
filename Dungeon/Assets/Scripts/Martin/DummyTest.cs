@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 public class DummyTest : MonoBehaviour, IDamageable
@@ -34,6 +34,14 @@ public class DummyTest : MonoBehaviour, IDamageable
 
         if (rb == null)
             rb = GetComponent<Rigidbody>();
+    }
+
+    public void Update()
+    {
+        if(currentHP <= 0)
+        {
+            Destroy(gameObject);
+        }
     }
 
     public void TakeDamage(float amount, ThrowType throwType, Vector3 hitDirection, float stunDuration, bool keepOnAir, float airLift)
@@ -118,7 +126,6 @@ public class DummyTest : MonoBehaviour, IDamageable
 
         rb.useGravity = true;
 
-        // Optional: make fall faster
         rb.linearVelocity += Vector3.down * fallGravityMultiplier;
 
         Debug.Log("Enemy falling");
@@ -129,14 +136,14 @@ public class DummyTest : MonoBehaviour, IDamageable
         Vector3 force = dir * pushForce;
         force.y = 0;
 
-        rb.AddForce(force, ForceMode.Impulse);
+        rb.AddForce(force * 10, ForceMode.Impulse);
     }
 
     void Launch(Vector3 dir)
     {
         Vector3 force = dir * pushForce + Vector3.up * airForce;
 
-        rb.AddForce(Vector3.up * airForce, ForceMode.Impulse);
+        rb.AddForce(Vector3.up * airForce * 10, ForceMode.Impulse);
 
         if (airRoutine != null)
             StopCoroutine(airRoutine);
