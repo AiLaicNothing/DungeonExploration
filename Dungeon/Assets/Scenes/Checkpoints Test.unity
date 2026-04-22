@@ -166,7 +166,7 @@ GameObject:
   - component: {fileID: 192101579}
   - component: {fileID: 192101578}
   - component: {fileID: 192101577}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Plane
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -2245,6 +2245,10 @@ PrefabInstance:
       propertyPath: m_XAxis.m_InvertInput
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 760489869447179111, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_YAxis.m_InvertInput
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2075475488835863185, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
       propertyPath: m_Name
       value: Player (1)
@@ -2304,6 +2308,46 @@ PrefabInstance:
     - target: {fileID: 7187626322008412461, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
       propertyPath: maxHealth
       value: 100
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.size
+      value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[12].m_ActionId
+      value: 5193b362-1a0a-4628-bd16-4e5ef786413a
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[12].m_ActionName
+      value: 'PlayerInput/X[/Keyboard/x]'
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[12].m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[12].m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[12].m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 733504085}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[12].m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[12].m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: Reload
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[12].m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: ReloadScene, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[12].m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -2774,6 +2818,50 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 90, z: -90}
+--- !u!1 &733504084
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 733504086}
+  - component: {fileID: 733504085}
+  m_Layer: 0
+  m_Name: Reload
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &733504085
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 733504084}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c490a3795097a4846859a352d1d78985, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ReloadScene
+--- !u!4 &733504086
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 733504084}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 12.89382, y: -0, z: -78.12411}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!43 &754243078
 Mesh:
   m_ObjectHideFlags: 0
@@ -3069,7 +3157,7 @@ GameObject:
   - component: {fileID: 805740806}
   - component: {fileID: 805740805}
   - component: {fileID: 805740804}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Plane (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4338,7 +4426,7 @@ GameObject:
   - component: {fileID: 821501841}
   - component: {fileID: 821501840}
   - component: {fileID: 821501839}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Cube (3)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5987,6 +6075,34 @@ Mesh:
       - serializedVersion: 1
         m_IndexStart: 0
         m_IndexCount: 0
+--- !u!1 &1342755764 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2647653479590083940, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
+  m_PrefabInstance: {fileID: 1690483349}
+  m_PrefabAsset: {fileID: 0}
+--- !u!136 &1342755769
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1342755764}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5
+  m_Height: 1.8584337
+  m_Direction: 1
+  m_Center: {x: 0, y: -0.054889202, z: 0}
 --- !u!43 &1396245044
 Mesh:
   m_ObjectHideFlags: 0
@@ -6179,7 +6295,7 @@ GameObject:
   - component: {fileID: 1427262273}
   - component: {fileID: 1427262272}
   - component: {fileID: 1427262271}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Cube (4)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -6535,7 +6651,7 @@ GameObject:
   - component: {fileID: 1437934064}
   - component: {fileID: 1437934063}
   - component: {fileID: 1437934062}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Cube (5)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -7217,7 +7333,7 @@ GameObject:
   - component: {fileID: 1651953410}
   - component: {fileID: 1651953409}
   - component: {fileID: 1651953408}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Plane (1)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -8520,6 +8636,10 @@ PrefabInstance:
       propertyPath: ataquePrefab
       value: 
       objectReference: {fileID: 7885307304022035477, guid: 853955db38f1dbc45947c530a2a4dec3, type: 3}
+    - target: {fileID: 1171689976796640373, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
+      propertyPath: m_TagString
+      value: Untagged
+      objectReference: {fileID: 0}
     - target: {fileID: 2647653479590083940, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
       propertyPath: m_Name
       value: Enemigo2
@@ -8532,6 +8652,10 @@ PrefabInstance:
       propertyPath: m_TagString
       value: Enemy
       objectReference: {fileID: 0}
+    - target: {fileID: 3807735109711542150, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6865969252366970139, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
       propertyPath: altura
       value: 0.5
@@ -8542,7 +8666,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7009669580994522041, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -3.8499994
+      value: -2
       objectReference: {fileID: 0}
     - target: {fileID: 7009669580994522041, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
       propertyPath: m_LocalPosition.z
@@ -8587,7 +8711,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2647653479590083940, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1342755769}
   m_SourcePrefab: {fileID: 100100000, guid: 7a1628fedcd57974fa3205999905e5ba, type: 3}
 --- !u!43 &1717880372
 Mesh:
@@ -9331,7 +9458,7 @@ GameObject:
   - component: {fileID: 2013002008}
   - component: {fileID: 2013002007}
   - component: {fileID: 2013002006}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Cube (2)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9687,7 +9814,7 @@ GameObject:
   - component: {fileID: 2019579420}
   - component: {fileID: 2019579419}
   - component: {fileID: 2019579418}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Cube (6)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -11121,3 +11248,4 @@ SceneRoots:
   - {fileID: 1690483349}
   - {fileID: 18711}
   - {fileID: 396183409}
+  - {fileID: 733504086}
