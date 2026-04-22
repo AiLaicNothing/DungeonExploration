@@ -36,6 +36,11 @@ public class LockOnTarget : MonoBehaviour
     {
         HandleLockInput();
 
+        if(isTargeting && currentTarget == null)
+        {
+            ClearTarget();
+        }
+
         if (isTargeting && currentTarget != null)
         {
             UpdateLockCamera();
