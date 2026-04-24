@@ -20,14 +20,11 @@ public class PlayerController : MonoBehaviour, IDamageable
     [SerializeField] private float dashDuration = 0.3f;
     [SerializeField] private float dashCost = 20f;
 
-<<<<<<< HEAD
     [SerializeField] private float baseGravity = -9.81f;
     [SerializeField] private float fallGravityMultiplier = 2.5f;
     private float currentGravityMultiplier;
     //[SerializeField] private float maxStamina;
 
-=======
->>>>>>> 2efebbcec97fb351a232d65925bbd8ca633a15bf
     //-->Combat variables
     [Header("Combat")]
     [SerializeField] private BasicComboData basicComboData;
@@ -51,7 +48,6 @@ public class PlayerController : MonoBehaviour, IDamageable
     [SerializeField] private PlayerInputHandler input;
     [SerializeField] private Transform playerModel;
     [SerializeField] private LockOnTarget lockOnTarget;
-    [SerializeField] private PlatformRider platformRider;   
 
     [SerializeField] private PlatformRider platformRider;
     public GameObject hitboxPrefab;
@@ -62,13 +58,11 @@ public class PlayerController : MonoBehaviour, IDamageable
     public BasicComboData ComboData => basicComboData;
     public BasicComboData AirComboData => airComboData;
 
-<<<<<<< HEAD
     public float FallGravityMultiplier => fallGravityMultiplier;
 
     //--> make data accesible to other scripts that has acces to this one.
-=======
+
     //--> ESTADISTICAS (todas leen de PlayerStats.Instance)
->>>>>>> 2efebbcec97fb351a232d65925bbd8ca633a15bf
     public float CurrentStamina => PlayerStats.Instance.Stamina.CurrentValue;
     public float MaxStamina => PlayerStats.Instance.Stamina.Max;
 
@@ -167,14 +161,6 @@ public class PlayerController : MonoBehaviour, IDamageable
         actionSM.FixedUpdate();
     }
 
-    public void ChangeState(PlayerStates nextState)
-    {
-        movementSM.ChangeState(nextState);
-    }
-    public void ChangeActionState(PlayerStates nextState)
-    {
-        actionSM.ChangeState(nextState);
-    }
     public void ChangeState(PlayerStates nextState) => movementSM.ChangeState(nextState);
     public void ChangeActionState(PlayerStates nextState) => actionSM.ChangeState(nextState);
 
@@ -221,25 +207,20 @@ public class PlayerController : MonoBehaviour, IDamageable
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
     }
 
-    public bool HasStamina(float cost) =>
-        PlayerStats.Instance.Stamina.CurrentValue >= cost;
+
     // ── Stamina ──────────────────────────────────────────────────────
     public bool HasStamina(float cost) => PlayerStats.Instance.Stamina.CurrentValue >= cost;
     public void ConsumeStamina(float cost) => PlayerStats.Instance.Stamina.Modify(-cost);
 
-    public void ConsumeStamina(float cost) =>
-        PlayerStats.Instance.Stamina.Modify(-cost);
+
     // ── Mana ─────────────────────────────────────────────────────────
     public bool HasMana(float cost) => PlayerStats.Instance.Mana.CurrentValue >= cost;
     public void ConsumeMana(float cost) => PlayerStats.Instance.Mana.Modify(-cost);
 
-    public bool HasMana(float cost) =>
-        PlayerStats.Instance.Mana.CurrentValue >= cost;
+
     // ── Health ───────────────────────────────────────────────────────
     public bool IsAlive => CurrentHealth > 0;
 
-    public void ConsumeMana(float cost) =>
-        PlayerStats.Instance.Mana.Modify(-cost);
     /// <summary>Cura al jugador (clamp al max automático).</summary>
     public void Heal(float amount)
     {
@@ -297,24 +278,14 @@ public class PlayerController : MonoBehaviour, IDamageable
         return skills[index];
     }
 
-    public bool HasResource(ResourceType type, float cost)
     public bool HasResource(ResourceType type, float cost) => type switch
     {
-        return type switch
-        {
-            ResourceType.Stamina => PlayerStats.Instance.Stamina.CurrentValue >= cost,
-            ResourceType.Mana => PlayerStats.Instance.Mana.CurrentValue >= cost,
-            ResourceType.Health => PlayerStats.Instance.Health.CurrentValue >= cost,
-            _ => true
-        };
-    }
         ResourceType.Stamina => PlayerStats.Instance.Stamina.CurrentValue >= cost,
         ResourceType.Mana => PlayerStats.Instance.Mana.CurrentValue >= cost,
         ResourceType.Health => PlayerStats.Instance.Health.CurrentValue >= cost,
         _ => true
     };
 
-    public void ConsumeResource(ResourceType type, float cost)  // corregí el typo "ConsumreResource"
     public void ConsumeResource(ResourceType type, float cost)
     {
         switch (type)
@@ -324,15 +295,7 @@ public class PlayerController : MonoBehaviour, IDamageable
             case ResourceType.Health: PlayerStats.Instance.Health.Modify(-cost); break;
         }
     }
-    public bool IsSkillReady(int index)
-    {
-        return skillsCooldown[index] <= 0;
-    }
 
-    public void TriggerCooldown(int index)
-    {
-        skillsCooldown[index] = skills[index].cooldown;
-    }
     public bool IsSkillReady(int index) => skillsCooldown[index] <= 0;
     public void TriggerCooldown(int index) => skillsCooldown[index] = skills[index].cooldown;
 
@@ -350,12 +313,8 @@ public class PlayerController : MonoBehaviour, IDamageable
         currentGravityMultiplier = value;
     }
 
-<<<<<<< HEAD
-    public void TakeDamage(float damage, ThrowType throwType, Vector3 hitDir, float stunDuration, bool keepOnAir, float airLift, float StaggerBuild)
-=======
-    // ── Daño y muerte ────────────────────────────────────────────────
-    public void TakeDamage(float damage, ThrowType throwType, Vector3 hitDir, float stunDuration, bool keepOnAir, float airLift)
->>>>>>> 2efebbcec97fb351a232d65925bbd8ca633a15bf
+    // ── Daño y muerte ───────────────────────────────────────────────
+    public void TakeDamage(float damage, ThrowType throwType, Vector3 hitDir, float stunDuration, bool keepOnAir, float airLift, float staggerBuild)
     {
         if (isDead) return;
 
@@ -389,7 +348,6 @@ public class PlayerController : MonoBehaviour, IDamageable
     /// <summary>Resetea al jugador al último checkpoint activo.</summary>
     public void Respawn()
     {
-        currentHealth -= damage;   
         var cp = CheckpointManager.Instance.activeCheckpoint;
         if (cp == null || cp.spawnPoint == null)
         {
@@ -406,5 +364,4 @@ public class PlayerController : MonoBehaviour, IDamageable
 
         isDead = false;
     }
-}
 }
