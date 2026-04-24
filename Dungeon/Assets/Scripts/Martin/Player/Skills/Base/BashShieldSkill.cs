@@ -19,6 +19,8 @@ public class BashShieldSkill : Skill
 
     public IEnumerator BashShield(PlayerController player)
     {
+        player.blockVelocity = false;
+
         float timer = duration;
 
         while (timer > 0)
@@ -44,7 +46,7 @@ public class BashShieldSkill : Skill
 
                     if (dmg != null)
                     {
-                        dmg.TakeDamage(10 * hitData.damageMultiplier, hitData.throwType, player.PlayerModel.transform.forward, hitData.stunDuration, hitData.keepInAir, hitData.airLiftForce    );
+                        dmg.TakeDamage(10 * hitData.damageMultiplier, hitData.throwType, player.PlayerModel.transform.forward, hitData.stunDuration, hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
 
                         yield break; 
                     }

@@ -66,6 +66,7 @@ public class PlayerBasicAttack : PlayerStates
     public override void OnExit()
     {
         player.isPerformingAction = false;
+        player.blockVelocity = false;
     }
 
     private void StartAttack()
@@ -77,6 +78,8 @@ public class PlayerBasicAttack : PlayerStates
         hasHit = false;
 
         player.isPerformingAction = true;
+
+        player.blockVelocity = true;
 
         //--> Play animation
         Debug.Log($"Player attacked with {attackSteps.name}");
@@ -105,8 +108,10 @@ public class PlayerBasicAttack : PlayerStates
                 {
                     Vector3 hitDir = player.PlayerModel.transform.forward;
 
-                    damageable.TakeDamage(10f * attack.hitData.damageMultiplier, attack.hitData.throwType, hitDir, attack.hitData.stunDuration, attack.hitData.keepInAir, attack.hitData.airLiftForce);
+                    damageable.TakeDamage(10f * attack.hitData.damageMultiplier, attack.hitData.throwType, hitDir, attack.hitData.stunDuration, attack.hitData.keepInAir, attack.hitData.airLiftForce, attack.hitData.staggerCharge);
                 }
+
+                Debug.Log($"HIT {hit.name}");
             }
         }
     }

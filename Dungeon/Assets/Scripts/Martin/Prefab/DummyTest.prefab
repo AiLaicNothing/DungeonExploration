@@ -187,8 +187,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 40a0e8ad9be44734c8598400ea7d2d77, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DummyTest
-  maxHP: 100
+  maxHP: 9999
   currentHP: 0
+  hasStagger: 1
+  staggerBar: 50
+  currentStaggerValue: 0
+  staggerDuration: 2.5
+  timeResetStagger: 5
+  canStaggerMultipleTimes: 1
   canBeAffected: 1
   rb: {fileID: 7475500944755739565}
   pushForce: 15
@@ -196,3 +202,4 @@ MonoBehaviour:
   airHangTime: 0.65
   fallGravityMultiplier: 2
   isStunned: 0
+  isStaggered: 0

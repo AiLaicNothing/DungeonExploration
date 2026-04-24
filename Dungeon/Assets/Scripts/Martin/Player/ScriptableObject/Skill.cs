@@ -12,6 +12,7 @@ public abstract class Skill : ScriptableObject
     [Header("Casting")]
     public float castTime;
     public float cooldown;
+    public float actionTime;
 
     [Header("Animtion")]
     public string castAnimation;

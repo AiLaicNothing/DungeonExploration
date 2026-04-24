@@ -19,7 +19,7 @@ public class Proyectil : MonoBehaviour
     {
         if (other.gameObject.CompareTag("Player"))
         {
-            other.gameObject.GetComponentInParent<IDamageable>().TakeDamage(10, ThrowType.None, Vector3.zero, 0, false, 0);
+            other.gameObject.GetComponentInParent<IDamageable>().TakeDamage(10, ThrowType.None, Vector3.zero, 0, false, 0, 0);
 
             Destroy(gameObject);
         }

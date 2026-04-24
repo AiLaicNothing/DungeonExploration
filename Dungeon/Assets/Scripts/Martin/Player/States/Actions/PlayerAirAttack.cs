@@ -15,6 +15,8 @@ public class PlayerAirAttack : PlayerStates
     {
         player.isPerformingAction = true;
 
+        player.blockVelocity = true;
+
         comboIndex = 0;
 
         player.hasUsedAirAttack = true;
@@ -82,6 +84,8 @@ public class PlayerAirAttack : PlayerStates
         player.Rb.useGravity = true;
 
         player.isPerformingAction = false;
+
+        player.blockVelocity = false;
     }
 
     private void StartAttack()
@@ -121,7 +125,7 @@ public class PlayerAirAttack : PlayerStates
                 {
                     Vector3 hitDir = player.PlayerModel.transform.forward;
 
-                    damageable.TakeDamage(10f * attack.hitData.damageMultiplier, attack.hitData.throwType, hitDir, attack.hitData.stunDuration, attack.hitData.keepInAir, attack.hitData.airLiftForce);
+                    damageable.TakeDamage(10f * attack.hitData.damageMultiplier, attack.hitData.throwType, hitDir, attack.hitData.stunDuration, attack.hitData.keepInAir, attack.hitData.airLiftForce, attack.hitData.staggerCharge);
                 }
             }
         }

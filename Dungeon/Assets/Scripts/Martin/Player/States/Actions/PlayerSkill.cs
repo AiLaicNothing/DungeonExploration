@@ -74,7 +74,8 @@ public class PlayerSkill : PlayerStates
                 player.TriggerCooldown(skillIndex);
 
                 // Optional: short action duration
-                timer = 0.2f;
+                // This is the duration of the casting???
+                timer = currentSkill.actionTime;
             }
             else
             {

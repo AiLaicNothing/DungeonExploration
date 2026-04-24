@@ -7,10 +7,20 @@ public class DummyTest : MonoBehaviour, IDamageable
     public float maxHP = 100f;
     [SerializeField] private float currentHP;
 
+    [Header("Stagger")]
+    public bool hasStagger = true;
+    public float staggerBar = 100f;
+    [SerializeField] private float currentStaggerValue;
+    [SerializeField] private float staggerDuration;
+    [SerializeField] private float timeResetStagger = 5f;
+    private float staggerResetTimer;
+    [SerializeField] private bool canStaggerMultipleTimes = true;
+    private bool isInStaggerCooldown;
+
     [Header("Behavior")]
     public bool canBeAffected = true;
 
-    [Header("Physics")]
+    [Header("Components")]
     public Rigidbody rb;
 
     [Header("Forces")]
@@ -21,19 +31,24 @@ public class DummyTest : MonoBehaviour, IDamageable
     public float airHangTime = 0.4f;
     public float fallGravityMultiplier = 2f;
 
+
+    [Header("States")]
+    [SerializeField] private bool isStunned;
+    [SerializeField] private bool isStaggered;
+
+    //-->Courutinas
     Coroutine airRoutine;
-
-    [Header("State")]
-    public bool isStunned;
-
     Coroutine stunCoroutine;
+    Coroutine staggerCoroutine;
 
     void Awake()
     {
         currentHP = maxHP;
 
         if (rb == null)
+        {
             rb = GetComponent<Rigidbody>();
+        }
     }
 
     public void Update()
@@ -44,12 +59,20 @@ public class DummyTest : MonoBehaviour, IDamageable
         }
     }
 
-    public void TakeDamage(float amount, ThrowType throwType, Vector3 hitDirection, float stunDuration, bool keepOnAir, float airLift)
+    public void TakeDamage(float amount, ThrowType throwType, Vector3 hitDirection, float stunDuration, bool keepOnAir, float airLift, float StaggerBuild)
     {
-        currentHP -= amount;
+        //--> When staggered increase damage
+        if (isStaggered)
+        {
+            currentHP -= amount * 1.5f;
 
+        }
+
+        //--> CHECK if it CAN BE STUN
         if (!canBeAffected)
+        {
             return;
+        }
 
         ApplyThrow(throwType, hitDirection);
 
@@ -59,12 +82,100 @@ public class DummyTest : MonoBehaviour, IDamageable
         }
 
         ApplyStun(stunDuration);
+
+        BuildStagger(StaggerBuild);
+    }
+
+    // === STAGGER SECTION ===
+    void BuildStagger(float amount)
+    {
+        if (!hasStagger || isInStaggerCooldown)
+        {
+            return;
+        }
+
+        if (isStaggered)
+        {
+            ExtendStagger();
+            return;
+        }
+
+        currentStaggerValue += amount;
+
+        if (currentStaggerValue >= staggerBar)
+        {
+            TriggerStagger();
+        }
+    }
+
+    void TriggerStagger()
+    {
+        if (isStaggered)
+            return;
+
+        if (!canStaggerMultipleTimes && currentStaggerValue >= staggerBar)
+        {
+            currentStaggerValue = staggerBar;
+        }
+
+        if (staggerCoroutine != null)
+        {
+            StopCoroutine(staggerCoroutine);
+        }
+
+        staggerCoroutine = StartCoroutine(StaggerRoutine());
+    }
+    void ExtendStagger()
+    {
+        if (staggerCoroutine != null)
+        {
+            StopCoroutine(staggerCoroutine);
+        }
+
+        staggerCoroutine = StartCoroutine(StaggerRoutine());
+    }
+
+    IEnumerator StaggerRoutine()
+    {
+        isStaggered = true;
+        isStunned = true;
+
+        Debug.Log("Enemy STAGGERED");
+
+        yield return new WaitForSeconds(staggerDuration);
+
+        isStaggered = false;
+
+        if(stunCoroutine == null)
+        {
+            isStunned = false;
+        }
+
+        isInStaggerCooldown = true;
+
+        Debug.Log("Enemy recovered from stagger");
+
+        yield return new WaitForSeconds(timeResetStagger);
+
+        currentStaggerValue = 0;
+
+        isInStaggerCooldown = false;
+
+        staggerCoroutine = null;
     }
 
     void ApplyStun(float duration)
     {
+        //Evade extending the stun when staggered
+        if (isStaggered)
+        {
+            return;
+        }
+
         if (stunCoroutine != null)
+        {
             StopCoroutine(stunCoroutine);
+        }
 
         stunCoroutine = StartCoroutine(StunRoutine(duration));
     }
@@ -77,7 +188,11 @@ public class DummyTest : MonoBehaviour, IDamageable
 
         yield return new WaitForSeconds(duration);
 
-        isStunned = false;
+        //--> Evade stun cancelling stagger
+        if (!isStaggered)
+        {
+            isStunned = false;
+        }
 
         Debug.Log("Enemy recovered from stun");
     }
@@ -97,6 +212,12 @@ public class DummyTest : MonoBehaviour, IDamageable
 
     void ApplyThrow(ThrowType type, Vector3 dir)
     {
+
+        if(hasStagger && !isStaggered)
+        {
+            return;
+        }
+
         switch (type)
         {
             case ThrowType.Push:

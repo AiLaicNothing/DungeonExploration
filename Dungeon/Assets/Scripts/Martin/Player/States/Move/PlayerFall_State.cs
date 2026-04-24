@@ -12,6 +12,8 @@ public class PlayerFall_State : PlayerStates
         {
             return;
         }
+
+        player.SetGravityMultiplier(player.FallGravityMultiplier);
     }
 
     public override void OnUpdate()
@@ -32,5 +34,7 @@ public class PlayerFall_State : PlayerStates
     public override void OnExit()
     {
         Debug.Log("Exit Fall State");
+
+        player.SetGravityMultiplier(1f);
     }
 }

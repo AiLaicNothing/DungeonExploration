@@ -169,7 +169,7 @@ public class Enemigo : MonoBehaviour, IDamageable
 
     }
 
-    public void TakeDamage(float amount, ThrowType throwType, Vector3 hitDirection, float stunDuration, bool keepOnAir, float airLift)
+    public void TakeDamage(float amount, ThrowType throwType, Vector3 hitDirection, float stunDuration, bool keepOnAir, float airLift, float StaggerBuild)
     {
         currentHP -= amount;
 

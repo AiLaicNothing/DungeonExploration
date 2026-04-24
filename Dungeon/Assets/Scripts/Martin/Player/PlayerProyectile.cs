@@ -35,7 +35,7 @@ public class PlayerProyectile : MonoBehaviour
 
             if (target != null)
             {
-                target.TakeDamage(damage * hitData.damageMultiplier, hitData.throwType, direction, hitData.stunDuration, hitData.keepInAir, hitData.airLiftForce);
+                target.TakeDamage(damage * hitData.damageMultiplier, hitData.throwType, direction, hitData.stunDuration, hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
             }
 
             Destroy(gameObject);

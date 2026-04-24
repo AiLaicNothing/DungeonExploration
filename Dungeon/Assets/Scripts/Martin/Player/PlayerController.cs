@@ -20,6 +20,9 @@ public class PlayerController : MonoBehaviour, IDamageable
     [SerializeField] private float dashDuration = 0.3f;
     [SerializeField] private float dashCost = 20f;
 
+    [SerializeField] private float baseGravity = -9.81f;
+    [SerializeField] private float fallGravityMultiplier = 2.5f;
+    private float currentGravityMultiplier;
     //[SerializeField] private float maxStamina;
 
     //-->Combat variables
@@ -28,6 +31,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     [SerializeField] private BasicComboData airComboData;
     public bool isGrounded { get; private set; }
     public bool isPerformingAction = false;
+    public bool blockVelocity = false;
     public bool hasUsedDash = false;
     public bool hasUsedAirAttack = false;
 
@@ -52,6 +56,8 @@ public class PlayerController : MonoBehaviour, IDamageable
     public PlayerInputHandler Input => input;
     public BasicComboData ComboData => basicComboData;
     public BasicComboData AirComboData => airComboData;
+
+    public float FallGravityMultiplier => fallGravityMultiplier;
 
     //--> make data accesible to other scripts that has acces to this one.
     public float CurrentStamina => PlayerStats.Instance.Stamina.CurrentValue;
@@ -127,9 +133,16 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     private void FixedUpdate()
     {
+        //rb.AddForce(Vector3.up * baseGravity * currentGravityMultiplier, ForceMode.Acceleration);
+
         if (!isPerformingAction)
         {
             Movement();
+            rb.AddForce(Vector3.up * baseGravity * currentGravityMultiplier, ForceMode.Acceleration);
+        }
+        if (blockVelocity)
+        {
+            rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
         }
 
         movementSM.FixedUpdate();
@@ -284,8 +297,12 @@ public class PlayerController : MonoBehaviour, IDamageable
 
         Destroy(box, 0.2f);
     }
+    public void SetGravityMultiplier(float value)
+    {
+        currentGravityMultiplier = value;
+    }
 
-    public void TakeDamage(float damage, ThrowType throwType, Vector3 hitDir, float stunDuration, bool keepOnAir, float airLift)
+    public void TakeDamage(float damage, ThrowType throwType, Vector3 hitDir, float stunDuration, bool keepOnAir, float airLift, float StaggerBuild)
     {
         currentHealth -= damage;   
     }
