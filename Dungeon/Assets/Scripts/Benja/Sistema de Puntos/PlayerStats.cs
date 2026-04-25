@@ -14,9 +14,6 @@ public class PlayerStats : MonoBehaviour
     public IEnumerable<PlayerStat> AllStats => statsById.Values;
 
     // ── Accesos rápidos para mantener compatibilidad con PlayerController ──
-    // Estas propiedades buscan por ID. Los IDs DEBEN existir en el ScriptableObject:
-    // "health", "mana", "stamina", "physicalDamage", "magicalDamage",
-    // "healthRegen", "staminaRegen", "manaRegen"
     public PlayerStat Health => GetStat("health");
     public PlayerStat Mana => GetStat("mana");
     public PlayerStat Stamina => GetStat("stamina");
@@ -33,9 +30,7 @@ public class PlayerStats : MonoBehaviour
     public int TotalPointsEarned { get; private set; }
 
     // ── Eventos ───────────────────────────────────────────────────────
-    /// <summary>Disparado cuando una stat cambia. Parámetros: (id, currentValue).</summary>
     public event Action<string, float> OnStatChanged;
-    /// <summary>Disparado cuando cambian los puntos disponibles. Parámetro: puntos nuevos.</summary>
     public event Action<int> OnPointsChanged;
 
     private void Awake()
@@ -68,7 +63,6 @@ public class PlayerStats : MonoBehaviour
             }
 
             var stat = new PlayerStat(config);
-            // Propaga cambios al evento global
             stat.OnChanged += s => OnStatChanged?.Invoke(s.Id, s.CurrentValue);
             statsById[config.id] = stat;
         }
@@ -79,7 +73,6 @@ public class PlayerStats : MonoBehaviour
 
     private void Update()
     {
-        // Regeneración pasiva
         if (Health != null && HealthRegen != null && Health.CurrentValue < Health.Max)
             Health.Modify(HealthRegen.CurrentValue * Time.deltaTime);
 
@@ -90,7 +83,6 @@ public class PlayerStats : MonoBehaviour
             Mana.Modify(ManaRegen.CurrentValue * Time.deltaTime);
     }
 
-    /// <summary>Obtiene una stat por su ID.</summary>
     public PlayerStat GetStat(string id)
     {
         if (statsById == null) return null;
@@ -99,18 +91,6 @@ public class PlayerStats : MonoBehaviour
     }
 
     // ── Sistema de tradeoff ───────────────────────────────────────────
-    /// <summary>
-    /// Aplica un tradeoff: sube las stats de increaseIds y baja las de decreaseIds.
-    /// Los IDs pueden repetirse si se quiere subir/bajar varias veces la misma stat.
-    /// Retorna true si se aplicó correctamente.
-    ///
-    /// Regla de balance:
-    ///   costoSubida = Σ upgradeCost de cada ID en increaseIds
-    ///   valorBajada = Σ downgradeValue de cada ID en decreaseIds
-    ///   puntosNecesarios = max(0, costoSubida - valorBajada)
-    ///   El jugador debe tener al menos ese número de upgradePoints.
-    ///   Cada punto gastado = 1 upgradePoint.
-    /// </summary>
     public bool ApplyTradeoff(List<string> increaseIds, List<string> decreaseIds)
     {
         if (increaseIds == null) increaseIds = new List<string>();
@@ -118,7 +98,6 @@ public class PlayerStats : MonoBehaviour
 
         if (increaseIds.Count == 0 && decreaseIds.Count == 0) return false;
 
-        // Calcula balance
         int upgradeCost = 0;
         foreach (var id in increaseIds)
         {
@@ -144,7 +123,6 @@ public class PlayerStats : MonoBehaviour
             return false;
         }
 
-        // Aplica los cambios
         foreach (var id in decreaseIds) GetStat(id).RemovePoint();
         foreach (var id in increaseIds) GetStat(id).AddPoint();
 
@@ -153,7 +131,6 @@ public class PlayerStats : MonoBehaviour
         return true;
     }
 
-    /// <summary>Sobrecarga para compatibilidad con tu UI actual (tradeoff 1 vs 1).</summary>
     public bool ApplyTradeoff(string increaseId, string decreaseId)
     {
         var inc = increaseId != null ? new List<string> { increaseId } : new List<string>();
@@ -162,7 +139,6 @@ public class PlayerStats : MonoBehaviour
     }
 
     // ── Puntos ────────────────────────────────────────────────────────
-    /// <summary>Añade puntos de mejora. Usado por checkpoints.</summary>
     public void AddUpgradePoints(int amount)
     {
         if (amount <= 0) return;
@@ -171,7 +147,24 @@ public class PlayerStats : MonoBehaviour
         OnPointsChanged?.Invoke(_upgradePoints);
     }
 
-    // ── Compatibilidad con tu PlayerController ────────────────────────
+    /// <summary>
+    /// Resetea todas las stats al baseValue del ScriptableObject
+    /// y vacía el pool de puntos. Usado por Savesystem.ResetInPlace().
+    /// </summary>
+    public void ResetToDefaults()
+    {
+        InitializeStats();
+
+        if (statsById != null)
+        {
+            foreach (var stat in statsById.Values)
+                OnStatChanged?.Invoke(stat.Id, stat.CurrentValue);
+        }
+
+        OnPointsChanged?.Invoke(_upgradePoints);
+    }
+
+    // ── Compatibilidad con PlayerController ───────────────────────────
     public bool HasResource(ResourceType type, float cost) => type switch
     {
         ResourceType.Stamina => Stamina != null && Stamina.CurrentValue >= cost,
