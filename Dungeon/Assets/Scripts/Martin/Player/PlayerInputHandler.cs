@@ -12,8 +12,10 @@ public class PlayerInputHandler : MonoBehaviour
     public bool isAiming {  get; private set; }
     public Vector2 lookInput { get; private set; }
     public bool onLockTarget { get; private set; }
-    public bool attackPressed { get; private set; }
+    //public bool attackPressed { get; private set; }
+    public AttackInputType bufferedAttackType { get; private set; }
     public bool AttackBuffered => attackBufferCounter > 0;
+    public bool onMelee {  get; private set; }
     public bool skill1Pressed { get; private set; }
     public int skillPressedIndex { get; private set; } = -1;
     public void OnMove(InputAction.CallbackContext context)
@@ -57,10 +59,18 @@ public class PlayerInputHandler : MonoBehaviour
 
     public void OnAttack(InputAction.CallbackContext context)
     {
-        if(context.started)
+        if (context.started)
         {
-            attackBufferCounter = attackBufferTime;
-            attackPressed = true;
+            BufferAttack(AttackInputType.Primary);
+            //attackPressed = true;
+        }
+    }
+
+    public void OnMelee(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            BufferAttack(AttackInputType.Melee);
         }
     }
 
@@ -107,10 +117,6 @@ public class PlayerInputHandler : MonoBehaviour
 
         }
     }
-    public void UseAttackBufer()
-    {
-        attackBufferCounter = 0f;
-    }
 
     private void Update()
     {
@@ -123,11 +129,22 @@ public class PlayerInputHandler : MonoBehaviour
     public void LateUpdate()
     {
         hasJumped = false;
-        attackPressed = false;
+        //attackPressed = false;
         hasDashed = false;
         skill1Pressed = false;
         onLockTarget = false;
 
         skillPressedIndex = -1;
+    }
+
+    private void BufferAttack(AttackInputType type)
+    {
+        attackBufferCounter = attackBufferTime;
+        bufferedAttackType = type;
+    }
+    public void UseAttackBufer()
+    {
+        attackBufferCounter = 0f;
+        bufferedAttackType = AttackInputType.None;
     }
 }

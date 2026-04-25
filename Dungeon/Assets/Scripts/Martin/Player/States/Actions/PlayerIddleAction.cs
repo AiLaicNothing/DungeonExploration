@@ -17,19 +17,51 @@ public class PlayerIddleAction : PlayerStates
             return;
         }
 
-        if (player.Input.attackPressed)
+        if (player.Input.AttackBuffered)
         {
-            //--> If is not touching the ground and has not attacked in the air
-            if (!player.isGrounded && !player.hasUsedAirAttack)
+            var type = player.Input.bufferedAttackType;
+
+            player.Input.UseAttackBufer();
+
+            //--> Input [F] melee atatack for both of them [Melee/Range]
+            if (type == AttackInputType.Melee)
             {
-                //-->Do airAttack
-                player.ChangeActionState(player.airAttack_State);
+                //--> If is not touching the ground and has not attacked in the air
+                if (!player.isGrounded && !player.hasUsedAirAttack)
+                {
+                    //-->Do airAttack
+                    player.ChangeActionState(player.airAttack_State);
+                }
+                else if (player.isGrounded)
+                {
+                    //-->Do grounded attack
+                    player.ChangeActionState(player.basicAttack_State);
+                }
             }
-            else if (player.isGrounded)
+
+            //--> Input is mouse left button
+            if (type == AttackInputType.Primary)
             {
-                //-->Do grounded attack
-                player.ChangeActionState(player.basicAttack_State);
+                //--> If player is range do shoot else do melee attack
+                if (player.IsRange)
+                {
+                    player.ChangeActionState(player.shoot_State);
+                }
+                else
+                {
+                    if (!player.isGrounded && !player.hasUsedAirAttack)
+                    {
+                        player.ChangeActionState(player.airAttack_State);
+                    }
+                    else if (player.isGrounded)
+                    {
+                        player.ChangeActionState(player.basicAttack_State);
+                    }
+                }
+                return;
+                
             }
+           
         }
 
         int index = player.Input.skillPressedIndex;

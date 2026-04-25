@@ -2,11 +2,6 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour, IDamageable
 {
-    public float maxHealth;
-    public float currentHealth;
-    //public float currentStamina;
-    public float maxMana;
-    public float currentMana;
 
     //--> Variables
     [Header("Movement")]
@@ -27,8 +22,13 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     //-->Combat variables
     [Header("Combat")]
+    [SerializeField] private bool isRange;
     [SerializeField] private BasicComboData basicComboData;
     [SerializeField] private BasicComboData airComboData;
+    [Header("Variables for range")]
+    [SerializeField] private Transform firePoint;
+    [SerializeField] private GameObject proyectilePrefab;
+
     public bool isGrounded { get; private set; }
     public bool isPerformingAction = false;
     public bool blockVelocity = false;
@@ -54,6 +54,10 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     public Rigidbody Rb => rb;
     public Transform PlayerModel => playerModel;
+
+    public bool IsRange => isRange;
+    public Transform FirePoint => firePoint;
+    public GameObject ProyectilePrefab => proyectilePrefab;
     public PlayerInputHandler Input => input;
     public BasicComboData ComboData => basicComboData;
     public BasicComboData AirComboData => airComboData;
@@ -63,13 +67,14 @@ public class PlayerController : MonoBehaviour, IDamageable
     //--> make data accesible to other scripts that has acces to this one.
 
     //--> ESTADISTICAS (todas leen de PlayerStats.Instance)
+    public float MaxHealth => PlayerStats.Instance.Health.Max;
+    public float CurrentHealth => PlayerStats.Instance.Health.CurrentValue;
+
     public float CurrentStamina => PlayerStats.Instance.Stamina.CurrentValue;
     public float MaxStamina => PlayerStats.Instance.Stamina.Max;
 
     public float MaxMana => PlayerStats.Instance.Mana.Max;
     public float CurrentMana => PlayerStats.Instance.Mana.CurrentValue;
-    public float MaxHealth => PlayerStats.Instance.Health.Max;
-    public float CurrentHealth => PlayerStats.Instance.Health.CurrentValue;
 
     public float DashDistance => dashDistance;
     public float DashDuration => dashDuration;
@@ -87,6 +92,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     public PlayerIddleAction iddeAction_State;
     public PlayerBasicAttack basicAttack_State;
     public PlayerAirAttack airAttack_State;
+    public PlayerShoot shoot_State;
     public PlayerDash dash_State;
     public PlayerSkill skill_State;
 
@@ -103,13 +109,12 @@ public class PlayerController : MonoBehaviour, IDamageable
         iddeAction_State = new PlayerIddleAction(this);
         basicAttack_State = new PlayerBasicAttack(this);
         airAttack_State = new PlayerAirAttack(this);
+        shoot_State = new PlayerShoot(this);
         dash_State = new PlayerDash(this);
         skill_State = new PlayerSkill(this);
 
         skillsCooldown = new float[skills.Length];
 
-        currentHealth = maxHealth;
-        currentMana = maxMana;
         // NOTA: No inicializamos vida/mana aquí.
         // PlayerStats.Instance ya lo hace con los baseValue del ScriptableObject.
     }
@@ -122,7 +127,6 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     private void Update()
     {
-        if(currentHealth <= 0)
         // Chequeo de muerte: usa la propiedad correcta y solo dispara una vez
         if (!isDead && CurrentHealth <= 0)
         {

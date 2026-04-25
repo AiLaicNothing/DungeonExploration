@@ -47,6 +47,13 @@ public class PlayerBasicAttack : PlayerStates
         //--> Check if recive input to continue combo
         if (canCombo && player.Input.AttackBuffered)
         {
+            var type = player.Input.bufferedAttackType;
+
+            if (!CheckMeleeInput(type))
+            {
+                return;
+            }
+
             player.Input.UseAttackBufer();
 
             if (comboIndex < player.ComboData.attackSteps.Length - 1)
@@ -115,4 +122,19 @@ public class PlayerBasicAttack : PlayerStates
             }
         }
     }
+
+    private bool CheckMeleeInput(AttackInputType type)
+    {
+        if (type  == AttackInputType.Melee)
+        {
+            return true;
+        }
+
+        if (!player.IsRange && type == AttackInputType.Primary)
+        {
+            return true;
+        }
+
+        return false;
+    } 
 }

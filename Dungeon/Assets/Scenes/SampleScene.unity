@@ -697,6 +697,52 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ac0b09e7857660247b1477e93731de29, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Cinemachine::Cinemachine.CinemachinePipeline
+--- !u!1 &877400512
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 877400514}
+  - component: {fileID: 877400513}
+  m_Layer: 0
+  m_Name: PlayerStats
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &877400513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 877400512}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ef9e53deab13397418999aa8e72d4f15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerStats
+  data: {fileID: 11400000, guid: 87ba5a4779940854aa887ffcc272787b, type: 2}
+  _upgradePoints: 0
+--- !u!4 &877400514
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 877400512}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!20 &964915527 stripped
 Camera:
   m_CorrespondingSourceObject: {fileID: 6383479980869518904, guid: 38cf37e6bc527a94883348595653afef, type: 3}
@@ -1261,6 +1307,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5195984443101771771, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
   m_PrefabInstance: {fileID: 3661950094281799947}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1957258693 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4412126337141054394, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+  m_PrefabInstance: {fileID: 3661950094281799947}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6f1aaeaef74db4f479ce9dc97fed63ad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInputHandler
 --- !u!1 &1982833886
 GameObject:
   m_ObjectHideFlags: 0
@@ -1449,6 +1506,62 @@ PrefabInstance:
       propertyPath: maxHealth
       value: 100
       objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.size
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[12].m_ActionId
+      value: 5193b362-1a0a-4628-bd16-4e5ef786413a
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[13].m_ActionId
+      value: 22eb7ec1-141d-4dc5-afcf-72fd9058ee88
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[14].m_ActionId
+      value: dcd193ea-b0d5-4710-bf13-eee1de36c591
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[12].m_ActionName
+      value: 'PlayerInput/X[/Keyboard/x]'
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[13].m_ActionName
+      value: 'PlayerInput/ScrollWheel[/Mouse/scroll/y]'
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[14].m_ActionName
+      value: 'PlayerInput/OnMelee[/Keyboard/f]'
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[14].m_PersistentCalls.m_Calls.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[14].m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[14].m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1957258693}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[14].m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[14].m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: OnMelee
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[14].m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: PlayerInputHandler, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 7648726316778184223, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
+      propertyPath: m_ActionEvents.Array.data[14].m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1588,3 +1701,4 @@ SceneRoots:
   - {fileID: 3661950094281799947}
   - {fileID: 1806111591}
   - {fileID: 6384212724308323714}
+  - {fileID: 877400514}

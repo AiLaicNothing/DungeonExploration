@@ -34,15 +34,6 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "Attack",
-                    "type": "Button",
-                    "id": "7b5ec449-3cc6-42c2-9e92-04488f153b1a",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
                     "name": "Dash",
                     "type": "Button",
                     "id": "a9d628ba-3aa6-44f7-8555-cdc8a6e03f44",
@@ -73,6 +64,24 @@
                     "name": "LockOn",
                     "type": "Button",
                     "id": "220837d1-6e2f-423c-bcbe-e86374028bd3",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Attack",
+                    "type": "Button",
+                    "id": "7b5ec449-3cc6-42c2-9e92-04488f153b1a",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "OnMelee",
+                    "type": "Button",
+                    "id": "dcd193ea-b0d5-4710-bf13-eee1de36c591",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -329,6 +338,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "ScrollWheel",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "b468f6ef-817c-406b-8580-4116e578ce93",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "OnMelee",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
