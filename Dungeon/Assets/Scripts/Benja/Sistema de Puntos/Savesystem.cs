@@ -20,7 +20,6 @@ public class Savesystem : MonoBehaviour
     private string SavePath => Path.Combine(Application.persistentDataPath, fileName);
 
     // ── Estado en memoria de los checkpoints activados ────────────────
-    // Se mantiene aquí para no depender de PlayerPrefs
     private HashSet<string> _activatedCheckpoints = new HashSet<string>();
     private string _activeCheckpointName;
 
@@ -39,7 +38,6 @@ public class Savesystem : MonoBehaviour
 
     private void Start()
     {
-        // Intenta cargar al iniciar (si hay partida guardada)
         if (HasSave())
             Load();
     }
@@ -62,12 +60,12 @@ public class Savesystem : MonoBehaviour
         {
             string json = JsonUtility.ToJson(save, prettyPrint: true);
             File.WriteAllText(SavePath, json);
-            Debug.Log($"[SaveSystem] Partida guardada en {SavePath}");
+            Debug.Log($"[Savesystem] Partida guardada en {SavePath}");
             OnSaved?.Invoke();
         }
         catch (Exception e)
         {
-            Debug.LogError($"[SaveSystem] Error guardando: {e.Message}");
+            Debug.LogError($"[Savesystem] Error guardando: {e.Message}");
         }
     }
 
@@ -75,7 +73,7 @@ public class Savesystem : MonoBehaviour
     {
         if (!HasSave())
         {
-            Debug.Log("[SaveSystem] No hay partida guardada.");
+            Debug.Log("[Savesystem] No hay partida guardada.");
             return;
         }
 
@@ -95,22 +93,16 @@ public class Savesystem : MonoBehaviour
             // Posición del jugador
             if (save.playerPosition != null && playerTransform != null)
             {
-                // Si hay un checkpoint activo, preferimos spawnear allí
-                if (!string.IsNullOrEmpty(_activeCheckpointName))
-                {
-                    // Lo dejamos así y que el CheckpointManager decida al hacer respawn.
-                    // Para la carga inicial, usamos la posición guardada.
-                }
                 playerTransform.position = save.playerPosition.Position;
                 playerTransform.rotation = save.playerPosition.Rotation;
             }
 
-            Debug.Log($"[SaveSystem] Partida cargada de {SavePath}");
+            Debug.Log($"[Savesystem] Partida cargada de {SavePath}");
             OnLoaded?.Invoke();
         }
         catch (Exception e)
         {
-            Debug.LogError($"[SaveSystem] Error cargando: {e.Message}");
+            Debug.LogError($"[Savesystem] Error cargando: {e.Message}");
         }
     }
 
@@ -121,8 +113,54 @@ public class Savesystem : MonoBehaviour
             File.Delete(SavePath);
             _activatedCheckpoints.Clear();
             _activeCheckpointName = null;
-            Debug.Log("[SaveSystem] Partida eliminada.");
+            Debug.Log("[Savesystem] Archivo de partida eliminado.");
         }
+    }
+
+    /// <summary>
+    /// Reset completo: borra el save y recarga la escena actual.
+    /// Todos los sistemas vuelven a sus valores base al arrancar.
+    /// Usar desde un botón "Nueva Partida" o "Reiniciar".
+    /// </summary>
+    public void ResetAndReloadScene()
+    {
+        DeleteSave();
+        _activatedCheckpoints.Clear();
+        _activeCheckpointName = null;
+
+        // Importante: si el juego estaba pausado al pulsar el botón,
+        // restauramos el timeScale antes de recargar la escena.
+        Time.timeScale = 1f;
+
+        var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        UnityEngine.SceneManagement.SceneManager.LoadScene(scene.name);
+    }
+
+    /// <summary>
+    /// Reset "en caliente": borra el save y resetea los objetos en memoria
+    /// sin recargar la escena. Útil para un botón de reset en debug/testing.
+    /// </summary>
+    public void ResetInPlace(Vector3? spawnPosition = null)
+    {
+        DeleteSave();
+
+        if (PlayerStats.Instance != null)
+            PlayerStats.Instance.ResetToDefaults();
+
+        if (CheckpointManager.Instance != null)
+        {
+            CheckpointManager.Instance.unlockedCheckpoints.Clear();
+            CheckpointManager.Instance.activeCheckpoint = null;
+        }
+
+        // Notifica a todos los Checkpoint que se refresquen
+        // (sus `activated` vuelven a false porque el HashSet ya está vacío)
+        OnLoaded?.Invoke();
+
+        if (spawnPosition.HasValue && playerTransform != null)
+            playerTransform.position = spawnPosition.Value;
+
+        Debug.Log("[Savesystem] Reset en caliente completado.");
     }
 
     // ── Checkpoints ───────────────────────────────────────────────────
