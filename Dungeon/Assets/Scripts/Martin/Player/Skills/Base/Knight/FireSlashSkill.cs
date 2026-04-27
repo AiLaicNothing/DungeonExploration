@@ -26,7 +26,7 @@ public class FireSlashSkill : Skill
 
         if (proyectile != null )
         {
-            proyectile.Initialize(damage, hitData, player.PlayerModel.forward, proyectileSpeed);
+            proyectile.Initialize(damage, hitData, player.PlayerModel.forward, proyectileSpeed, player);
         }
     }
 

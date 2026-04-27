@@ -1,4 +1,5 @@
 using Cinemachine;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,13 +15,17 @@ public class LockOnTarget : MonoBehaviour
     [SerializeField] private Image aimIcon;
 
     [Header("Settings")]
+    [SerializeField] private LayerMask obstacleLayer;
     [SerializeField] private string enemyTag = "Enemy";
     [SerializeField] private Vector2 targetLockOffset;
     [SerializeField] private float minDistance = 1.5f;
     [SerializeField] private float maxDistance = 15f;
     [SerializeField] private float lockSpeed = 3f;
 
+    private List<Transform> validTarget = new List<Transform>();
+    private int currentIndex = 0;
     public bool isTargeting { get; private set; }
+    public Transform CurrentTarget => currentTarget;
 
     private Transform currentTarget;
     private float maxAngle = 90f;
@@ -35,6 +40,26 @@ public class LockOnTarget : MonoBehaviour
     void Update()
     {
         HandleLockInput();
+
+        if (isTargeting)
+        {
+            validTarget = GetValidTargets();
+
+            if(validTarget.Count == 0)
+            {
+                ClearTarget();
+                return;
+            }
+
+            currentIndex = Mathf.Clamp(currentIndex, 0 , validTarget.Count - 1);
+
+            currentTarget = validTarget[currentIndex];
+
+            if(validTarget.Count > 1)
+            {
+                HandleTargetSwitch();
+            }
+        }
 
         if(isTargeting && currentTarget == null)
         {
@@ -75,41 +100,14 @@ public class LockOnTarget : MonoBehaviour
 
     void UpdateLockCamera()
     {
-        //if (!currentTarget)
-        //{
-        //    ClearTarget();
-        //    return;
-        //}
-
-        //float distance = Vector3.Distance(transform.position, currentTarget.position);
-
-        //if (distance < minDistance)
-        //    return;
-
-        //Vector3 viewPos = mainCamera.WorldToViewportPoint(currentTarget.position);
-
-        //// UI follow
-        //if (aimIcon != null)
-        //{
-        //    aimIcon.transform.position = mainCamera.WorldToScreenPoint(currentTarget.position);
-        //}
-
-        //float x = (viewPos.x - 0.5f + targetLockOffset.x) * lockSpeed;
-        //float y = (viewPos.y - 0.5f + targetLockOffset.y) * lockSpeed;
-
-        //freeLook.m_XAxis.m_InputAxisValue = x;
-        //freeLook.m_YAxis.m_InputAxisValue = y;
 
         if (!currentTarget) { ClearTarget(); return; }
 
-        // 1. Dirección hacia el objetivo
         Vector3 dirToTarget = currentTarget.position - freeLook.Follow.position;
 
-        // --- EJE X (ROTACIÓN HORIZONTAL) ---
         float targetX = Mathf.Atan2(dirToTarget.x, dirToTarget.z) * Mathf.Rad2Deg;
         freeLook.m_XAxis.Value = Mathf.LerpAngle(freeLook.m_XAxis.Value, targetX, Time.deltaTime * lockSpeed);
 
-        // --- EJE Y (ALTURA / VERTICAL) ---
         // Calculamos el ángulo vertical (pitch)
         float distanceXZ = new Vector2(dirToTarget.x, dirToTarget.z).magnitude;
         float angleY = Mathf.Atan2(dirToTarget.y, distanceXZ) * Mathf.Rad2Deg;
@@ -128,20 +126,59 @@ public class LockOnTarget : MonoBehaviour
         freeLook.m_YAxis.Value = Mathf.Lerp(freeLook.m_YAxis.Value, targetYNormalized, Time.deltaTime * lockSpeed);
     }
 
+    private void HandleTargetSwitch()
+    {
+        if (Mathf.Abs(input.scrollInput) < 0.1f) return;
+
+        if (input.scrollInput > 0)
+        {
+            currentIndex++;
+        }
+        else
+        {
+            currentIndex--;
+        }
+
+        if (currentIndex >= validTarget.Count)
+        {
+            currentIndex = 0;
+        }
+
+        if (currentIndex < 0)
+        {
+            currentIndex = validTarget.Count - 1;
+        }
+
+        currentTarget = validTarget[currentIndex];
+    }
+
     void AssignTarget()
     {
-        GameObject target = GetClosestTarget();
 
-        if (target != null)
+        validTarget = GetValidTargets();
+
+        if (validTarget.Count == 0) return;
+
+        currentIndex = 0;
+        currentTarget = validTarget[currentIndex];
+        isTargeting = true;
+
+        if (inputProvider != null)
         {
-            currentTarget = target.transform;
-            isTargeting = true;
-
-            if(inputProvider != null)
-            {
-                inputProvider.enabled = false;
-            }
+            inputProvider.enabled = false;
         }
+        //GameObject target = GetClosestTarget();
+
+        //if (target != null)
+        //{
+        //    currentTarget = target.transform;
+        //    isTargeting = true;
+
+        //    if(inputProvider != null)
+        //    {
+        //        inputProvider.enabled = false;
+        //    }
+        //}
     }
 
     void ClearTarget()
@@ -154,6 +191,37 @@ public class LockOnTarget : MonoBehaviour
         {
             inputProvider.enabled = true;
         }
+    }
+
+    List<Transform> GetValidTargets()
+    {
+        GameObject[] enemies = GameObject.FindGameObjectsWithTag(enemyTag);
+
+        List<Transform> list = new List<Transform>();
+
+        foreach (var enemy in enemies)
+        {
+            Vector3 dir = enemy.transform.position - transform.position;
+            float dist = dir.magnitude;
+
+            if (dist < minDistance || dist > maxDistance)
+                continue;
+
+            float angle = Vector3.Angle(mainCamera.transform.forward, dir.normalized);
+            if (angle > maxAngle)
+                continue;
+
+            // Cast a raycast to check if they are behind a wall
+            if (Physics.Raycast(mainCamera.transform.position, dir.normalized, out RaycastHit hit, maxDistance, obstacleLayer))
+            {
+                if (hit.transform != enemy.transform)
+                    continue;
+            }
+
+            list.Add(enemy.transform);
+        }
+
+        return list;
     }
 
     GameObject GetClosestTarget()

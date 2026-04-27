@@ -27,7 +27,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     [SerializeField] private BasicComboData airComboData;
     [Header("Variables for range")]
     [SerializeField] private Transform firePoint;
-    [SerializeField] private GameObject proyectilePrefab;
+    [SerializeField] private ShootData shootData;
 
     public bool isGrounded { get; private set; }
     public bool isPerformingAction = false;
@@ -55,12 +55,13 @@ public class PlayerController : MonoBehaviour, IDamageable
     public Rigidbody Rb => rb;
     public Transform PlayerModel => playerModel;
 
+    public LockOnTarget LockTarget => lockOnTarget;
     public bool IsRange => isRange;
     public Transform FirePoint => firePoint;
-    public GameObject ProyectilePrefab => proyectilePrefab;
     public PlayerInputHandler Input => input;
     public BasicComboData ComboData => basicComboData;
     public BasicComboData AirComboData => airComboData;
+    public ShootData ShootData => shootData;
 
     public float FallGravityMultiplier => fallGravityMultiplier;
 
@@ -135,6 +136,7 @@ public class PlayerController : MonoBehaviour, IDamageable
         }
 
         CheckGround();
+        GetViewPoint();
         movementSM.Update();
         actionSM.Update();
 
@@ -269,6 +271,25 @@ public class PlayerController : MonoBehaviour, IDamageable
         {
             hasUsedAirAttack = false;
         }
+    }
+
+    public Vector3 GetViewPoint()
+    {
+
+        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width/2, Screen.height/2, 0));
+
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f))
+        {
+            Debug.DrawRay(ray.origin, ray.direction * hit.distance, Color.green);
+            Debug.DrawLine(hit.point, hit.point + Vector3.up * 0.5f, Color.blue);
+
+            return hit.point;
+
+        }
+
+        Debug.DrawRay(ray.origin, ray.direction * 100f, Color.red);
+
+        return ray.origin + ray.direction * 100; 
     }
 
     //---SECTION RELATED TO SKILLS---

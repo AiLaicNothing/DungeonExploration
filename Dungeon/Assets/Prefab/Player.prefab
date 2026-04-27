@@ -451,6 +451,7 @@ Transform:
   - {fileID: 6714165563697598249}
   - {fileID: 3777057230753082985}
   - {fileID: 2070676529920893986}
+  - {fileID: 20241071996777362}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!54 &71265052130629953
@@ -475,7 +476,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 1
   m_Constraints: 112
@@ -506,21 +507,28 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   moveSpeed: 10
-  jumpForce: 8
+  jumpForce: 12
   rotSpeed: 60
   moveMultiplier: 1
   dashDistance: 5
   dashDuration: 0.3
   dashCost: 20
+  baseGravity: -9.81
+  fallGravityMultiplier: 2.5
+  isRange: 1
   basicComboData: {fileID: 11400000, guid: 6b9667d3b4e69a7499fc08b57c6d41c5, type: 2}
   airComboData: {fileID: 11400000, guid: 7a8e1b5267f86bf46ad3b01c2ac82ba3, type: 2}
+  firePoint: {fileID: 20241071996777362}
+  shootData: {fileID: 11400000, guid: 5c2e95cf4431f004094b00b5694ae0ea, type: 2}
   isPerformingAction: 0
+  blockVelocity: 0
   hasUsedDash: 0
   hasUsedAirAttack: 0
   maxSkillSlots: 4
   skills:
   - {fileID: 11400000, guid: e44cbdc44a1a45a4c858140296414556, type: 2}
   - {fileID: 11400000, guid: a9efe79e2cc66d44bbf9feb7b1c94465, type: 2}
+  - {fileID: 11400000, guid: 81d34fd3a4b515c42b67b9c207be9399, type: 2}
   rb: {fileID: 71265052130629953}
   groundCheck: {fileID: 6714165563697598249}
   input: {fileID: 4412126337141054394}
@@ -745,6 +753,30 @@ MonoBehaviour:
         m_CallState: 2
     m_ActionId: 6e329bce-e710-4fee-84ce-7b246ad1332e
     m_ActionName: 'PlayerInput/Skill_4[/Keyboard/4]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 5193b362-1a0a-4628-bd16-4e5ef786413a
+    m_ActionName: 'PlayerInput/X[/Keyboard/x]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 22eb7ec1-141d-4dc5-afcf-72fd9058ee88
+    m_ActionName: 'PlayerInput/ScrollWheel[/Mouse/scroll/y]'
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 4412126337141054394}
+        m_TargetAssemblyTypeName: PlayerInputHandler, Assembly-CSharp
+        m_MethodName: OnMelee
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: dcd193ea-b0d5-4710-bf13-eee1de36c591
+    m_ActionName: 'PlayerInput/OnMelee[/Keyboard/f]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: PlayerInput
@@ -808,6 +840,37 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db93f9b7606a6c84b893f32f078686c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HpPlaceHolder
+--- !u!1 &2097487903115187661
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 20241071996777362}
+  m_Layer: 0
+  m_Name: FirePoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &20241071996777362
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2097487903115187661}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.672, y: 0.277, z: 0.722}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5195984443101771771}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2185094164459535946
 GameObject:
   m_ObjectHideFlags: 0

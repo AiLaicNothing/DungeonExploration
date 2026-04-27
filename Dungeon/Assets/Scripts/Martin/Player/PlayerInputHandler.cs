@@ -12,7 +12,7 @@ public class PlayerInputHandler : MonoBehaviour
     public bool isAiming {  get; private set; }
     public Vector2 lookInput { get; private set; }
     public bool onLockTarget { get; private set; }
-    //public bool attackPressed { get; private set; }
+    public float scrollInput { get; private set; }
     public AttackInputType bufferedAttackType { get; private set; }
     public bool AttackBuffered => attackBufferCounter > 0;
     public bool onMelee {  get; private set; }
@@ -55,6 +55,11 @@ public class PlayerInputHandler : MonoBehaviour
         {
             onLockTarget = true;
         }
+    }
+
+    public void OnScrollWheel(InputAction.CallbackContext context)
+    {
+        scrollInput = context.ReadValue<float>();
     }
 
     public void OnAttack(InputAction.CallbackContext context)
@@ -134,6 +139,7 @@ public class PlayerInputHandler : MonoBehaviour
         skill1Pressed = false;
         onLockTarget = false;
 
+        scrollInput = 0f;
         skillPressedIndex = -1;
     }
 
