@@ -16,7 +16,7 @@ MonoBehaviour:
   shootAnimation: 
   shootTime: 0.2
   timeBtwShot: 0.5
-  proyectilePrefab: {fileID: 1862193953970959967, guid: f557299d8bbf7674d9336988669b6dee, type: 3}
+  proyectilePrefab: {fileID: 7664227392648269801, guid: b2865a1976e633e429bc16f9bb0d919c, type: 3}
   proyectileSpeed: 20
   hitData:
     physicalScale: 1

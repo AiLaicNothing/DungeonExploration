@@ -3,7 +3,6 @@ using Unity.Services.Lobbies.Models;
 using Unity.Services.Matchmaker.Models;
 using UnityEngine;
 using UnityEngine.ProBuilder;
-using static UnityEditor.PlayerSettings;
 
 [CreateAssetMenu(menuName = "Skills/Magic bullet Skill")]
 public class MagicBullet : Skill

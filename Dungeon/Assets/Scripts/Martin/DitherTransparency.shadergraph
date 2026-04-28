@@ -2318,7 +2318,7 @@
     "m_Type": "UnityEditor.ShaderGraph.Vector4MaterialSlot",
     "m_ObjectId": "7c09d4092cb34a7aa717b1dcaeb1305a",
     "m_Id": 0,
-    "m_DisplayName": "EmessiveColor",
+    "m_DisplayName": "EmissiveColor",
     "m_SlotType": 1,
     "m_Hidden": false,
     "m_ShaderOutputName": "Out",

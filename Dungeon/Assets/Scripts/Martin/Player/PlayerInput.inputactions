@@ -124,15 +124,6 @@
                     "initialStateCheck": false
                 },
                 {
-                    "name": "X",
-                    "type": "Button",
-                    "id": "5193b362-1a0a-4628-bd16-4e5ef786413a",
-                    "expectedControlType": "",
-                    "processors": "",
-                    "interactions": "",
-                    "initialStateCheck": false
-                },
-                {
                     "name": "ScrollWheel",
                     "type": "Value",
                     "id": "22eb7ec1-141d-4dc5-afcf-72fd9058ee88",
@@ -145,6 +136,24 @@
                     "name": "Pause",
                     "type": "Button",
                     "id": "2eeb34ae-f338-4ad2-9f6d-e9102f5d2b11",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "X",
+                    "type": "Button",
+                    "id": "5193b362-1a0a-4628-bd16-4e5ef786413a",
+                    "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "Temporal-Change",
+                    "type": "Button",
+                    "id": "519f02ff-406f-4a32-b7e8-4913233f4f5b",
                     "expectedControlType": "",
                     "processors": "",
                     "interactions": "",
@@ -369,6 +378,17 @@
                     "processors": "",
                     "groups": "",
                     "action": "Pause",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "3c6d5a56-76ad-4334-a0b3-fb5b79a169ca",
+                    "path": "<Keyboard>/c",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Temporal-Change",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }
