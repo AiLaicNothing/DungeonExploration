@@ -14,16 +14,31 @@ public class GoblinMelee : EnemyBase
     [SerializeField] private float hitTime;
     [SerializeField] private float attackAnimDuration;
     [SerializeField] private float recoveryTime;
+    private Quaternion lockedAttackRot;
 
-    [SerializeField] private bool hasPatrol;
+    [Header("Detection")]
+    [SerializeField] private float detectionRange;
+    [SerializeField] private float maxChaseDistance;
+    [SerializeField] private float detectionDelay;
+    private float detectionTimer;
+
+    [Header("Patrol")]
     [SerializeField] private Transform safeZone;
-    [SerializeField] protected Transform[] patrolZones;
+    [SerializeField] private bool hasPatrol;
+    [SerializeField] private Transform[] patrolZones;
+    [SerializeField] private float stopDistance;
+    private int patrolIndex = 0;
+    private int patrolDir = 1;
 
     //TEMPORAL
     public GameObject hitBoxPrefab;
 
     private bool isPerformingAction;
+    private bool instantDetection;
+    private bool hasDetectedPlayer;
     private bool isFollowingPlayer;
+
+    private float distPlayer;
 
     private NavMeshAgent agent;
 
@@ -33,13 +48,15 @@ public class GoblinMelee : EnemyBase
 
         player = GameObject.FindGameObjectWithTag("Player");
         agent = GetComponent<NavMeshAgent>();
+
+        agent.updateRotation = false;
     }
 
     private void Update()
     {
-
         if (isStunned || IsStaggered) return;
 
+        HandleDetection();
         HandleActions();
 
         if (isPerformingAction) return;
@@ -47,18 +64,110 @@ public class GoblinMelee : EnemyBase
         HandleMovement();
     }
 
+    private void HandleDetection()
+    {
+        if (player ==  null) return;
+
+        distPlayer = Vector3.Distance(transform.position, player.transform.position);
+        float distHome = Vector3.Distance(transform.position, safeZone.transform.position);
+
+        if (instantDetection)
+        {
+            hasDetectedPlayer = true;
+            isFollowingPlayer = true;
+            return;
+        }
+
+        if (!hasDetectedPlayer)
+        {
+            if (distPlayer <= detectionRange)
+            {
+                detectionTimer += Time.deltaTime;
+
+                if (detectionTimer >= detectionDelay)
+                {
+                    hasDetectedPlayer = true;
+                    isFollowingPlayer = true;
+                }
+            }
+            else
+            {
+                detectionTimer = 0f;
+            }
+        }
+        else
+        {
+            //--> If to far from "home" return to home
+            if (distHome > maxChaseDistance)
+            {
+                hasDetectedPlayer = false;
+                isFollowingPlayer = false;
+                detectionTimer = 0f;
+                return;
+            }
+        }
+    }
+
     private void HandleMovement()
     {
-        //This value fuction is that when the enemy get too far from the safe zone or home zone it return to it either to say iddle or patrol
-        if(safeZone != null)
+        if (isFollowingPlayer)
         {
-            float distance = Vector3.Distance(transform.position, safeZone.position);
+            agent.SetDestination(player.transform.position);
+
+            //-->Rotate the player depending of distance if its not close, it rotate toward it destination else toward the player
+            if (distPlayer > attackRange * 2f)
+            {
+                RotateToVelocity();
+            }
+            else
+            {
+                RotateToPlayer();
+            }
+        }
+        else
+        {
+            if (hasPatrol)
+            {
+                HandlePatrol();
+                RotateToVelocity();
+            }
+            else
+            {
+                agent.ResetPath();
+            }
+        }
+    }
+
+    private void HandlePatrol()
+    {
+        if (patrolZones == null || patrolZones.Length == 0) return;
+
+        Transform posDesired = patrolZones[patrolIndex];
+
+        agent.SetDestination(posDesired.position);
+
+        float dist = Vector3.Distance(transform.position, posDesired.position);
+
+        if (dist <= stopDistance)
+        {
+            patrolIndex += patrolDir;
+
+            if (patrolIndex >= patrolZones.Length)
+            {
+                patrolIndex = patrolZones.Length - 2;
+                patrolDir = -1;
+            }
+            else if (patrolIndex < 0)
+            {
+                patrolIndex = 1;
+                patrolDir = 1;
+            }
         }
     }
 
     private void HandleActions()
     {
-        if (isPerformingAction) return;
+        if (isPerformingAction || !hasDetectedPlayer) return;
 
         float distance = Vector3.Distance(transform.position, player.transform.position);
         Debug.Log(distance);
@@ -71,7 +180,9 @@ public class GoblinMelee : EnemyBase
 
     private IEnumerator PerformAttack()
     {
+        agent.isStopped = true;
         isPerformingAction = true;
+
         //Trigger animation
 
         yield return new WaitForSeconds(hitTime);
@@ -82,6 +193,7 @@ public class GoblinMelee : EnemyBase
 
         yield return new WaitForSeconds(recoveryTime);
 
+        agent.isStopped = false;
         isPerformingAction = false;
     }
 
@@ -103,6 +215,30 @@ public class GoblinMelee : EnemyBase
             }
         }
     }
+
+    private void RotateToVelocity()
+    {
+        Vector3 vel = agent.velocity;
+        vel.y = 0;
+
+        if (vel.sqrMagnitude < 0.01f) return;
+
+        Quaternion rot = Quaternion.LookRotation(vel);
+        transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * 10f);
+    }
+
+    private void RotateToPlayer()
+    {
+        Vector3 dir = player.transform.position - transform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.01f) return;
+
+        Quaternion rot = Quaternion.LookRotation(dir);
+        transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * 15f);
+    }
+
+    //=========TEMPORAL===========
 
     public void ShowHitbox(Vector3 center, Vector3 size, Quaternion rot)
     {

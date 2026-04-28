@@ -127,7 +127,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 
         yield return new WaitForSeconds(duration);
 
-        if (!isStaggered) isStaggered = false;
+        if (!isStaggered) isStunned = false;
     }
 
     //====PHYSIC RELATED=====
