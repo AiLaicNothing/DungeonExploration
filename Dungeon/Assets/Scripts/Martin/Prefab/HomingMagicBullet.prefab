@@ -96,7 +96,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerProyectile
   isHoming: 1
-  hasTarget: 0
+  hasTarget: 1
   randomTarget: 0
   maxTargetRange: 20
   homingRange: 15

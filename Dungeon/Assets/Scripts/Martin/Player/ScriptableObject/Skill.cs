@@ -1,6 +1,5 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = ("Skills"))]
 public abstract class Skill : ScriptableObject
 {
     [Header("Info")]

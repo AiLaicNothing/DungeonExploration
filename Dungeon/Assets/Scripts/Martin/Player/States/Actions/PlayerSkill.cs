@@ -87,6 +87,7 @@ public class PlayerSkill : PlayerStates
     public override void OnExit() 
     {
         player.isPerformingAction = false;
+        player.blockVelocity = false;
     }
 
     public void SetSkill(Skill skillToUse, int index)

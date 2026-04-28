@@ -9,6 +9,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     [SerializeField] private float jumpForce = 8f;
     [SerializeField] private float rotSpeed = 10f;
     [SerializeField] private float moveMultiplier = 1f;
+    [SerializeField] private LayerMask whatIsGround;
 
     [Header("Dash")]
     [SerializeField] private float dashDistance = 5f;
@@ -151,16 +152,14 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     private void FixedUpdate()
     {
-        //rb.AddForce(Vector3.up * baseGravity * currentGravityMultiplier, ForceMode.Acceleration);
-
         if (!isPerformingAction)
         {
-            Movement();
             rb.AddForce(Vector3.up * baseGravity * currentGravityMultiplier, ForceMode.Acceleration);
+            Movement();
         }
         if (blockVelocity)
         {
-            rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
+            rb.linearVelocity = new Vector3(0, 0, 0);
         }
 
         movementSM.FixedUpdate();
@@ -264,7 +263,7 @@ public class PlayerController : MonoBehaviour, IDamageable
     private void CheckGround()
     {
         bool previous = isGrounded;
-        isGrounded = Physics.Raycast(groundCheck.position, Vector3.down, 1.1f);
+        isGrounded = Physics.Raycast(groundCheck.position, Vector3.down, 1.1f, whatIsGround);
 
         if(!previous && isGrounded)
         if (!previous && isGrounded)
@@ -333,6 +332,19 @@ public class PlayerController : MonoBehaviour, IDamageable
 
         Destroy(box, 0.2f);
     }
+    public GameObject ShowHitboxPersistent(Vector3 center, Vector3 size, Quaternion rot, GameObject debugBox)
+    {
+        if (debugBox == null)
+        {
+            debugBox = Instantiate(hitboxPrefab);
+        }
+
+        debugBox.transform.SetPositionAndRotation(center, rot);
+        debugBox.transform.localScale = size;
+
+        return debugBox;
+    }
+
     public void SetGravityMultiplier(float value)
     {
         currentGravityMultiplier = value;
