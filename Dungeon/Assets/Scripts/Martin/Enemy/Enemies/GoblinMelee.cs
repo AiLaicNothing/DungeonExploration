@@ -40,20 +40,18 @@ public class GoblinMelee : EnemyBase
 
     private float distPlayer;
 
-    private NavMeshAgent agent;
-
     protected override void Awake()
     {
         base.Awake();
 
         player = GameObject.FindGameObjectWithTag("Player");
-        agent = GetComponent<NavMeshAgent>();
 
         agent.updateRotation = false;
     }
-
-    private void Update()
+    protected override void Update()
     {
+        base .Update();
+
         if (isStunned || IsStaggered) return;
 
         HandleDetection();

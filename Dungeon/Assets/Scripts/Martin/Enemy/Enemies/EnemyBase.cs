@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.AI;
 
 public abstract class EnemyBase : MonoBehaviour, IDamageable
 {
@@ -18,10 +19,17 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     [Header("Components")]
     protected Rigidbody rb;
     protected Animator anim;
+    protected NavMeshAgent agent;
+
+    [SerializeField] protected LayerMask whatIsGround;
+    [SerializeField] protected Transform groundCheck;
+    protected bool isGrounded;
 
     protected Coroutine stunCourutine;
     protected Coroutine staggerCourutine;
     protected Coroutine airRoutine;
+
+
 
     public bool IsStunned => isStunned;
     public bool IsStaggered => isStaggered;
@@ -30,8 +38,14 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
         rb = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
+        agent = GetComponent<NavMeshAgent>();
 
         currentHp = stats.maxHp;
+    }
+
+    protected virtual void Update()
+    {
+        CheckGround();
     }
 
     public void TakeDamage(float damage, ThrowType throwType, Vector3 hitDir, float stunDuration, bool keepOnAir, float airLift, float staggerBuild)
@@ -116,7 +130,11 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
         if (isStaggered) return;
 
-        if (stunCourutine != null) StopCoroutine(stunCourutine);
+        if (stunCourutine != null)
+        {
+            StopCoroutine(stunCourutine);
+            stunCourutine = null;
+        }
 
         stunCourutine = StartCoroutine(StunRoutine(duration));
     }
@@ -127,6 +145,8 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 
         yield return new WaitForSeconds(duration);
 
+        stunCourutine = null;
+
         if (!isStaggered) isStunned = false;
     }
 
@@ -136,14 +156,18 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
         if (stats.hasStagger && !isStaggered) return;
 
+        agent.isStopped = true;
+        agent.updatePosition = false;
+        agent.updateRotation = false;
+
         switch (type)
         {
             case ThrowType.Push:
-                
+                Push(dir);
                 break;
 
             case ThrowType.Airbone:
-
+                Launch(dir);
                 break;
         }
     }
@@ -186,5 +210,19 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 
         rb.useGravity = true;
         rb.linearVelocity += Vector3.down * stats.fallGravityMultiplier;
+
+        while(!isGrounded) yield return null;
+
+        yield return new WaitForSeconds(0.05f);
+
+        agent.Warp(transform.position);
+        agent.updatePosition = true;
+        agent.updateRotation = true;
+        agent.isStopped = false;
+    }
+
+    private void CheckGround()
+    {
+        isGrounded = Physics.Raycast(groundCheck.position, Vector3.down, 0.2f, whatIsGround);
     }
 }
