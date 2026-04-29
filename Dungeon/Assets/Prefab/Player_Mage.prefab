@@ -122,8 +122,6 @@ MonoBehaviour:
   skills:
   - {fileID: 11400000, guid: 81d34fd3a4b515c42b67b9c207be9399, type: 2}
   - {fileID: 11400000, guid: 4599ca888d6dcb44b86b06a9261dae28, type: 2}
-  - {fileID: 0}
-  - {fileID: 0}
   rb: {fileID: 8381377712644560453}
   groundCheck: {fileID: 1409356898219542302}
   input: {fileID: 2898682877129559688}
@@ -388,6 +386,10 @@ MonoBehaviour:
       m_Calls: []
     m_ActionId: 2eeb34ae-f338-4ad2-9f6d-e9102f5d2b11
     m_ActionName: 'PlayerInput/Pause[/Keyboard/escape]'
+  - m_PersistentCalls:
+      m_Calls: []
+    m_ActionId: 519f02ff-406f-4a32-b7e8-4913233f4f5b
+    m_ActionName: 'PlayerInput/Temporal-Change[/Keyboard/c]'
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: PlayerInput
@@ -669,7 +671,7 @@ MonoBehaviour:
     m_DecelTime: 0.1
     m_InputAxisName: Mouse Y
     m_InputAxisValue: 0
-    m_InvertInput: 0
+    m_InvertInput: 1
     m_MinValue: 0
     m_MaxValue: 1
     m_Wrap: 0
@@ -693,7 +695,7 @@ MonoBehaviour:
     m_DecelTime: 0.1
     m_InputAxisName: Mouse X
     m_InputAxisValue: 0
-    m_InvertInput: 1
+    m_InvertInput: 0
     m_MinValue: -180
     m_MaxValue: 180
     m_Wrap: 1
