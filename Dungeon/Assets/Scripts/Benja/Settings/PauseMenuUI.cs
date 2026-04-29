@@ -34,6 +34,10 @@ public class PauseMenuUI : MonoBehaviour
         if (pausePanel != null) pausePanel.SetActive(false);
         if (confirmDeletePanel != null) confirmDeletePanel.SetActive(false);
 
+        // Cursor siempre visible y libre, sin importar el estado del juego
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
         SetupSensitivitySlider();
         SetupInvertToggles();
         SetupButtons();
@@ -63,9 +67,6 @@ public class PauseMenuUI : MonoBehaviour
         if (pausePanel != null) pausePanel.SetActive(_isPaused);
 
         Time.timeScale = _isPaused ? 0f : 1f;
-
-        Cursor.visible = _isPaused;
-        Cursor.lockState = _isPaused ? CursorLockMode.None : CursorLockMode.Locked;
     }
 
     // ── Setup de UI ───────────────────────────────────────────────────
