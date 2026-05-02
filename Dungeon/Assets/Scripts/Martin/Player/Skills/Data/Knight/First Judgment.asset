@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 448588643fb9ae344b678ec61f7a6220, type: 3}
+  m_Name: First Judgment
+  m_EditorClassIdentifier: Assembly-CSharp::FirstJudgment
+  skillName: 
+  resourceType: 0
+  cost: 0
+  castTime: 0
+  cooldown: 0
+  actionTime: 0
+  castAnimation: 
+  actionAnimation: 
+  swordPrefab: {fileID: 4001187048571639140, guid: a8b2f8815fd4a1b42add7c63a43d01df, type: 3}
+  maxRange: 20
+  spawnHeight: 15
+  spawnSFX: {fileID: 0}

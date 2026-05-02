@@ -291,6 +291,21 @@ public class PlayerController : MonoBehaviour, IDamageable
         return ray.origin + ray.direction * 100; 
     }
 
+    public Vector3 GetAimPoint(float maxRange, LayerMask groundLayer)
+    {
+        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f));
+
+        Vector3 origin = ray.origin;
+        Vector3 dir = ray.direction;
+
+        if (Physics.Raycast(ray, out RaycastHit hit, maxRange, groundLayer))
+        {
+            return hit.point;
+        }
+
+        return origin + dir * maxRange;
+    }
+
     //---SECTION RELATED TO SKILLS---
     public Skill GetSkill(int index)
     {

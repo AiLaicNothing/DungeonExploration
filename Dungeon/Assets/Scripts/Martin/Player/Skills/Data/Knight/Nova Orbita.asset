@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d73c7eef9f560974fbed523e68c16e2c, type: 3}
+  m_Name: Nova Orbita
+  m_EditorClassIdentifier: Assembly-CSharp::NovaOrbita
+  skillName: 
+  resourceType: 0
+  cost: 0
+  castTime: 0.2
+  cooldown: 0
+  actionTime: 0.5
+  castAnimation: 
+  actionAnimation: 
+  orbPrefab: {fileID: 7803720243544684117, guid: b88fd86fc81135740b3b48f91150fc90, type: 3}
+  radius: 3
+  angularSpeed: 180
+  duration: 5

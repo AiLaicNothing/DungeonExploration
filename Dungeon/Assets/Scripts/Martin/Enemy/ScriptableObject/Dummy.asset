@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e80327ac66eec24488c0a8ca659a762a, type: 3}
+  m_Name: Dummy
+  m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
+  maxHp: 999
+  damage: 0
+  moveSpeed: 0
+  hasStagger: 1
+  staggerTreshold: 100
+  staggerDuration: 5
+  timeResetStagger: 8
+  canStaggerMultiplesTimes: 1
+  pushForce: 5
+  airForce: 7
+  airHangTime: 0.4
+  fallGravityMultiplier: 2
