@@ -13950,6 +13950,14 @@ PrefabInstance:
       propertyPath: m_LocalRotation.x
       value: 0.19424808
       objectReference: {fileID: 0}
+    - target: {fileID: 9128271964599962825, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
+      propertyPath: m_XAxis.m_InvertInput
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9128271964599962825, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
+      propertyPath: m_YAxis.m_InvertInput
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

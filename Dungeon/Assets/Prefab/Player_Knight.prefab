@@ -1556,7 +1556,7 @@ MonoBehaviour:
   aimIcon: {fileID: 0}
   obstacleLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 384
   enemyTag: Enemy
   targetLockOffset: {x: 0, y: 0}
   minDistance: 1.5

@@ -20,6 +20,9 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     protected Rigidbody rb;
     protected Animator anim;
     protected NavMeshAgent agent;
+    private EnemyHealthBar healthBar;
+    private EnemyStaggerBar staggerBar;
+    private EnemyBarHolder enemyBarHolder;
 
     [SerializeField] protected LayerMask whatIsGround;
     [SerializeField] protected Transform groundCheck;
@@ -29,8 +32,6 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     protected Coroutine staggerCourutine;
     protected Coroutine airRoutine;
 
-
-
     public bool IsStunned => isStunned;
     public bool IsStaggered => isStaggered;
 
@@ -39,6 +40,10 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         rb = GetComponent<Rigidbody>();
         anim = GetComponentInChildren<Animator>();
         agent = GetComponent<NavMeshAgent>();
+
+        healthBar = GetComponentInChildren<EnemyHealthBar>();
+        staggerBar = GetComponentInChildren<EnemyStaggerBar>();
+        enemyBarHolder = GetComponentInChildren<EnemyBarHolder>();
 
         currentHp = stats.maxHp;
     }
@@ -52,6 +57,8 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
         currentHp -= isStaggered ? damage * 1.5f : damage;
 
+        healthBar.UpdateHealthBar(currentHp, stats.maxHp);
+
         if (currentHp <= 0) OnDie();
 
         ApplyThrow(throwType, hitDir);
@@ -60,6 +67,10 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 
         ApplyStun(stunDuration);
         BuildStagger(staggerBuild);
+
+        staggerBar.UpdateStaggerhBar(currentStaggerBuild, stats.staggerTreshold);
+
+        enemyBarHolder.Show();
     }
 
     protected void OnDie()
@@ -156,9 +167,9 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
         if (stats.hasStagger && !isStaggered) return;
 
-        agent.isStopped = true;
-        agent.updatePosition = false;
-        agent.updateRotation = false;
+        //agent.isStopped = true;
+        //agent.updatePosition = false;
+        //agent.updateRotation = false;
 
         switch (type)
         {
@@ -167,6 +178,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
                 break;
 
             case ThrowType.Airbone:
+                DisableAgents();
                 Launch(dir);
                 break;
         }
@@ -215,14 +227,26 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 
         yield return new WaitForSeconds(0.05f);
 
-        agent.Warp(transform.position);
-        agent.updatePosition = true;
-        agent.updateRotation = true;
-        agent.isStopped = false;
+        EnableAgent();
     }
 
     private void CheckGround()
     {
         isGrounded = Physics.Raycast(groundCheck.position, Vector3.down, 0.2f, whatIsGround);
     }
+
+    private void DisableAgents()
+    {
+        agent.isStopped = true;
+        agent.updatePosition = false;
+        agent.updateRotation = false;
+    }
+    private void EnableAgent()
+    {
+        agent.Warp(transform.position);
+        agent.updatePosition = true;
+        agent.updateRotation = true;
+        agent.isStopped = false;
+    }
+
 }

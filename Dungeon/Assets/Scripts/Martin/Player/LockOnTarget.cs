@@ -1,5 +1,7 @@
 using Cinemachine;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -51,9 +53,11 @@ public class LockOnTarget : MonoBehaviour
                 return;
             }
 
-            currentIndex = Mathf.Clamp(currentIndex, 0 , validTarget.Count - 1);
-
-            currentTarget = validTarget[currentIndex];
+            if(CurrentTarget == null || !validTarget.Contains(currentTarget))
+            {
+                currentIndex = Mathf.Clamp(currentIndex, 0, validTarget.Count - 1);
+                currentTarget = validTarget[currentIndex];
+            }
 
             if(validTarget.Count > 1)
             {
@@ -61,9 +65,10 @@ public class LockOnTarget : MonoBehaviour
             }
         }
 
-        if(isTargeting && currentTarget == null)
+        if(isTargeting && !IsTargetValid(currentTarget))
         {
             ClearTarget();
+            return;
         }
 
         if (isTargeting && currentTarget != null)
@@ -80,6 +85,12 @@ public class LockOnTarget : MonoBehaviour
         if(aimIcon != null)
         {
             aimIcon.gameObject.SetActive(isTargeting);
+        }
+
+        if (aimIcon != null && currentTarget != null)
+        {
+            Vector3 screenPos = mainCamera.WorldToScreenPoint(currentTarget.position + (Vector3)targetLockOffset);
+            aimIcon.transform.position = screenPos;
         }
     }
 
@@ -154,31 +165,17 @@ public class LockOnTarget : MonoBehaviour
 
     void AssignTarget()
     {
-
         validTarget = GetValidTargets();
 
         if (validTarget.Count == 0) return;
 
-        currentIndex = 0;
-        currentTarget = validTarget[currentIndex];
+        currentTarget = validTarget.OrderBy(t => Vector3.Angle(mainCamera.transform.forward, (t.position - mainCamera.transform.position))).First();
+
+        currentIndex = validTarget.IndexOf(currentTarget);
+
         isTargeting = true;
 
-        if (inputProvider != null)
-        {
-            inputProvider.enabled = false;
-        }
-        //GameObject target = GetClosestTarget();
-
-        //if (target != null)
-        //{
-        //    currentTarget = target.transform;
-        //    isTargeting = true;
-
-        //    if(inputProvider != null)
-        //    {
-        //        inputProvider.enabled = false;
-        //    }
-        //}
+        if (inputProvider != null) inputProvider.enabled = false;
     }
 
     void ClearTarget()
@@ -221,37 +218,30 @@ public class LockOnTarget : MonoBehaviour
             list.Add(enemy.transform);
         }
 
-        return list;
+        //Order the list of targets in base of distance, the closer the lower in list
+        return list.OrderBy(t => Vector3.Distance(transform.position, t.position)).ToList();
     }
-
-    GameObject GetClosestTarget()
+    bool IsTargetValid(Transform target)
     {
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag(enemyTag);
+        if (target == null) return false;
 
-        GameObject closest = null;
-        float minDist = maxDistance;
+        Vector3 dir = target.position - transform.position;
+        float dist = dir.magnitude;
 
-        foreach (var enemy in enemies)
+        if (dist < minDistance || dist > maxDistance)
+            return false;
+
+        float angle = Vector3.Angle(mainCamera.transform.forward, dir.normalized);
+        if (angle > maxAngle)
+            return false;
+
+        if (Physics.Raycast(mainCamera.transform.position, dir.normalized, out RaycastHit hit, maxDistance, obstacleLayer))
         {
-            Vector3 dir = enemy.transform.position - transform.position;
-            float dist = dir.magnitude;
-
-            if (dist > maxDistance)
-                continue;
-
-            float angle = Vector3.Angle(mainCamera.transform.forward, dir.normalized);
-
-            if (angle > maxAngle)
-                continue;
-
-            if (dist < minDist)
-            {
-                closest = enemy;
-                minDist = dist;
-            }
+            if (hit.transform != target)
+                return false;
         }
 
-        return closest;
+        return true;
     }
 
     void OnDrawGizmos()
