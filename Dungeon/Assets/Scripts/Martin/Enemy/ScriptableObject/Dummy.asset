@@ -17,8 +17,8 @@ MonoBehaviour:
   moveSpeed: 0
   hasStagger: 1
   staggerTreshold: 100
-  staggerDuration: 5
-  timeResetStagger: 8
+  staggerDuration: 3
+  timeResetStagger: 5
   canStaggerMultiplesTimes: 1
   pushForce: 5
   airForce: 7

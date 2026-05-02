@@ -13,8 +13,8 @@ MonoBehaviour:
   m_Name: Aria Aqua
   m_EditorClassIdentifier: Assembly-CSharp::AriaAqua
   skillName: 
-  resourceType: 0
-  cost: 0
+  resourceType: 2
+  cost: 10
   castTime: 0.5
   cooldown: 0
   actionTime: 1
@@ -22,6 +22,7 @@ MonoBehaviour:
   actionAnimation: 
   projectilePrefab: {fileID: 4437991558455029950, guid: e14941e2e3202194caae083702df138e, type: 3}
   centerVFX: {fileID: 0}
+  explosionVFX: {fileID: 0}
   maxRange: 25
   groundLayer:
     serializedVersion: 2

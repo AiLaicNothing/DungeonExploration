@@ -13,14 +13,23 @@ MonoBehaviour:
   m_Name: Nova Orbita
   m_EditorClassIdentifier: Assembly-CSharp::NovaOrbita
   skillName: 
-  resourceType: 0
-  cost: 0
+  resourceType: 2
+  cost: 15
   castTime: 0.2
   cooldown: 0
   actionTime: 0.5
   castAnimation: 
   actionAnimation: 
   orbPrefab: {fileID: 7803720243544684117, guid: b88fd86fc81135740b3b48f91150fc90, type: 3}
+  hitData:
+    physicalScale: 1
+    magicalScale: 1
+    damageMultiplier: 1
+    staggerCharge: 10
+    throwType: 0
+    stunDuration: 0
+    keepInAir: 0
+    airLiftForce: 0
   radius: 3
   angularSpeed: 180
   duration: 5

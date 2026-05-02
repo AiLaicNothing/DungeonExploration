@@ -44,13 +44,19 @@ public class GoblinMelee : EnemyBase
     {
         base.Awake();
 
-        player = GameObject.FindGameObjectWithTag("Player");
+        AssignActivePlayer();
 
         agent.updateRotation = false;
+
     }
     protected override void Update()
     {
         base .Update();
+
+        if (player == null || !player.activeInHierarchy)
+        {
+            AssignActivePlayer();
+        }
 
         if (isStunned || IsStaggered) return;
 
@@ -60,6 +66,22 @@ public class GoblinMelee : EnemyBase
         if (isPerformingAction) return;
 
         HandleMovement();
+    }
+
+    private void AssignActivePlayer()
+    {
+        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+
+        foreach (GameObject p in players)
+        {
+            if (p.activeInHierarchy)
+            {
+                player = p;
+                return;
+            }
+        }
+
+        player = null; // fallback if none found
     }
 
     private void HandleDetection()

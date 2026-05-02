@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BloodMoon
   skillName: BloodMoon
   resourceType: 2
-  cost: 0
+  cost: 20
   castTime: 0.6
   cooldown: 0
   actionTime: 1
@@ -23,3 +23,12 @@ MonoBehaviour:
   moonPrefab: {fileID: 80157640402141701, guid: ee0eb0089a22039459015bdaa7a97aba, type: 3}
   height: 3
   offset: {x: 0, y: 0, z: 1}
+  hitData:
+    physicalScale: 1
+    magicalScale: 1
+    damageMultiplier: 1
+    staggerCharge: 10
+    throwType: 0
+    stunDuration: 0
+    keepInAir: 0
+    airLiftForce: 0

@@ -13,10 +13,11 @@ MonoBehaviour:
   m_Name: Fire Slash
   m_EditorClassIdentifier: Assembly-CSharp::FireSlashSkill
   skillName: Fire slash
-  resourceType: 0
-  cost: 0
+  resourceType: 2
+  cost: 10
   castTime: 0
   cooldown: 0
+  actionTime: 0
   castAnimation: 
   actionAnimation: 
   proyectilePrefab: {fileID: 7664227392648269801, guid: b2865a1976e633e429bc16f9bb0d919c, type: 3}
@@ -24,7 +25,10 @@ MonoBehaviour:
   spawnOffset: {x: 0, y: 1, z: 1.5}
   damage: 10
   hitData:
+    physicalScale: 1
+    magicalScale: 1
     damageMultiplier: 1
+    staggerCharge: 10
     throwType: 0
     stunDuration: 0
     keepInAir: 1
