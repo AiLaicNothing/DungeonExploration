@@ -122,6 +122,8 @@ MonoBehaviour:
   skills:
   - {fileID: 11400000, guid: 81d34fd3a4b515c42b67b9c207be9399, type: 2}
   - {fileID: 11400000, guid: 4599ca888d6dcb44b86b06a9261dae28, type: 2}
+  - {fileID: 11400000, guid: 964f0fa63f880ee46b303b1ba093ae2d, type: 2}
+  - {fileID: 11400000, guid: afbcde7509b561e4dae6dfbf31339e50, type: 2}
   rb: {fileID: 8381377712644560453}
   groundCheck: {fileID: 1409356898219542302}
   input: {fileID: 2898682877129559688}
@@ -417,8 +419,8 @@ MonoBehaviour:
     m_Bits: 384
   enemyTag: Enemy
   targetLockOffset: {x: 0, y: 0}
-  minDistance: 1.5
-  maxDistance: 15
+  minDistance: 0
+  maxDistance: 30
   lockSpeed: 3
 --- !u!114 &7458924195982018009
 MonoBehaviour:
