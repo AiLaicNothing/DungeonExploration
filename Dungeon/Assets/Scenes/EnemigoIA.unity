@@ -496,11 +496,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2424911801295206994, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.98095244
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2424911801295206994, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.19424808
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2424911801295206994, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
       propertyPath: m_LocalRotation.y
@@ -700,7 +700,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.15991563, g: 0.14159843, b: 0.8113208, a: 0.6745098}
+  m_Color: {r: 1, g: 1, b: 1, a: 0.6745098}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -984,7 +984,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4294967295
+    rgba: 4278585087
   m_fontColor: {r: 1, g: 0.023584902, b: 0.023584902, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -1320,7 +1320,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.2913302, g: 0.1782218, b: 0.8396226, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1462,7 +1462,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.8867924, g: 0.09620863, b: 0.7915877, a: 1}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -1900,7 +1900,7 @@ MonoBehaviour:
       virtualCamera: {fileID: 566292587}
       leftImage: {fileID: 0}
       rightImage: {fileID: 0}
-      centerImage: {fileID: 21300000, guid: c563fd2c8c2a07648940793c949e6746, type: 3}
+      centerImage: {fileID: 0}
   pressEText: {fileID: 528383140}
 --- !u!65 &1328483747
 BoxCollider:
