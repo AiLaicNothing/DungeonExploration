@@ -1,8 +1,9 @@
+using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
-public abstract class EnemyBase : MonoBehaviour, IDamageable
+public abstract class EnemyBase : MonoBehaviour, IDamageable, IKillable
 {
     [Header("Stats")]
     [SerializeField] protected EnemyStats stats;
@@ -35,6 +36,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     public bool IsStunned => isStunned;
     public bool IsStaggered => isStaggered;
 
+    public event Action<IKillable> OnKilled;
     protected virtual void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -75,6 +77,8 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
 
     protected void OnDie()
     {
+        // Notifica a cualquier sistema suscrito ANTES de destruir el GameObject
+        OnKilled?.Invoke(this);
         Destroy(gameObject);
     }
 
@@ -196,7 +200,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
     {
         rb.AddForce(Vector3.up * stats.airForce * 10, ForceMode.Impulse);
 
-        if (airRoutine != null)  StopCoroutine(airRoutine);
+        if (airRoutine != null) StopCoroutine(airRoutine);
 
         airRoutine = StartCoroutine(AirHangRoutine());
     }
@@ -223,7 +227,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         rb.useGravity = true;
         rb.linearVelocity += Vector3.down * stats.fallGravityMultiplier;
 
-        while(!isGrounded) yield return null;
+        while (!isGrounded) yield return null;
 
         yield return new WaitForSeconds(0.05f);
 
@@ -241,6 +245,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         agent.updatePosition = false;
         agent.updateRotation = false;
     }
+
     private void EnableAgent()
     {
         agent.Warp(transform.position);
@@ -248,5 +253,4 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable
         agent.updateRotation = true;
         agent.isStopped = false;
     }
-
 }
