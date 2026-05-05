@@ -4,10 +4,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-/// <summary>
-/// Define una oleada: qué enemigos spawnear y dónde.
-/// Soporta tanto spawnear prefabs como activar enemigos pre-colocados en la escena.
-/// </summary>
 [Serializable]
 public class AmbushWave
 {
@@ -25,20 +21,13 @@ public class AmbushWave
 
     [Tooltip("Segundos de espera antes de spawnear esta oleada (después de completarse la anterior).")]
     public float delayBeforeSpawn = 0f;
+
+    [Tooltip("Opcional: secuencia de cámaras a reproducir AL INICIAR esta oleada (antes del spawn).\n" +
+             "Útil para mostrar la llegada de refuerzos. Si es null, la oleada empieza directamente.")]
+    public CinemachineSequence introWaveSequence;
 }
 
-/// <summary>
-/// Zona de emboscada con oleadas de enemigos.
-///
-/// Flujo:
-///   Idle → Trigger (player o evento externo) → reproducir secuencia opcional →
-///   bloquear entradas → spawnear oleada 1 → esperar a que muera el último enemigo →
-///   spawnear oleada 2 → ... → al completar todas las oleadas, desbloquear entradas.
-///
-/// La activación puede ser por:
-///   - Trigger volume (player entra al collider)
-///   - Llamada manual desde otro script (TriggerAmbush())
-/// </summary>
+
 public class AmbushZone : MonoBehaviour
 {
     public enum State { Idle, Sequence, InCombat, Completed }
@@ -58,9 +47,12 @@ public class AmbushZone : MonoBehaviour
     [Header("Oleadas")]
     [SerializeField] private List<AmbushWave> waves = new();
 
-    [Header("Cinemática")]
-    [Tooltip("Opcional: secuencia de cámaras a reproducir antes de spawnear la primera oleada.")]
+    [Header("Cinemáticas")]
+    [Tooltip("Opcional: secuencia de cámaras al INICIAR la emboscada (mostrar puertas cerrándose, enemigos apareciendo).")]
     [SerializeField] private CinemachineSequence introSequence;
+
+    [Tooltip("Opcional: secuencia de cámaras al COMPLETAR la emboscada (mostrar puertas abriéndose).")]
+    [SerializeField] private CinemachineSequence outroSequence;
 
     [Header("Eventos UnityEvent (opcional, se disparan junto a los Action)")]
     public UnityEvent onAmbushStarted;
@@ -81,6 +73,8 @@ public class AmbushZone : MonoBehaviour
     private readonly HashSet<IKillable> _aliveEnemies = new();
     // GameObjects spawneados (para limpieza)
     private readonly List<GameObject> _spawnedThisAmbush = new();
+    // Índices de oleadas que ya fueron spawneadas (evita doble spawn por UnityEvent)
+    private readonly HashSet<int> _wavesSpawned = new();
 
     // ── Activación ────────────────────────────────────────────────────
     void OnTriggerEnter(Collider other)
@@ -142,18 +136,23 @@ public class AmbushZone : MonoBehaviour
         OnAmbushStarted?.Invoke();
         onAmbushStarted?.Invoke();
 
-        // 1. Bloquear entradas inmediatamente
-        BlockAll();
-
-        // 2. Reproducir cinemática si existe
+        // 1. Reproducir cinemática de intro (si existe).
+        // Las puertas se bloquean DESDE la cinemática usando UnityEvent en cada shot,
+        // no aquí — así puedes sincronizar visualmente "shot que muestra puerta + cerrarla".
+        // Lo mismo aplica para el spawn de la primera oleada: se puede disparar como
+        // UnityEvent (SpawnFirstWaveFromEvent) en el shot que muestra el área de spawn.
+        // Si no usas cinemática, las puertas se bloquean inmediatamente como fallback.
         if (introSequence != null)
         {
             introSequence.Play();
-            // Esperar a que termine
             while (introSequence.IsPlaying) yield return null;
         }
+        else
+        {
+            BlockAll();
+        }
 
-        // 3. Iniciar combate por oleadas
+        // 2. Iniciar combate por oleadas
         CurrentState = State.InCombat;
 
         for (int i = 0; i < waves.Count; i++)
@@ -164,11 +163,25 @@ public class AmbushZone : MonoBehaviour
             if (wave.delayBeforeSpawn > 0f)
                 yield return new WaitForSeconds(wave.delayBeforeSpawn);
 
-            SpawnWave(wave);
+            // Cinemática opcional ANTES de esta oleada (mostrar refuerzos llegando, etc.)
+            if (wave.introWaveSequence != null)
+            {
+                wave.introWaveSequence.Play();
+                while (wave.introWaveSequence.IsPlaying) yield return null;
+            }
+
+            // Si la oleada NO fue spawneada ya por un UnityEvent durante la cinemática,
+            // la spawneamos ahora como fallback.
+            if (!_wavesSpawned.Contains(i))
+            {
+                SpawnWave(wave);
+                _wavesSpawned.Add(i);
+            }
+
             OnWaveStarted?.Invoke(i);
             onWaveStarted?.Invoke();
 
-            // Esperar a que mueran todos los enemigos de esta oleada
+            // Esperar a que mueran todos los enemigos
             while (_aliveEnemies.Count > 0)
                 yield return null;
 
@@ -176,19 +189,59 @@ public class AmbushZone : MonoBehaviour
             onWaveCleared?.Invoke();
         }
 
-        // 4. Todas las oleadas completadas → desbloquear
-        UnblockAll();
+        // 3. Cinemática de outro (si existe). Las puertas se desbloquean
+        // DESDE la cinemática con UnityEvents. Si no hay cinemática, fallback inmediato.
+        if (outroSequence != null)
+        {
+            outroSequence.Play();
+            while (outroSequence.IsPlaying) yield return null;
+        }
+        else
+        {
+            UnblockAll();
+        }
+
+        // 4. Completar
         CurrentState = State.Completed;
         OnAmbushCompleted?.Invoke();
         onAmbushCompleted?.Invoke();
 
         if (!oneTime)
         {
-            // Limpiar para poder reusar
             _spawnedThisAmbush.Clear();
+            _wavesSpawned.Clear();
             CurrentWaveIndex = -1;
             CurrentState = State.Idle;
         }
+    }
+
+    // ── Métodos públicos para llamar desde UnityEvents de cinemáticas ─
+    /// <summary>
+    /// Spawnea la primera oleada (índice 0). Pensado para llamarse desde un UnityEvent
+    /// en un shot de la introSequence (por ejemplo, en el shot que muestra el área de spawn).
+    /// Si la oleada ya fue spawneada, no hace nada.
+    /// </summary>
+    public void SpawnFirstWaveFromEvent()
+    {
+        SpawnWaveByIndex(0);
+    }
+
+    /// <summary>
+    /// Spawnea una oleada específica por índice. Pensado para llamarse desde UnityEvents
+    /// en cinemáticas per-wave (introWaveSequence de cada oleada).
+    /// Si la oleada ya fue spawneada, no hace nada.
+    /// </summary>
+    public void SpawnWaveByIndex(int index)
+    {
+        if (index < 0 || index >= waves.Count)
+        {
+            Debug.LogWarning($"[AmbushZone] Índice de oleada inválido: {index}");
+            return;
+        }
+        if (_wavesSpawned.Contains(index)) return;
+
+        SpawnWave(waves[index]);
+        _wavesSpawned.Add(index);
     }
 
     // ── Spawn ─────────────────────────────────────────────────────────
@@ -242,7 +295,9 @@ public class AmbushZone : MonoBehaviour
     }
 
     // ── Bloqueo ───────────────────────────────────────────────────────
-    private void BlockAll()
+    /// <summary>Bloquea todas las entradas. Público para que pueda llamarse desde
+    /// UnityEvents de los shots de la cinemática (ej: "cerrar puertas en este shot").</summary>
+    public void BlockAll()
     {
         foreach (var b in blockers)
         {
@@ -251,7 +306,8 @@ public class AmbushZone : MonoBehaviour
         }
     }
 
-    private void UnblockAll()
+    /// <summary>Desbloquea todas las entradas. Público para uso desde UnityEvents.</summary>
+    public void UnblockAll()
     {
         foreach (var b in blockers)
         {

@@ -5,7 +5,6 @@ using UnityEngine;
 using UnityEngine.Events;
 using Cinemachine;
 
-
 [Serializable]
 public class CinemachineShot
 {
@@ -18,10 +17,13 @@ public class CinemachineShot
     [Tooltip("Prioridad cuando este shot está activo (debe ser > prioridad de la cámara del jugador).")]
     public int activePriority = 20;
 
-    [Tooltip("Evento opcional al terminar este shot (audio, vibración, abrir puerta, etc.).")]
+    [Tooltip("Evento opcional al INICIAR este shot. Útil para disparar animaciones o spawns " +
+             "exactamente cuando la cámara cambia (ej: 'cerrar puerta cuando la cámara la muestra').")]
+    public UnityEvent onShotStart;
+
+    [Tooltip("Evento opcional al TERMINAR este shot.")]
     public UnityEvent onShotEnd;
 }
-
 
 public class CinemachineSequence : MonoBehaviour
 {
@@ -77,6 +79,7 @@ public class CinemachineSequence : MonoBehaviour
             if (shot.camera == null) continue;
 
             shot.camera.Priority = shot.activePriority;
+            shot.onShotStart?.Invoke();
             yield return new WaitForSeconds(shot.duration);
             shot.camera.Priority = inactivePriority;
 

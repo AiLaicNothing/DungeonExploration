@@ -296,7 +296,7 @@ GameObject:
   - component: {fileID: 32599200}
   - component: {fileID: 32599199}
   m_Layer: 0
-  m_Name: 'Cam_DoorSouth          '
+  m_Name: Cam_DoorSalida
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -592,7 +592,9 @@ MonoBehaviour:
     sceneEnemies:
     - {fileID: 673980491}
     delayBeforeSpawn: 0
+    introWaveSequence: {fileID: 0}
   introSequence: {fileID: 168705306}
+  outroSequence: {fileID: 0}
   onAmbushStarted:
     m_PersistentCalls:
       m_Calls: []
@@ -697,7 +699,7 @@ GameObject:
   - component: {fileID: 115554738}
   - component: {fileID: 115554737}
   m_Layer: 0
-  m_Name: 'Cam_DoorNorth          '
+  m_Name: Cam_DoorEntrada
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1374,18 +1376,42 @@ MonoBehaviour:
   - camera: {fileID: 115554737}
     duration: 1.5
     activePriority: 20
-    onShotEnd:
+    onShotStart:
       m_PersistentCalls:
-        m_Calls: []
-  - camera: {fileID: 32599199}
-    duration: 1.5
-    activePriority: 20
+        m_Calls:
+        - m_Target: {fileID: 818921983}
+          m_TargetAssemblyTypeName: AmbushZone, Assembly-CSharp
+          m_MethodName: BlockAll
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
     onShotEnd:
       m_PersistentCalls:
         m_Calls: []
   - camera: {fileID: 1841361490}
-    duration: 2
+    duration: 1.5
     activePriority: 20
+    onShotStart:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 818921983}
+          m_TargetAssemblyTypeName: AmbushZone, Assembly-CSharp
+          m_MethodName: SpawnFirstWaveFromEvent
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
     onShotEnd:
       m_PersistentCalls:
         m_Calls: []
@@ -8052,6 +8078,7 @@ GameObject:
   m_Component:
   - component: {fileID: 818921982}
   - component: {fileID: 818921981}
+  - component: {fileID: 818921983}
   m_Layer: 0
   m_Name: AmbushZone_BossArena
   m_TagString: Untagged
@@ -8078,8 +8105,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 80, y: 30, z: 60}
-  m_Center: {x: 0, y: 5, z: 0}
+  m_Size: {x: 80, y: 30, z: 59.008194}
+  m_Center: {x: 0, y: 5, z: -0.49590302}
 --- !u!4 &818921982
 Transform:
   m_ObjectHideFlags: 0
@@ -8094,11 +8121,52 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 168705305}
+  - {fileID: 1699008845}
   - {fileID: 1427103185}
   - {fileID: 870629854}
   - {fileID: 86495895}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &818921983
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 818921980}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 700c4e50ddb4e364e9689b341603bf95, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AmbushZone
+  triggerOnPlayerEnter: 1
+  playerTag: Player
+  oneTime: 1
+  blockers:
+  - {fileID: 1404483447}
+  - {fileID: 441578000}
+  waves:
+  - name: Inicial
+    enemyPrefabs: []
+    spawnPoints: []
+    sceneEnemies:
+    - {fileID: 673980491}
+    delayBeforeSpawn: 0
+    introWaveSequence: {fileID: 0}
+  introSequence: {fileID: 168705306}
+  outroSequence: {fileID: 1699008844}
+  onAmbushStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  onWaveStarted:
+    m_PersistentCalls:
+      m_Calls: []
+  onWaveCleared:
+    m_PersistentCalls:
+      m_Calls: []
+  onAmbushCompleted:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &821501838
 GameObject:
   m_ObjectHideFlags: 0
@@ -14117,7 +14185,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7509508564574997203, guid: 38cf37e6bc527a94883348595653afef, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -16.38047
+      value: -135.78046
       objectReference: {fileID: 0}
     - target: {fileID: 7509508564574997203, guid: 38cf37e6bc527a94883348595653afef, type: 3}
       propertyPath: m_LocalRotation.w
@@ -14236,7 +14304,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2475266143739573949, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -10
+      value: -129.4
       objectReference: {fileID: 0}
     - target: {fileID: 2475266143739573949, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
       propertyPath: m_LocalRotation.w
@@ -15668,6 +15736,75 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 8846076826872646024, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
   m_PrefabInstance: {fileID: 1648812367}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &1699008843
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1699008845}
+  - component: {fileID: 1699008844}
+  m_Layer: 0
+  m_Name: OutroSequence
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1699008844
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699008843}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fbe18e2c69358be469889e444c43ff0a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CinemachineSequence
+  shots:
+  - camera: {fileID: 32599199}
+    duration: 1.5
+    activePriority: 20
+    onShotStart:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 818921983}
+          m_TargetAssemblyTypeName: AmbushZone, Assembly-CSharp
+          m_MethodName: UnblockAll
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+    onShotEnd:
+      m_PersistentCalls:
+        m_Calls: []
+  inactivePriority: 0
+  disablePlayerInputDuringSequence: 0
+  playerInputObject: {fileID: 0}
+--- !u!4 &1699008845
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1699008843}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 818921982}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1704546580
 GameObject:
   m_ObjectHideFlags: 0
