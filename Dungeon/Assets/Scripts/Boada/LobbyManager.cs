@@ -30,9 +30,9 @@ public class LobbyManager : MonoBehaviour
     {
         string roomName = roomNameInput.text;
 
-        SessionOptions options = new SessionOptions
+        SessionOptions options = new SessionOptions 
         {
-            MaxPlayers = 2,
+            MaxPlayers = 4,
             IsPrivate = false,
         }.WithRelayNetwork();
 

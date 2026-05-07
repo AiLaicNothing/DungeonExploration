@@ -1,7 +1,8 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 
-public class FirstJudgementSword : MonoBehaviour
+public class FirstJudgementSword : NetworkBehaviour
 {
     [Header("Fall")]
     public float initialSpeed = 20f;
@@ -27,15 +28,20 @@ public class FirstJudgementSword : MonoBehaviour
 
     private Vector3 velocity;
 
-    public void Initialize(Vector3 target)
+    public override void OnNetworkSpawn()
     {
         rb = GetComponent<Rigidbody>();
+    }
 
+    public void Initialize(Vector3 target)
+    {
         velocity = Vector3.down * initialSpeed;
     }
 
     void FixedUpdate()
     {
+        if (!IsServer) return;
+
         if (hasLanded) return;
 
         ApplyMovement();
@@ -83,6 +89,8 @@ public class FirstJudgementSword : MonoBehaviour
 
     private void DealDamage()
     {
+        if (!IsServer) return;
+
         Collider[] hits = Physics.OverlapSphere(transform.position, radius, enemyLayer);
 
         if (damageSFX != null)

@@ -1,13 +1,14 @@
 using System;
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.AI;
 
-public abstract class EnemyBase : MonoBehaviour, IDamageable, IKillable
+public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
 {
     [Header("Stats")]
     [SerializeField] protected EnemyStats stats;
-    protected float currentHp;
+    [SerializeField] protected float currentHp;
 
     [Header("State")]
     protected bool isStunned;
@@ -37,6 +38,18 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable, IKillable
     public bool IsStaggered => isStaggered;
 
     public event Action<IKillable> OnKilled;
+
+    public override void OnNetworkSpawn()
+    {
+        if (!IsServer)
+        {
+            if (agent != null)
+            {
+                agent.enabled = false;
+            }
+        }
+    }
+
     protected virtual void Awake()
     {
         rb = GetComponent<Rigidbody>();
@@ -52,11 +65,15 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable, IKillable
 
     protected virtual void Update()
     {
+        if (!IsServer) return;
+
         CheckGround();
     }
 
     public void TakeDamage(float damage, ThrowType throwType, Vector3 hitDir, float stunDuration, bool keepOnAir, float airLift, float staggerBuild)
     {
+        if (!IsServer) return;
+
         currentHp -= isStaggered ? damage * 1.5f : damage;
 
         healthBar.UpdateHealthBar(currentHp, stats.maxHp);
@@ -79,7 +96,7 @@ public abstract class EnemyBase : MonoBehaviour, IDamageable, IKillable
     {
         // Notifica a cualquier sistema suscrito ANTES de destruir el GameObject
         OnKilled?.Invoke(this);
-        Destroy(gameObject);
+        NetworkObject.Despawn();
     }
 
     //=====STAGGER RELATED======

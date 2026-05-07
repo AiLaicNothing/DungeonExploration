@@ -376,8 +376,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff06c83e961066c4b84b926ad9cc4f5f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyBarHolder
-  canvasGroup: {fileID: 46690812098242395}
   visibleTime: 3
+  fadeDuration: 0.5
 --- !u!225 &46690812098242395
 CanvasGroup:
   m_ObjectHideFlags: 0
@@ -727,7 +727,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 0
+  m_PresetInfoIsWorld: 1
 --- !u!114 &6004179772787882468
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Skills/Blood Moon Skill")]
@@ -10,13 +11,21 @@ public class BloodMoon : Skill
     public Vector3 offset;
     public HitData hitData;
 
-    public override void Execute(PlayerController player)
+    public override void LocalExecute(PlayerController player, Vector3 targetPoint)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public override void ServerExecute(PlayerController player, Vector3 targetPoint)
     {
         player.blockVelocity = true;
 
         Vector3 spawnPos = player.transform.position + player.PlayerModel.forward * offset.z + player.PlayerModel.right * offset.x + Vector3.up * height;
 
         GameObject moon = Instantiate(moonPrefab, spawnPos, Quaternion.identity);
+
+        moon.GetComponent<NetworkObject>().Spawn();
+
 
         BloodMoonProj moonProj = moon.GetComponent<BloodMoonProj>();
 

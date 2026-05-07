@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using Unity.Services.Lobbies.Models;
 using Unity.Services.Matchmaker.Models;
 using UnityEngine;
@@ -23,7 +24,11 @@ public class MagicBullet : Skill
 
     public HitData hitData;
 
-    public override void Execute(PlayerController player)
+    public override void LocalExecute(PlayerController player, Vector3 targetPoint)
+    {
+        throw new System.NotImplementedException();
+    }
+    public override void ServerExecute(PlayerController player, Vector3 targetPoint)
     {
         Vector3 basePos = player.transform.position - player.PlayerModel.forward * backOffset + player.PlayerModel.up * heightOffset;
 
@@ -52,6 +57,8 @@ public class MagicBullet : Skill
         for (int i = 0; i < proyectilePerNode; i++)
         {
             GameObject proj = Instantiate(proyectilePrefab, pos, Quaternion.identity);
+
+            proj.GetComponent<NetworkObject>().Spawn();
 
             var proyectile = proj.GetComponent<PlayerProyectile>();
 

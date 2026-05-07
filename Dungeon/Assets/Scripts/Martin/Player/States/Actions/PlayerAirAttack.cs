@@ -49,7 +49,8 @@ public class PlayerAirAttack : PlayerStates
 
         if (elapsed >= attackSteps.hitTime && !hasHit)
         {
-            DoHit(attackSteps);
+            //DoHit(attackSteps);
+            player.RequestMeleeAttack(comboIndex, false);
             hasHit = true;
         }
 
@@ -116,7 +117,7 @@ public class PlayerAirAttack : PlayerStates
 
         Collider[] hits = Physics.OverlapBox(center, attack.hitBoxSize * 0.5f, player.PlayerModel.transform.rotation);
 
-        player.ShowHitbox(center, attack.hitBoxSize, player.PlayerModel.transform.rotation);
+        //player.ShowHitbox(center, attack.hitBoxSize, player.PlayerModel.transform.rotation);
 
         foreach (var hit in hits)
         {

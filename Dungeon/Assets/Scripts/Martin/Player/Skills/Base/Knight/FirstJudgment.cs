@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Skills/First Judgment")]
@@ -13,7 +14,11 @@ public class FirstJudgment : Skill
     [Header("SFX")]
     public GameObject spawnSFX;
 
-    public override void Execute(PlayerController player)
+    public override void LocalExecute(PlayerController player, Vector3 targetPoint)
+    {
+    }
+
+    public override void ServerExecute(PlayerController player, Vector3 targetPoint)
     {
         Vector3 aimPoint = player.GetViewPoint();
 
@@ -30,6 +35,8 @@ public class FirstJudgment : Skill
         Vector3 spawnPos = aimPoint + Vector3.up * spawnHeight;
 
         GameObject sword = Instantiate(swordPrefab, spawnPos, Quaternion.identity);
+
+        sword.GetComponent<NetworkObject>().Spawn();
 
         FirstJudgementSword proj = sword.GetComponent<FirstJudgementSword>();
         proj.Initialize(aimPoint);

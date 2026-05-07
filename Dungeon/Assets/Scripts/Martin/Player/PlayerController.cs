@@ -1,6 +1,7 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerController : MonoBehaviour, IDamageable
+public class PlayerController : NetworkBehaviour, IDamageable
 {
 
     //--> Variables
@@ -98,6 +99,26 @@ public class PlayerController : MonoBehaviour, IDamageable
     public PlayerDash dash_State;
     public PlayerSkill skill_State;
 
+    public override void OnNetworkSpawn()
+    {
+        if (rb == null) rb = GetComponent<Rigidbody>();
+
+        if (input == null) input = GetComponent<PlayerInputHandler>();
+
+        if (lockOnTarget == null) lockOnTarget = GetComponent<LockOnTarget>();
+
+        if (platformRider == null) platformRider = GetComponent<PlatformRider>();
+
+        if (!IsOwner)
+        {
+
+        }
+        else
+        {
+
+        }
+    }
+
     private void Awake()
     {
         movementSM = new PlayerStateMachine();
@@ -123,12 +144,16 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     private void Start()
     {
+        if (!IsOwner) return;
+
         movementSM.Initialize(iddle_State);
         actionSM.Initialize(iddeAction_State);
     }
 
     private void Update()
     {
+        if (!IsOwner) return;
+
         // Chequeo de muerte: usa la propiedad correcta y solo dispara una vez
         if (!isDead && CurrentHealth <= 0)
         {
@@ -152,6 +177,8 @@ public class PlayerController : MonoBehaviour, IDamageable
 
     private void FixedUpdate()
     {
+        if (!IsOwner) return;
+
         if (!isPerformingAction)
         {
             rb.AddForce(Vector3.up * baseGravity * currentGravityMultiplier, ForceMode.Acceleration);
@@ -165,9 +192,12 @@ public class PlayerController : MonoBehaviour, IDamageable
         movementSM.FixedUpdate();
         actionSM.FixedUpdate();
     }
+    // ── State Machine ──────────────────────────────────────────────────────
 
     public void ChangeState(PlayerStates nextState) => movementSM.ChangeState(nextState);
     public void ChangeActionState(PlayerStates nextState) => actionSM.ChangeState(nextState);
+
+    // ── Movement ──────────────────────────────────────────────────────
 
     private void Movement()
     {
@@ -306,6 +336,68 @@ public class PlayerController : MonoBehaviour, IDamageable
         return origin + dir * maxRange;
     }
 
+    // ── Melee Request ──────────────────────────────────────────────────────
+
+    public void RequestMeleeAttack(int comboIndex, bool isGrounded)
+    {
+        MeleeAttackServerRpc(comboIndex, isGrounded);
+    }
+
+    [ServerRpc]
+    private void MeleeAttackServerRpc(int comboIndex, bool isGrounded)
+    {
+        AttackSteps attack = isGrounded? ComboData.attackSteps[comboIndex] : airComboData.attackSteps[comboIndex];
+
+        Vector3 center = PlayerModel.transform.position + PlayerModel.transform.forward * attack.hitBoxOffSet.z + Vector3.up * attack.hitBoxOffSet.y;
+
+        Collider[] hits = Physics.OverlapBox(center, attack.hitBoxSize * 0.5f, PlayerModel.transform.rotation);
+
+        //ShowHitbox(center, attack.hitBoxSize, PlayerModel.transform.rotation);
+
+        foreach (var hit in hits)
+        {
+            if (hit.CompareTag("Enemy"))
+            {
+                Debug.Log($"Hit Enemy: {hit.name}");
+
+                //Add damage logic
+
+                IDamageable damageable = hit.GetComponent<IDamageable>();
+
+                if (damageable != null)
+                {
+                    Vector3 hitDir = PlayerModel.transform.forward;
+
+                    damageable.TakeDamage(10f * attack.hitData.damageMultiplier, attack.hitData.throwType, hitDir, attack.hitData.stunDuration, attack.hitData.keepInAir, attack.hitData.airLiftForce, attack.hitData.staggerCharge);
+                }
+
+                Debug.Log($"HIT {hit.name}");
+            }
+        }
+
+        ShowHitboxClientRpc(center, attack.hitBoxSize, PlayerModel.rotation);
+    }
+
+    // ── Skill Request ──────────────────────────────────────────────────────
+
+    public void RequestSkill(int skillIndex, Vector3 targetPoint)
+    {
+        UseSkillServerRpc(skillIndex, targetPoint);
+    }
+
+    [ServerRpc]
+    private void UseSkillServerRpc(int skillIndex, Vector3 targetPoint)
+    {
+        if (skillIndex < 0 || skillIndex >= skills.Length) return;
+
+        Skill skill = skills[skillIndex];
+
+        if ( skill == null) return;
+
+        skill.ServerExecute(this, targetPoint);
+    }
+
+
     //---SECTION RELATED TO SKILLS---
     public Skill GetSkill(int index)
     {
@@ -339,7 +431,8 @@ public class PlayerController : MonoBehaviour, IDamageable
     public void TriggerCooldown(int index) => skillsCooldown[index] = skills[index].cooldown;
 
     //---TEMPORAL---
-    public void ShowHitbox(Vector3 center, Vector3 size, Quaternion rot)
+    [ClientRpc]
+    public void ShowHitboxClientRpc(Vector3 center, Vector3 size, Quaternion rot)
     {
         GameObject box = GameObject.Instantiate(hitboxPrefab, center, rot);
 
@@ -347,6 +440,7 @@ public class PlayerController : MonoBehaviour, IDamageable
 
         Destroy(box, 0.2f);
     }
+
     public GameObject ShowHitboxPersistent(Vector3 center, Vector3 size, Quaternion rot, GameObject debugBox)
     {
         if (debugBox == null)

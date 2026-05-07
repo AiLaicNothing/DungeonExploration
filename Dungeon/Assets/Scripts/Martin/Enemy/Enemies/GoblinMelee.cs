@@ -51,7 +51,9 @@ public class GoblinMelee : EnemyBase
     }
     protected override void Update()
     {
-        base .Update();
+        if (!IsServer) return;
+
+        base.Update();
 
         if (player == null || !player.activeInHierarchy)
         {

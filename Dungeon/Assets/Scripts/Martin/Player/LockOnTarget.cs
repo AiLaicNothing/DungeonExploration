@@ -34,6 +34,8 @@ public class LockOnTarget : MonoBehaviour
 
     void Start()
     {
+        mainCamera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Camera>();
+
         // Disable default Cinemachine input
         freeLook.m_XAxis.m_InputAxisName = "";
         freeLook.m_YAxis.m_InputAxisName = "";

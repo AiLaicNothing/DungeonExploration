@@ -1,4 +1,5 @@
 using System.Collections;
+using Unity.Netcode;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Skills/Aria Aqua")]
@@ -27,7 +28,13 @@ public class AriaAqua : Skill
     public HitData hitData;
     public float damage = 20f;
 
-    public override void Execute(PlayerController player)
+
+    public override void LocalExecute(PlayerController player, Vector3 targetPoint)
+    {
+        throw new System.NotImplementedException();
+    }
+
+    public override void ServerExecute(PlayerController player, Vector3 targetPoint)
     {
         player.StartCoroutine(ExecuteRoutine(player));
     }
@@ -91,6 +98,8 @@ public class AriaAqua : Skill
     void CreateNode(Vector3 pos, Vector3 center, System.Action onArrive)
     {
         GameObject obj = Instantiate(projectilePrefab, pos, Quaternion.identity);
+
+        obj.GetComponent<NetworkObject>().Spawn();
 
         var node = obj.GetComponent<AriaAquaproj>();
         node.Initialize(center, travelTime, onArrive);

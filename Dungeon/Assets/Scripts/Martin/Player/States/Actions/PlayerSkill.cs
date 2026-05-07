@@ -10,6 +10,7 @@ public class PlayerSkill : PlayerStates
     float timer;
     bool isCasting = true;
 
+    Vector3 saveTargetPoint;
     public override void OnEnter()
     {
         //--> Check thatk skill is not null
@@ -40,6 +41,8 @@ public class PlayerSkill : PlayerStates
         isCasting = true;
         timer = currentSkill.castTime;
 
+        saveTargetPoint = player.GetViewPoint();
+
         //--> call animator and play the animation name of casting
         //player.Animator.Play(currentSkill.castAnimation);
     }
@@ -68,7 +71,12 @@ public class PlayerSkill : PlayerStates
                 //player.Animator.Play(currentSkill.actionAnimation);
 
                 // Execute skill logic
-                currentSkill.Execute(player);
+
+                // Local execute handle thing that manage the Rb for things like movement
+                currentSkill.LocalExecute(player, saveTargetPoint);
+
+                // Server pass data to server things like hits
+                player.RequestSkill(skillIndex, saveTargetPoint);
 
                 // Set cooldown
                 player.TriggerCooldown(skillIndex);

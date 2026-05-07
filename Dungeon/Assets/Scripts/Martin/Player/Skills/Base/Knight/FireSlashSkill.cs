@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "Skills/Fire Slash ")]
@@ -14,13 +15,20 @@ public class FireSlashSkill : Skill
     public float damage;
     public HitData hitData;
 
-    public override void Execute(PlayerController player)
+    public override void LocalExecute(PlayerController player, Vector3 targetPoint)
+    {
+    }
+
+
+    public override void ServerExecute(PlayerController player, Vector3 targetPoint)
     {
         Vector3 spawnPos = player.PlayerModel.transform.position + player.PlayerModel.transform.forward * spawnOffset.z + Vector3.up * spawnOffset.y;
 
         Quaternion rot = Quaternion.LookRotation(player.PlayerModel.transform.forward);
 
         GameObject prefab = Instantiate(proyectilePrefab, spawnPos, rot);
+
+        prefab.GetComponent<NetworkObject>().Spawn();
 
         PlayerProyectile proyectile = prefab.GetComponent<PlayerProyectile>();
 

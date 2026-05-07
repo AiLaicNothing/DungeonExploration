@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 public class PlayerShoot : PlayerStates
@@ -55,6 +56,8 @@ public class PlayerShoot : PlayerStates
         Vector3 dir = (targetPoint - player.FirePoint.position).normalized;
 
         GameObject prefab = GameObject.Instantiate(player.ShootData.proyectilePrefab, player.FirePoint.position, Quaternion.LookRotation(dir));
+
+        prefab.GetComponent<NetworkObject>().Spawn();
 
         PlayerProyectile proyectile = prefab.GetComponent<PlayerProyectile>();
 

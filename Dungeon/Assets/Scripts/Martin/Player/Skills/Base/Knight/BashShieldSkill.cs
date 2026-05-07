@@ -12,13 +12,18 @@ public class BashShieldSkill : Skill
     public Vector3 hitBoxSize;
     public Vector3 hitBoxOffset;
 
-    public override void Execute(PlayerController player)
+    public override void LocalExecute(PlayerController player, Vector3 targetPoint)
+    {
+        player.StartCoroutine(BashMove(player));
+    }
+    public override void ServerExecute(PlayerController player, Vector3 targetPoint)
     {
         player.StartCoroutine(BashShield(player));
     }
 
-    public IEnumerator BashShield(PlayerController player)
+    private IEnumerator BashMove(PlayerController player)
     {
+
         player.blockVelocity = false;
 
         float timer = duration;
@@ -32,11 +37,24 @@ public class BashShieldSkill : Skill
 
             player.Rb.linearVelocity = vel;
 
+            yield return null;
+        }
+    }
+
+    public IEnumerator BashShield(PlayerController player)
+    {
+
+        float timer = duration;
+
+        while (timer > 0)
+        {
+            timer -= Time.deltaTime;
+
             Vector3 center = player.PlayerModel.transform.position + player.PlayerModel.transform.forward * hitBoxOffset.z + Vector3.up * hitBoxOffset.y;
 
             Collider[] hits = Physics.OverlapBox(center, hitBoxSize * 0.5f, player.PlayerModel.transform.rotation);
 
-            player.ShowHitbox(center, hitBoxSize, player.PlayerModel.transform.rotation);
+            player.ShowHitboxClientRpc(center, hitBoxSize, player.PlayerModel.transform.rotation);
 
             foreach (var hit in hits)
             {
@@ -56,5 +74,6 @@ public class BashShieldSkill : Skill
             yield return null;
         }
     }
+
 }
 

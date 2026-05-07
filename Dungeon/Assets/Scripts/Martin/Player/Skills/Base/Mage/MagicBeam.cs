@@ -23,7 +23,12 @@ public class MagicBeam : Skill
     [SerializeField] private LayerMask obstacleLayer;
     [SerializeField] private LayerMask enemyLayer;
     private GameObject debugBox;
-    public override void Execute(PlayerController player)
+
+    public override void LocalExecute(PlayerController player, Vector3 targetPoint)
+    {
+        throw new System.NotImplementedException();
+    }
+    public override void ServerExecute(PlayerController player, Vector3 targetPoint)
     {
         player.StartCoroutine(BeamRoutine(player));
     }

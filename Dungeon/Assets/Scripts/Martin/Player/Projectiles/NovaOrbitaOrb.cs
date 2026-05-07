@@ -1,6 +1,6 @@
 using UnityEngine;
-
-public class NovaOrbitaOrb : MonoBehaviour
+using Unity.Netcode;
+public class NovaOrbitaOrb : NetworkBehaviour
 {
     private Transform player;
 
@@ -34,9 +34,11 @@ public class NovaOrbitaOrb : MonoBehaviour
 
     void Update()
     {
+        if (!IsServer) return;
+
         if (player == null)
         {
-            Destroy(gameObject);
+            NetworkObject.Despawn();
             return;
         }
 
@@ -44,7 +46,7 @@ public class NovaOrbitaOrb : MonoBehaviour
 
         if (timer >= duration)
         {
-            Destroy(gameObject);
+            NetworkObject.Despawn();
             return;
         }
 
@@ -57,18 +59,14 @@ public class NovaOrbitaOrb : MonoBehaviour
 
         float rad = angle * Mathf.Deg2Rad;
 
-        Vector3 offset =
-            orbitForward * Mathf.Cos(rad) * radius +
-            orbitRight * Mathf.Sin(rad) * radius;
+        Vector3 offset = orbitForward * Mathf.Cos(rad) * radius + orbitRight * Mathf.Sin(rad) * radius;
 
         Vector3 targetPos = player.position + offset;
 
         transform.position = targetPos;
 
         // tangent direction (for rotation)
-        Vector3 tangent =
-            -orbitForward * Mathf.Sin(rad) +
-             orbitRight * Mathf.Cos(rad);
+        Vector3 tangent = -orbitForward * Mathf.Sin(rad) + orbitRight * Mathf.Cos(rad);
 
         if (tangent != Vector3.zero)
         {
@@ -78,6 +76,8 @@ public class NovaOrbitaOrb : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
+        if (!IsServer) return;
+
         if (other.CompareTag("Enemy"))
         {
             IDamageable dmg = other.GetComponent<IDamageable>();

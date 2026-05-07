@@ -13,6 +13,11 @@ public class PlayerDitherFade : MonoBehaviour
 
     private float currentAlpha = 1f;
 
+    private void Start()
+    {
+        cam = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Camera>();
+    }
+
     void Update()
     {
         float dist = Vector3.Distance(cam.transform.position, player.position);
