@@ -86,7 +86,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 0
+  GlobalObjectIdHash: 2213873824
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -203,6 +203,7 @@ MonoBehaviour:
   input: {fileID: 2898682877129559688}
   playerModel: {fileID: 4282020108262377157}
   lockOnTarget: {fileID: 3204434697806101090}
+  thirdCam: {fileID: 3620408723487565942}
   platformRider: {fileID: 7712298097343908202}
   hitboxPrefab: {fileID: 65547742025389114, guid: e1a6382669a4d2d49901cfb4464b71df, type: 3}
 --- !u!114 &8459381729365501494
