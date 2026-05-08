@@ -29,7 +29,7 @@ Transform:
   m_GameObject: {fileID: 638606761920322837}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 2.275385, y: 2.1898746, z: -4.2710857}
+  m_LocalPosition: {x: -1.2261772, y: 0.68784237, z: -5.7088923}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -78,7 +78,7 @@ MonoBehaviour:
         m_Calls: []
   m_LegacyBlendHint: 0
   m_YAxis:
-    Value: 0.8372482
+    Value: 0.41898525
     m_SpeedMode: 0
     m_MaxSpeed: 2
     m_AccelTime: 0.2
@@ -102,7 +102,7 @@ MonoBehaviour:
     m_LegacyHeadingDefinition: -1
     m_LegacyVelocityFilterStrength: -1
   m_XAxis:
-    Value: -28.046082
+    Value: 12.122035
     m_SpeedMode: 0
     m_MaxSpeed: 300
     m_AccelTime: 0.1
@@ -263,7 +263,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Cinemachine::Cinemachine.CinemachineOrbitalTransposer
   m_BindingMode: 3
-  m_FollowOffset: {x: 0, y: 2.1898746, z: -4.839375}
+  m_FollowOffset: {x: 0, y: 0.68784237, z: -5.83909}
   m_XDamping: 0
   m_YDamping: 0
   m_ZDamping: 0
@@ -283,7 +283,7 @@ MonoBehaviour:
     m_LegacyHeadingDefinition: -1
     m_LegacyVelocityFilterStrength: -1
   m_XAxis:
-    Value: -28.046082
+    Value: 12.122035
     m_SpeedMode: 0
     m_MaxSpeed: 300
     m_AccelTime: 0.1
@@ -452,7 +452,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Cinemachine::Cinemachine.CinemachineOrbitalTransposer
   m_BindingMode: 3
-  m_FollowOffset: {x: 0, y: 2.1898746, z: -4.839375}
+  m_FollowOffset: {x: 0, y: 0.68784237, z: -5.83909}
   m_XDamping: 0
   m_YDamping: 0
   m_ZDamping: 0
@@ -472,7 +472,7 @@ MonoBehaviour:
     m_LegacyHeadingDefinition: -1
     m_LegacyVelocityFilterStrength: -1
   m_XAxis:
-    Value: -28.046082
+    Value: 12.122035
     m_SpeedMode: 0
     m_MaxSpeed: 300
     m_AccelTime: 0.1
@@ -545,7 +545,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5282313569105316549}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.16220644, y: -0.23890156, z: 0.040511906, w: 0.95654273}
+  m_LocalRotation: {x: 0.015988784, y: 0.10557388, z: -0.0016977064, w: 0.9942815}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -876,7 +876,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7744516880323647543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.127353, y: -0.24021547, z: 0.031807076, w: 0.96180356}
+  m_LocalRotation: {x: -0.020141214, y: 0.10560618, z: 0.002139442, w: 0.9942018}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -989,7 +989,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Cinemachine::Cinemachine.CinemachineOrbitalTransposer
   m_BindingMode: 3
-  m_FollowOffset: {x: 0, y: 2.1898746, z: -4.839375}
+  m_FollowOffset: {x: 0, y: 0.68784237, z: -5.83909}
   m_XDamping: 0
   m_YDamping: 0
   m_ZDamping: 0
@@ -1009,7 +1009,7 @@ MonoBehaviour:
     m_LegacyHeadingDefinition: -1
     m_LegacyVelocityFilterStrength: -1
   m_XAxis:
-    Value: -28.046082
+    Value: 12.122035
     m_SpeedMode: 0
     m_MaxSpeed: 300
     m_AccelTime: 0.1
@@ -1113,7 +1113,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8778673210740311897}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.14478058, y: -0.23959891, z: 0.036159705, w: 0.9593349}
+  m_LocalRotation: {x: -0.0021005734, y: 0.105591044, z: 0.00022304912, w: 0.9944074}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1370,7 +1370,6 @@ MonoBehaviour:
   input: {fileID: 7822185270060810045}
   playerModel: {fileID: 1314249586743219423}
   lockOnTarget: {fileID: 6534210690128522125}
-  thirdPersonCam: {fileID: 638606761920322837}
   platformRider: {fileID: 2656101319054880454}
   hitboxPrefab: {fileID: 65547742025389114, guid: e1a6382669a4d2d49901cfb4464b71df, type: 3}
 --- !u!114 &3691745361167157781

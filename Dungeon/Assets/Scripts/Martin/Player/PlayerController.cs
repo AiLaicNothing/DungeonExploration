@@ -50,7 +50,6 @@ public class PlayerController : NetworkBehaviour, IDamageable
     [SerializeField] private PlayerInputHandler input;
     [SerializeField] private Transform playerModel;
     [SerializeField] private LockOnTarget lockOnTarget;
-    [SerializeField] private GameObject thirdPersonCam;
 
     [SerializeField] private PlatformRider platformRider;
     public GameObject hitboxPrefab;
@@ -112,11 +111,11 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
         if (!IsOwner)
         {
-            thirdPersonCam.SetActive(false);
+
         }
         else
         {
-            thirdPersonCam.SetActive(true);
+
         }
     }
 

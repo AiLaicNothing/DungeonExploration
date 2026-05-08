@@ -1970,7 +1970,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 1087698874}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.9999296
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -2139,18 +2139,6 @@ PrefabInstance:
     - target: {fileID: 1968578858848604316, guid: 4db3f5ee0c4d99343beabb3be9df0848, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1987804766822612793, guid: 4db3f5ee0c4d99343beabb3be9df0848, type: 3}
-      propertyPath: GlobalObjectIdHash
-      value: 153865475
-      objectReference: {fileID: 0}
-    - target: {fileID: 1987804766822612793, guid: 4db3f5ee0c4d99343beabb3be9df0848, type: 3}
-      propertyPath: SceneMigrationSynchronization
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1987804766822612793, guid: 4db3f5ee0c4d99343beabb3be9df0848, type: 3}
-      propertyPath: InScenePlacedSourceGlobalObjectIdHash
-      value: 1401054461
       objectReference: {fileID: 0}
     - target: {fileID: 2609228255535249576, guid: 4db3f5ee0c4d99343beabb3be9df0848, type: 3}
       propertyPath: m_IsActive
@@ -2677,7 +2665,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00011704509}
+  m_AnchoredPosition: {x: 0, y: -0.000066268854}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &1739360726
@@ -3365,25 +3353,13 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8867271508869473191, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
-      propertyPath: AuthorityMode
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 8879206821679219616, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.97552544
+      value: 0.98095244
       objectReference: {fileID: 0}
     - target: {fileID: 8879206821679219616, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.19317342
-      objectReference: {fileID: 0}
-    - target: {fileID: 8879206821679219616, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.10502193
-      objectReference: {fileID: 0}
-    - target: {fileID: 8879206821679219616, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0.0021276057
+      value: 0.19424808
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3470,18 +3446,6 @@ PrefabInstance:
       propertyPath: m_AnchorMax.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 9160354946897001153, guid: c337a74c15bdf6c439431992ec613f68, type: 3}
-      propertyPath: GlobalObjectIdHash
-      value: 1012598844
-      objectReference: {fileID: 0}
-    - target: {fileID: 9160354946897001153, guid: c337a74c15bdf6c439431992ec613f68, type: 3}
-      propertyPath: SceneMigrationSynchronization
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 9160354946897001153, guid: c337a74c15bdf6c439431992ec613f68, type: 3}
-      propertyPath: InScenePlacedSourceGlobalObjectIdHash
-      value: 1572611642
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3540,32 +3504,20 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7509508564574997203, guid: 38cf37e6bc527a94883348595653afef, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -0.34900892
-      objectReference: {fileID: 0}
-    - target: {fileID: 7509508564574997203, guid: 38cf37e6bc527a94883348595653afef, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.75485235
+      value: 2.5670102
       objectReference: {fileID: 0}
     - target: {fileID: 7509508564574997203, guid: 38cf37e6bc527a94883348595653afef, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -6.363818
+      value: -4.4029093
       objectReference: {fileID: 0}
     - target: {fileID: 7509508564574997203, guid: 38cf37e6bc527a94883348595653afef, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.9943963
+      value: 0.973249
       objectReference: {fileID: 0}
     - target: {fileID: 7509508564574997203, guid: 38cf37e6bc527a94883348595653afef, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0.005023902
-      objectReference: {fileID: 0}
-    - target: {fileID: 7509508564574997203, guid: 38cf37e6bc527a94883348595653afef, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.105595864
-      objectReference: {fileID: 0}
-    - target: {fileID: 7509508564574997203, guid: 38cf37e6bc527a94883348595653afef, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0.00053349265
+      value: 0.22975296
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3587,18 +3539,6 @@ PrefabInstance:
     - target: {fileID: 1968578858848604316, guid: 4db3f5ee0c4d99343beabb3be9df0848, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1987804766822612793, guid: 4db3f5ee0c4d99343beabb3be9df0848, type: 3}
-      propertyPath: GlobalObjectIdHash
-      value: 533900204
-      objectReference: {fileID: 0}
-    - target: {fileID: 1987804766822612793, guid: 4db3f5ee0c4d99343beabb3be9df0848, type: 3}
-      propertyPath: SceneMigrationSynchronization
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1987804766822612793, guid: 4db3f5ee0c4d99343beabb3be9df0848, type: 3}
-      propertyPath: InScenePlacedSourceGlobalObjectIdHash
-      value: 1401054461
       objectReference: {fileID: 0}
     - target: {fileID: 6273479016766077363, guid: 4db3f5ee0c4d99343beabb3be9df0848, type: 3}
       propertyPath: m_LocalPosition.x
