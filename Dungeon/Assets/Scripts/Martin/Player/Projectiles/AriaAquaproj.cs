@@ -14,20 +14,28 @@ public class AriaAquaproj : MonoBehaviour
     [Header("Spiral")]
     public float spiralStrength = 5f;
 
-    public void Initialize(Vector3 centerPos, float time, Action callback)
+    private bool initilized;
+
+    private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-
+    }
+    public void Initialize(Vector3 centerPos, float time, Action callback)
+    {
         center = centerPos;
         travelTime = time;
         onArrive = callback;
 
         rb.useGravity = false;
         rb.linearVelocity = Vector3.zero;
+
+        initilized = true;
     }
 
     void FixedUpdate()
     {
+        if (!initilized) return;
+
         timer += Time.fixedDeltaTime;
 
         float t = timer / travelTime;

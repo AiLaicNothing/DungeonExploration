@@ -18,9 +18,9 @@ public class FirstJudgment : Skill
     {
     }
 
-    public override void ServerExecute(PlayerController player, Vector3 targetPoint)
+    public override void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
-        Vector3 aimPoint = player.GetViewPoint();
+        Vector3 aimPoint = targetPoint;
 
         // clamp range
         Vector3 dir = (aimPoint - player.transform.position);

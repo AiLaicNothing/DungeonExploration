@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 5232021905118257923}
   - component: {fileID: 5240401980550652688}
   - component: {fileID: 3887808263514624578}
-  - component: {fileID: 7793989417138566058}
   - component: {fileID: 2003282402928644263}
+  - component: {fileID: 7793989417138566058}
   - component: {fileID: 634383600692154894}
   m_Layer: 0
   m_Name: JudgementSword
@@ -85,41 +85,6 @@ Rigidbody:
   m_Interpolate: 0
   m_Constraints: 112
   m_CollisionDetection: 0
---- !u!114 &7793989417138566058
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4001187048571639140}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4cfb6af0abdbc3e41a44753f2f7944b7, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::FirstJudgementSword
-  initialSpeed: 20
-  gravity: -15
-  groundOffset: 2
-  groundCheckDistance: 2.5
-  groundLayer:
-    serializedVersion: 2
-    m_Bits: 128
-  radius: 5
-  enemyLayer:
-    serializedVersion: 2
-    m_Bits: 4096
-  hitData:
-    physicalScale: 1
-    magicalScale: 1
-    damageMultiplier: 1
-    staggerCharge: 10
-    throwType: 0
-    stunDuration: 0
-    keepInAir: 0
-    airLiftForce: 0
-  damage: 40
-  impactSFX: {fileID: 0}
-  damageSFX: {fileID: 0}
 --- !u!114 &2003282402928644263
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -145,6 +110,42 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
+--- !u!114 &7793989417138566058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4001187048571639140}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4cfb6af0abdbc3e41a44753f2f7944b7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FirstJudgementSword
+  ShowTopMostFoldoutHeaderGroup: 1
+  initialSpeed: 20
+  gravity: -15
+  groundOffset: 2
+  groundCheckDistance: 2.5
+  groundLayer:
+    serializedVersion: 2
+    m_Bits: 128
+  radius: 5
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 4096
+  hitData:
+    physicalScale: 1
+    magicalScale: 1
+    damageMultiplier: 1
+    staggerCharge: 10
+    throwType: 0
+    stunDuration: 0
+    keepInAir: 0
+    airLiftForce: 0
+  damage: 40
+  impactSFX: {fileID: 0}
+  damageSFX: {fileID: 0}
 --- !u!114 &634383600692154894
 MonoBehaviour:
   m_ObjectHideFlags: 0

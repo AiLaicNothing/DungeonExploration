@@ -100,8 +100,8 @@ MonoBehaviour:
   isHoming: 1
   hasTarget: 1
   randomTarget: 0
-  maxTargetRange: 20
-  homingRange: 15
+  maxTargetRange: 60
+  homingRange: 45
   retargetInterval: 0.2
 --- !u!114 &4034350258064755819
 MonoBehaviour:

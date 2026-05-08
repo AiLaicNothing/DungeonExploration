@@ -26,9 +26,8 @@ public class MagicBullet : Skill
 
     public override void LocalExecute(PlayerController player, Vector3 targetPoint)
     {
-        throw new System.NotImplementedException();
     }
-    public override void ServerExecute(PlayerController player, Vector3 targetPoint)
+    public override void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
         Vector3 basePos = player.transform.position - player.PlayerModel.forward * backOffset + player.PlayerModel.up * heightOffset;
 
@@ -36,12 +35,12 @@ public class MagicBullet : Skill
         Vector3 middle = basePos;
         Vector3 right = basePos + player.PlayerModel.right * sideOffset;
 
-        player.StartCoroutine(CastSkill(player, left));
-        player.StartCoroutine(CastSkill(player, middle));
-        player.StartCoroutine(CastSkill(player, right));
+        player.StartCoroutine(CastSkill(player, left, targetPoint, lockTargetPos));
+        player.StartCoroutine(CastSkill(player, middle, targetPoint, lockTargetPos));
+        player.StartCoroutine(CastSkill(player, right, targetPoint, lockTargetPos));
     }
 
-    IEnumerator CastSkill(PlayerController player, Vector3 pos)
+    IEnumerator CastSkill(PlayerController player, Vector3 pos, Vector3 targetPoint, Vector3 lockTargetPos)
     {
         if (vfxPrefab != null)
         {
@@ -50,9 +49,18 @@ public class MagicBullet : Skill
 
         yield return new WaitForSeconds(0.2f);
 
-        Vector3 target = player.GetViewPoint();
+        Vector3 finalTarget;
 
-        Vector3 baseDir = (target - pos).normalized;
+        if (lockTargetPos != Vector3.zero)
+        {
+            finalTarget = lockTargetPos;
+        }
+        else
+        {
+            finalTarget = targetPoint;
+        }
+
+        Vector3 baseDir = (finalTarget - pos).normalized;
 
         for (int i = 0; i < proyectilePerNode; i++)
         {
@@ -64,7 +72,7 @@ public class MagicBullet : Skill
 
             if (proyectile != null)
             {
-                proyectile.Initialize(10, hitData, baseDir, speed, player);
+                proyectile.Initialize(10, hitData, baseDir, speed, finalTarget);
             }
 
             yield return new WaitForSeconds(timeBtwShoot);

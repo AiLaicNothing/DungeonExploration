@@ -17,7 +17,7 @@ public class NovaOrbita : Skill
     {
     }
 
-    public override void ServerExecute(PlayerController player, Vector3 targetPoint)
+    public override void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
         SpawnOrb(player, 0f);    // front
         SpawnOrb(player, 180f);  // back

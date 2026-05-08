@@ -16,7 +16,7 @@ public class BashShieldSkill : Skill
     {
         player.StartCoroutine(BashMove(player));
     }
-    public override void ServerExecute(PlayerController player, Vector3 targetPoint)
+    public override void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
         player.StartCoroutine(BashShield(player));
     }

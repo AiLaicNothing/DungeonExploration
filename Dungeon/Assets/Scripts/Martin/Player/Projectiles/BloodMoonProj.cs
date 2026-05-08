@@ -33,11 +33,11 @@ public class BloodMoonProj : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    public void Initialize(PlayerController player, HitData data)
+    public void Initialize(PlayerController player, HitData data, Vector3 targetPos)
     {
         hitData = data;
 
-        Vector3 targetPoint = player.GetAimPoint(maxRange, groundLayer);
+        Vector3 targetPoint = targetPos;
 
         Vector3 dir = targetPoint - player.transform.position;
         float dist = dir.magnitude;
@@ -122,7 +122,7 @@ public class BloodMoonProj : MonoBehaviour
         {
             IDamageable dmg = hit.GetComponent<IDamageable>();
 
-            if (dmg != null)
+            if (dmg != null && hitData != null)
             {
                 Vector3 dir = (hit.transform.position - transform.position).normalized;
 

@@ -296,7 +296,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Dummy
   ShowTopMostFoldoutHeaderGroup: 1
   stats: {fileID: 11400000, guid: fd8abf473ec975a4e9b487af7968dd9a, type: 2}
-  currentHp: 0
+  CurrentHp: 0
   whatIsGround:
     serializedVersion: 2
     m_Bits: 128

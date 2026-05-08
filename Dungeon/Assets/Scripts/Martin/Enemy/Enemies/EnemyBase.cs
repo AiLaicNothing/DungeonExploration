@@ -8,7 +8,7 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
 {
     [Header("Stats")]
     [SerializeField] protected EnemyStats stats;
-    [SerializeField] protected float currentHp;
+    NetworkVariable<float> currentHp = new NetworkVariable<float>();
 
     [Header("State")]
     protected bool isStunned;
@@ -19,7 +19,7 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
     protected float airHangTimer;
 
     [Header("Stagger")]
-    protected float currentStaggerBuild;
+    NetworkVariable<float> currentStaggerBuild = new NetworkVariable<float>();
     protected bool isInStaggerCooldown;
 
     [Header("Components")]
@@ -50,6 +50,11 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
 
     public override void OnNetworkSpawn()
     {
+        if (IsServer)
+        {
+            currentHp.Value = stats.maxHp;
+        }
+
         if (!IsServer)
         {
             if (agent != null)
@@ -57,6 +62,13 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
                 agent.enabled = false;
             }
         }
+
+        currentHp.OnValueChanged += OnHpChanged;
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        currentHp.OnValueChanged -= OnHpChanged;
     }
 
     protected virtual void Awake()
@@ -68,8 +80,6 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
         healthBar = GetComponentInChildren<EnemyHealthBar>();
         staggerBar = GetComponentInChildren<EnemyStaggerBar>();
         enemyBarHolder = GetComponentInChildren<EnemyBarHolder>();
-
-        currentHp = stats.maxHp;
     }
 
     protected virtual void Update()
@@ -90,11 +100,9 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
     {
         if (!IsServer) return;
 
-        currentHp -= isStaggered ? damage * 1.5f : damage;
+        currentHp.Value -= isStaggered ? damage * 1.5f : damage;
 
-        healthBar.UpdateHealthBar(currentHp, stats.maxHp);
-
-        if (currentHp <= 0) OnDie();
+        if (currentHp.Value <= 0) OnDie();
 
         ApplyThrow(throwType, hitDir);
 
@@ -102,8 +110,12 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
 
         ApplyStun(stunDuration);
         BuildStagger(staggerBuild);
+    }
 
-        staggerBar.UpdateStaggerhBar(currentStaggerBuild, stats.staggerTreshold);
+    private void OnHpChanged(float oldHp, float newHp)
+    {
+        healthBar.UpdateHealthBar(newHp, stats.maxHp);
+        staggerBar.UpdateStaggerhBar(currentStaggerBuild.Value, stats.staggerTreshold);
 
         enemyBarHolder.Show();
     }
@@ -127,9 +139,9 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
             return;
         }
 
-        currentStaggerBuild += ammount;
+        currentStaggerBuild.Value += ammount;
 
-        if (currentStaggerBuild >= stats.staggerTreshold)
+        if (currentStaggerBuild.Value >= stats.staggerTreshold)
         {
             TriggerStagger();
         }
@@ -166,7 +178,7 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
 
         yield return new WaitForSeconds(stats.timeResetStagger);
 
-        currentStaggerBuild = 0;
+        currentStaggerBuild.Value = 0;
         isInStaggerCooldown = false;
 
         staggerCourutine = null;

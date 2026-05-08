@@ -31,19 +31,18 @@ public class AriaAqua : Skill
 
     public override void LocalExecute(PlayerController player, Vector3 targetPoint)
     {
-        throw new System.NotImplementedException();
     }
 
-    public override void ServerExecute(PlayerController player, Vector3 targetPoint)
+    public override void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
-        player.StartCoroutine(ExecuteRoutine(player));
+        player.StartCoroutine(ExecuteRoutine(player, targetPoint));
     }
 
-    private IEnumerator ExecuteRoutine(PlayerController player)
+    private IEnumerator ExecuteRoutine(PlayerController player, Vector3 targetPoint)
     {
         player.blockVelocity = true;
 
-        Vector3 groundCenter = player.GetAimPoint(maxRange, groundLayer);
+        Vector3 groundCenter = targetPoint;
 
         // ensure ground
         if (Physics.Raycast(groundCenter + Vector3.up * 5f, Vector3.down, out RaycastHit hit, 20f, groundLayer))

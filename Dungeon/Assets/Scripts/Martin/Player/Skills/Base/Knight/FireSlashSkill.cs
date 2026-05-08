@@ -20,7 +20,7 @@ public class FireSlashSkill : Skill
     }
 
 
-    public override void ServerExecute(PlayerController player, Vector3 targetPoint)
+    public override void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
         Vector3 spawnPos = player.PlayerModel.transform.position + player.PlayerModel.transform.forward * spawnOffset.z + Vector3.up * spawnOffset.y;
 
@@ -34,7 +34,7 @@ public class FireSlashSkill : Skill
 
         if (proyectile != null )
         {
-            proyectile.Initialize(damage, hitData, player.PlayerModel.forward, proyectileSpeed, player);
+            proyectile.Initialize(damage, hitData, player.PlayerModel.forward, proyectileSpeed, Vector3.zero);
         }
     }
 

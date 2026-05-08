@@ -63,7 +63,7 @@ public class PlayerShoot : PlayerStates
 
         if (proyectile != null)
         {
-            proyectile.Initialize(10, player.ShootData.hitData, dir, player.ShootData.proyectileSpeed, player);
+            //proyectile.Initialize(10, player.ShootData.hitData, dir, player.ShootData.proyectileSpeed, player);
         }
     }
 }

@@ -19,5 +19,5 @@ public abstract class Skill : ScriptableObject
     public string actionAnimation;
 
     public abstract void LocalExecute(PlayerController player, Vector3 targetPoint);
-    public abstract void ServerExecute(PlayerController player, Vector3 targetPoint);
+    public abstract void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos);
 }

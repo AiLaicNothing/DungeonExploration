@@ -383,11 +383,18 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
     public void RequestSkill(int skillIndex, Vector3 targetPoint)
     {
-        UseSkillServerRpc(skillIndex, targetPoint);
+        Vector3 lockTargetPos = Vector3.zero;
+
+        if (lockOnTarget != null && lockOnTarget.isTargeting && lockOnTarget.CurrentTarget != null)
+        {
+            lockTargetPos = lockOnTarget.CurrentTarget.position;
+        }
+
+        UseSkillServerRpc(skillIndex, targetPoint, lockTargetPos);
     }
 
     [ServerRpc]
-    private void UseSkillServerRpc(int skillIndex, Vector3 targetPoint)
+    private void UseSkillServerRpc(int skillIndex, Vector3 targetPoint, Vector3 lockTargetPos)
     {
         if (skillIndex < 0 || skillIndex >= skills.Length) return;
 
@@ -395,7 +402,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
         if ( skill == null) return;
 
-        skill.ServerExecute(this, targetPoint);
+        skill.ServerExecute(this, targetPoint, lockTargetPos);
     }
 
 

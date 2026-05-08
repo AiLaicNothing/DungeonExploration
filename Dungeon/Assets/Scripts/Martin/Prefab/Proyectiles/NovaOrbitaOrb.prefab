@@ -11,8 +11,8 @@ GameObject:
   - component: {fileID: 2784766156253418151}
   - component: {fileID: 1860346779671341371}
   - component: {fileID: 3216312279137831715}
-  - component: {fileID: 4017832268971229467}
   - component: {fileID: 1324097801510416783}
+  - component: {fileID: 4017832268971229467}
   - component: {fileID: 8131380630150964793}
   m_Layer: 0
   m_Name: NovaOrbitaOrb
@@ -85,18 +85,6 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 0.5
   m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &4017832268971229467
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7803720243544684117}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 847377cedb670864eb07d06754dc2115, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::NovaOrbitaOrb
 --- !u!114 &1324097801510416783
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -122,6 +110,19 @@ MonoBehaviour:
   AutoObjectParentSync: 1
   SyncOwnerTransformWhenParented: 1
   AllowOwnerToParent: 0
+--- !u!114 &4017832268971229467
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7803720243544684117}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 847377cedb670864eb07d06754dc2115, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NovaOrbitaOrb
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &8131380630150964793
 MonoBehaviour:
   m_ObjectHideFlags: 0

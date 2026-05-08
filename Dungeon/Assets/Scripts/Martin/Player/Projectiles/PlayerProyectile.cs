@@ -24,7 +24,9 @@ public class PlayerProyectile : MonoBehaviour
 
     private Rigidbody rb;
 
-    public void Initialize(float dmg, HitData data, Vector3 dir, float spd, PlayerController player)
+    private Vector3 lockTargetPos;
+
+    public void Initialize(float dmg, HitData data, Vector3 dir, float spd, Vector3 lockTargetPos)
     {
         damage = dmg;
         hitData = data;
@@ -33,19 +35,24 @@ public class PlayerProyectile : MonoBehaviour
 
         rb = GetComponent<Rigidbody>();
 
+        this.lockTargetPos = lockTargetPos;
+
         if (isHoming)
         {
-            if (hasTarget && player.LockTarget.isTargeting)
+            if (target == null)
             {
-                target = player.LockTarget.CurrentTarget;
-            }
-            else if (randomTarget)
-            {
-                target = GetRandomTarget(player.transform.position);
-            }
-            else
-            {
-                target = GetClosestTarget(player.transform.position);
+                if (hasTarget && this.lockTargetPos != Vector3.zero)
+                {
+                    target = GetClosestToPoint(lockTargetPos);
+                }
+                else if (randomTarget)
+                {
+                    target = GetRandomTarget(transform.position);
+                }
+                else
+                {
+                    target = GetClosestTarget(transform.position);
+                }
             }
         }
 
@@ -110,6 +117,11 @@ public class PlayerProyectile : MonoBehaviour
         }
 
         return closest;
+    }
+
+    Transform GetClosestToPoint(Vector3 point)
+    {
+        return GetClosestTarget(point);
     }
 
     Transform GetRandomTarget(Vector3 origin)
