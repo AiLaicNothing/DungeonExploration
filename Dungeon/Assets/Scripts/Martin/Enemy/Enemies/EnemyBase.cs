@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -13,10 +13,6 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
     [Header("State")]
     protected bool isStunned;
     protected bool isStaggered;
-    // ── AirBone ──────────────────────────────────────────────────────
-    protected bool isAirbone;
-    protected bool isAirHanging;
-    protected float airHangTimer;
 
     [Header("Stagger")]
     NetworkVariable<float> currentStaggerBuild = new NetworkVariable<float>();
@@ -37,11 +33,6 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
     protected Coroutine stunCourutine;
     protected Coroutine staggerCourutine;
     protected Coroutine airRoutine;
-
-    // ── Visual related ──────────────────────────────────────────────────────
-    protected Vector3 combatVelocity;
-    protected float verticalVelocity;
-    protected bool isInCombatMotion;
 
     public bool IsStunned => isStunned;
     public bool IsStaggered => isStaggered;
@@ -89,13 +80,6 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
         CheckGround();
     }
 
-    private void FixedUpdate()
-    {
-        if (!IsServer) return;
-
-        HandleCombatMovement();
-    }
-
     public void TakeDamage(float damage, ThrowType throwType, Vector3 hitDir, float stunDuration, bool keepOnAir, float airLift, float staggerBuild)
     {
         if (!IsServer) return;
@@ -127,7 +111,7 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
         NetworkObject.Despawn();
     }
 
-    // ── Stagger ──────────────────────────────────────────────────────
+    //=====STAGGER RELATED======
 
     protected void BuildStagger(float ammount)
     {
@@ -210,11 +194,15 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
         if (!isStaggered) isStunned = false;
     }
 
-    // ── Type of Throw ──────────────────────────────────────────────────────
+    //====PHYSIC RELATED=====
 
     protected void ApplyThrow(ThrowType type, Vector3 dir)
     {
         if (stats.hasStagger && !isStaggered) return;
+
+        //agent.isStopped = true;
+        //agent.updatePosition = false;
+        //agent.updateRotation = false;
 
         switch (type)
         {
@@ -223,112 +211,63 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
                 break;
 
             case ThrowType.Airbone:
+                DisableAgents();
                 Launch(dir);
                 break;
         }
     }
-    // ── Push ──────────────────────────────────────────────────────
+
     protected void Push(Vector3 dir)
     {
-        DisableAgents();
+        Vector3 force = dir * stats.pushForce;
+        force.y = 0;
 
-        isInCombatMotion = true;
-
-        combatVelocity = dir.normalized * stats.pushForce;
+        rb.AddForce(force * 10, ForceMode.Impulse);
     }
 
-
-    // ── Launch ──────────────────────────────────────────────────────
     protected void Launch(Vector3 dir)
     {
-        DisableAgents();
+        rb.AddForce(Vector3.up * stats.airForce * 10, ForceMode.Impulse);
 
-        isInCombatMotion = true;
+        if (airRoutine != null) StopCoroutine(airRoutine);
 
-        isAirbone = true;
-
-        //combatVelocity = dir.normalized * stats.pushForce;
-
-        verticalVelocity = stats.airForce;
-
-        airHangTimer = stats.airHangTime;
+        airRoutine = StartCoroutine(AirHangRoutine());
     }
 
-
-    // ── Air Sustain ──────────────────────────────────────────────────────
     protected void SustainAir(float lift)
     {
-        if (verticalVelocity < 0)
-        {
-            verticalVelocity = 0;
-        }
+        Vector3 vel = rb.linearVelocity;
 
-        verticalVelocity += lift;
+        if (vel.y < 0) vel.y = 0;
+
+        vel.y += lift;
+        rb.linearVelocity = vel;
     }
 
-    // ── Client Visual ──────────────────────────────────────────────────────
-    private void HandleCombatMovement()
+    protected IEnumerator AirHangRoutine()
     {
-        if (!isInCombatMotion) return;
+        while (rb.linearVelocity.y > 0.1f) yield return null;
 
-        transform.position += combatVelocity * Time.fixedDeltaTime;
+        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
+        rb.useGravity = false;
 
-        // Work like friction
-        combatVelocity = Vector3.Lerp(combatVelocity, Vector3.zero, Time.fixedDeltaTime * 5f);
+        yield return new WaitForSeconds(stats.airHangTime);
 
-        if (isAirbone)
-        {
-            //Hang in the air for window combo
-            if (verticalVelocity <= 0 && airHangTimer > 0)
-            {
-                airHangTimer -= Time.fixedDeltaTime;
+        rb.useGravity = true;
+        rb.linearVelocity += Vector3.down * stats.fallGravityMultiplier;
 
-                verticalVelocity = 0;
-            }
-            else
-            {
-                verticalVelocity += Physics.gravity.y * Time.fixedDeltaTime;
-            }
+        while (!isGrounded) yield return null;
 
-            transform.position += Vector3.up * verticalVelocity * Time.fixedDeltaTime;
-
-            if (isGrounded && verticalVelocity <= 0)
-            {
-                Land();
-            }
-        }
-
-        if (combatVelocity.sqrMagnitude < 0.01f && !isAirbone)
-        {
-            StopCombatMotion();
-        }
-    }
-
-    private void Land()
-    {
-        isAirbone = false;
-
-        verticalVelocity = 0;
-
-        StopCombatMotion();
-    }
-
-    private void StopCombatMotion()
-    {
-        isInCombatMotion = false;
-
-        combatVelocity = Vector3.zero;
+        yield return new WaitForSeconds(0.05f);
 
         EnableAgent();
     }
 
-    // ── GroundCheck ──────────────────────────────────────────────────────
     private void CheckGround()
     {
         isGrounded = Physics.Raycast(groundCheck.position, Vector3.down, 0.2f, whatIsGround);
     }
 
-    // ── NavMesh ──────────────────────────────────────────────────────
     private void DisableAgents()
     {
         agent.isStopped = true;
