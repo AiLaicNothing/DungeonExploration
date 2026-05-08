@@ -9,6 +9,8 @@ public class PlayerShoot : PlayerStates
     float fireCooldown;
     bool hasShoot;
 
+    Vector3 saveTargetPoint;
+
     public override void OnEnter()
     {
         timer = 0f;
@@ -17,6 +19,7 @@ public class PlayerShoot : PlayerStates
 
         player.isPerformingAction = true;
 
+        saveTargetPoint = player.GetViewPoint();
         Debug.Log("Shoot State");
     }
 
@@ -51,19 +54,8 @@ public class PlayerShoot : PlayerStates
     {
         fireCooldown = player.ShootData.timeBtwShot;
 
-        Vector3 targetPoint = player.GetViewPoint();
+        Vector3 dir = (saveTargetPoint - player.FirePoint.position).normalized;
 
-        Vector3 dir = (targetPoint - player.FirePoint.position).normalized;
-
-        GameObject prefab = GameObject.Instantiate(player.ShootData.proyectilePrefab, player.FirePoint.position, Quaternion.LookRotation(dir));
-
-        prefab.GetComponent<NetworkObject>().Spawn();
-
-        PlayerProyectile proyectile = prefab.GetComponent<PlayerProyectile>();
-
-        if (proyectile != null)
-        {
-            //proyectile.Initialize(10, player.ShootData.hitData, dir, player.ShootData.proyectileSpeed, player);
-        }
+       player.RequestShoot(player.FirePoint.position, dir);
     }
 }

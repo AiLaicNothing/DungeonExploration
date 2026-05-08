@@ -379,6 +379,27 @@ public class PlayerController : NetworkBehaviour, IDamageable
         ShowHitboxClientRpc(center, attack.hitBoxSize, PlayerModel.rotation);
     }
 
+    // ── Shoot Request ──────────────────────────────────────────────────────
+    public void RequestShoot(Vector3 shootPos, Vector3 dir)
+    {
+        ShootServerRpc(shootPos, dir);
+    }
+
+    [ServerRpc]
+    private void ShootServerRpc(Vector3 shootPos, Vector3 dir)
+    {
+        GameObject prefab = GameObject.Instantiate(ShootData.proyectilePrefab, FirePoint.position, Quaternion.LookRotation(dir));
+
+        prefab.GetComponent<NetworkObject>().Spawn();
+
+        PlayerProyectile proyectile = prefab.GetComponent<PlayerProyectile>();
+
+        if (proyectile != null)
+        {
+            proyectile.Initialize(10, ShootData.hitData, dir, ShootData.proyectileSpeed, Vector3.zero);
+        }
+    }
+
     // ── Skill Request ──────────────────────────────────────────────────────
 
     public void RequestSkill(int skillIndex, Vector3 targetPoint)
