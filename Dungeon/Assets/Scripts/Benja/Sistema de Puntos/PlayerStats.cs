@@ -1,216 +1,386 @@
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
+using Unity.Netcode;
 using UnityEngine;
 
-public class PlayerStats : MonoBehaviour
+/// <summary>
+/// Componente de stats por jugador. NO singleton.
+/// Hereda de NetworkBehaviour: el servidor es la autoridad sobre todos los valores,
+/// los clientes los reciben automáticamente vía NetworkVariable.
+///
+/// Setup: añadir como componente al prefab del Player (junto a NetworkObject + PlayerController).
+/// </summary>
+[RequireComponent(typeof(NetworkObject))]
+public class PlayerStats : NetworkBehaviour
 {
-    public static PlayerStats Instance { get; private set; }
-
     [Header("Config")]
     [SerializeField] private PlayerStatsData data;
 
-    // ── Diccionario de stats por ID ───────────────────────────────────
-    private Dictionary<string, PlayerStat> statsById;
-    public IEnumerable<PlayerStat> AllStats => statsById.Values;
+    // ── Stats sincronizadas (servidor autoritativo) ───────────────────
+    // Una NetworkList paralela para currentValue y otra para max, indexadas igual que data.stats.
+    // Usamos arrays porque NetworkList<float> existe pero un array de NetworkVariable es más explícito.
+    // Aquí usamos NetworkList<float> que NGO soporta directamente.
+    private NetworkList<float> _currentValues;
+    private NetworkList<float> _maxValues;
+    private NetworkList<int> _pointsAssigned;
 
-    // ── Accesos rápidos para mantener compatibilidad con PlayerController ──
-    public PlayerStat Health => GetStat("health");
-    public PlayerStat Mana => GetStat("mana");
-    public PlayerStat Stamina => GetStat("stamina");
-    public PlayerStat PhysicalDamage => GetStat("physicalDamage");
-    public PlayerStat MagicalDamage => GetStat("magicalDamage");
-    public PlayerStat HealthRegen => GetStat("healthRegen");
-    public PlayerStat StaminaRegen => GetStat("staminaRegen");
-    public PlayerStat ManaRegen => GetStat("manaRegen");
+    // Puntos disponibles para gastar (sincronizado)
+    private NetworkVariable<int> _upgradePoints = new NetworkVariable<int>(
+        0, NetworkVariableReadPermission.Owner, NetworkVariableWritePermission.Server);
 
-    // ── Sistema de puntos ─────────────────────────────────────────────
-    [SerializeField] private int _upgradePoints;
-    public int upgradePoints => _upgradePoints; // lowercase para compatibilidad con tu UI
-    public int UpgradePoints => _upgradePoints;
-    public int TotalPointsEarned { get; private set; }
+    private NetworkVariable<int> _totalPointsEarned = new NetworkVariable<int>(
+        0, NetworkVariableReadPermission.Owner, NetworkVariableWritePermission.Server);
 
-    // ── Eventos ───────────────────────────────────────────────────────
+    // ── Diccionario local de stats (config, no estado runtime) ────────
+    private Dictionary<string, PlayerStat> _statsById;
+    private Dictionary<string, int> _idToIndex; // id -> índice en NetworkList
+
+    public IEnumerable<PlayerStat> AllStats => _statsById?.Values;
+
+    // ── Eventos C# (locales, los clientes los disparan al recibir cambios de NetworkVariable) ──
+    /// <summary>Disparado cuando una stat cambia. (id, currentValue)</summary>
     public event Action<string, float> OnStatChanged;
+    /// <summary>Disparado cuando los upgradePoints cambian.</summary>
     public event Action<int> OnPointsChanged;
 
+    // ── Acceso público para lectura (cualquiera puede leer) ───────────
+    public int UpgradePoints => _upgradePoints.Value;
+    public int upgradePoints => _upgradePoints.Value; // alias lowercase para compatibilidad
+    public int TotalPointsEarned => _totalPointsEarned.Value;
+
+    public float GetCurrentValue(string id) => _idToIndex.TryGetValue(id, out int i) ? _currentValues[i] : 0f;
+    public float GetMaxValue(string id) => _idToIndex.TryGetValue(id, out int i) ? _maxValues[i] : 0f;
+    public int GetPointsAssigned(string id) => _idToIndex.TryGetValue(id, out int i) ? _pointsAssigned[i] : 0;
+
+    // ── Atajos al estilo del singleton anterior ───────────────────────
+    public StatView Health => new StatView(this, "health");
+    public StatView Mana => new StatView(this, "mana");
+    public StatView Stamina => new StatView(this, "stamina");
+    public StatView PhysicalDamage => new StatView(this, "physicalDamage");
+    public StatView MagicalDamage => new StatView(this, "magicalDamage");
+    public StatView HealthRegen => new StatView(this, "healthRegen");
+    public StatView StaminaRegen => new StatView(this, "staminaRegen");
+    public StatView ManaRegen => new StatView(this, "manaRegen");
+
+    public PlayerStat GetStat(string id) => _statsById != null && _statsById.TryGetValue(id, out var s) ? s : null;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────
     private void Awake()
     {
-        if (Instance != null && Instance != this)
-        {
-            Destroy(gameObject);
-            return;
-        }
-        Instance = this;
+        // Inicializa las NetworkList ANTES de OnNetworkSpawn
+        _currentValues = new NetworkList<float>();
+        _maxValues = new NetworkList<float>();
+        _pointsAssigned = new NetworkList<int>();
 
-        InitializeStats();
+        BuildLocalConfig();
     }
 
-    private void InitializeStats()
+    public override void OnNetworkSpawn()
     {
-        statsById = new Dictionary<string, PlayerStat>();
-
-        foreach (var config in data.stats)
+        if (IsServer)
         {
-            if (string.IsNullOrEmpty(config.id))
+            // Solo el servidor inicializa los valores
+            for (int i = 0; i < data.stats.Count; i++)
             {
-                Debug.LogError($"[PlayerStats] Hay un StatConfig sin ID en {data.name}. Skip.");
-                continue;
-            }
-            if (statsById.ContainsKey(config.id))
-            {
-                Debug.LogError($"[PlayerStats] ID duplicado: '{config.id}'. Skip.");
-                continue;
+                _currentValues.Add(data.stats[i].baseValue);
+                _maxValues.Add(data.stats[i].baseValue);
+                _pointsAssigned.Add(0);
             }
 
-            var stat = new PlayerStat(config);
-            stat.OnChanged += s => OnStatChanged?.Invoke(s.Id, s.CurrentValue);
-            statsById[config.id] = stat;
+            _upgradePoints.Value = data.startingPoints;
+            _totalPointsEarned.Value = data.startingPoints;
         }
 
-        _upgradePoints = data.startingPoints;
-        TotalPointsEarned = data.startingPoints;
+        // Suscribirse a cambios para emitir eventos C# locales
+        _currentValues.OnListChanged += OnCurrentValuesListChanged;
+        _maxValues.OnListChanged += OnMaxValuesListChanged;
+        _upgradePoints.OnValueChanged += (oldV, newV) => OnPointsChanged?.Invoke(newV);
     }
 
+    public override void OnNetworkDespawn()
+    {
+        _currentValues.OnListChanged -= OnCurrentValuesListChanged;
+        _maxValues.OnListChanged -= OnMaxValuesListChanged;
+    }
+
+    private void BuildLocalConfig()
+    {
+        _statsById = new Dictionary<string, PlayerStat>();
+        _idToIndex = new Dictionary<string, int>();
+
+        for (int i = 0; i < data.stats.Count; i++)
+        {
+            var cfg = data.stats[i];
+            if (string.IsNullOrEmpty(cfg.id))
+            {
+                Debug.LogError($"[PlayerStats] StatConfig sin ID en {data.name}.");
+                continue;
+            }
+            _statsById[cfg.id] = new PlayerStat(cfg);
+            _idToIndex[cfg.id] = i;
+        }
+    }
+
+    private void OnCurrentValuesListChanged(NetworkListEvent<float> e)
+    {
+        if (e.Type != NetworkListEvent<float>.EventType.Value) return;
+        // Buscamos el ID por índice para emitir el evento
+        foreach (var kv in _idToIndex)
+        {
+            if (kv.Value == e.Index)
+            {
+                OnStatChanged?.Invoke(kv.Key, e.Value);
+                return;
+            }
+        }
+    }
+
+    private void OnMaxValuesListChanged(NetworkListEvent<float> e)
+    {
+        if (e.Type != NetworkListEvent<float>.EventType.Value) return;
+        // Cuando el max sube, también puede dispararse OnStatChanged para refrescar la UI
+        foreach (var kv in _idToIndex)
+        {
+            if (kv.Value == e.Index)
+            {
+                OnStatChanged?.Invoke(kv.Key, _currentValues[e.Index]);
+                return;
+            }
+        }
+    }
+
+    // ── REGEN PASIVA (solo en servidor) ───────────────────────────────
     private void Update()
     {
-        if (Health != null && HealthRegen != null && Health.CurrentValue < Health.Max)
-            Health.Modify(HealthRegen.CurrentValue * Time.deltaTime);
+        if (!IsServer) return;
 
-        if (Stamina != null && StaminaRegen != null && Stamina.CurrentValue < Stamina.Max)
-            Stamina.Modify(StaminaRegen.CurrentValue * Time.deltaTime);
-
-        if (Mana != null && ManaRegen != null && Mana.CurrentValue < Mana.Max)
-            Mana.Modify(ManaRegen.CurrentValue * Time.deltaTime);
+        TryRegen("health", "healthRegen");
+        TryRegen("stamina", "staminaRegen");
+        TryRegen("mana", "manaRegen");
     }
 
-    public PlayerStat GetStat(string id)
+    private void TryRegen(string statId, string regenStatId)
     {
-        if (statsById == null) return null;
-        statsById.TryGetValue(id, out var stat);
-        return stat;
+        if (!_idToIndex.TryGetValue(statId, out int idx)) return;
+        if (!_idToIndex.TryGetValue(regenStatId, out int regenIdx)) return;
+
+        float current = _currentValues[idx];
+        float max = _maxValues[idx];
+        if (current >= max) return;
+
+        float regenPerSecond = _currentValues[regenIdx];
+        float newValue = Mathf.Min(current + regenPerSecond * Time.deltaTime, max);
+        _currentValues[idx] = newValue;
     }
 
-    // ── Sistema de tradeoff ───────────────────────────────────────────
-    public bool ApplyTradeoff(List<string> increaseIds, List<string> decreaseIds)
+    // ── MODIFICACIÓN DE STATS (autoritativo de servidor) ──────────────
+    /// <summary>
+    /// Modifica el currentValue de una stat. Solo se ejecuta en el servidor.
+    /// Si lo llama un cliente, se redirige automáticamente vía RPC.
+    /// </summary>
+    public void Modify(string statId, float amount)
     {
-        if (increaseIds == null) increaseIds = new List<string>();
-        if (decreaseIds == null) decreaseIds = new List<string>();
+        if (IsServer) Modify_Internal(statId, amount);
+        else ModifyServerRpc(statId, amount);
+    }
 
-        if (increaseIds.Count == 0 && decreaseIds.Count == 0) return false;
+    [ServerRpc(RequireOwnership = false)]
+    private void ModifyServerRpc(FixedString64Bytes statId, float amount)
+    {
+        Modify_Internal(statId.Value, amount);
+    }
 
-        int upgradeCost = 0;
-        foreach (var id in increaseIds)
+    private void Modify_Internal(string statId, float amount)
+    {
+        if (!_idToIndex.TryGetValue(statId, out int idx)) return;
+        float current = _currentValues[idx];
+        float max = _maxValues[idx];
+        _currentValues[idx] = Mathf.Clamp(current + amount, 0f, max);
+    }
+
+    /// <summary>Setea el currentValue directamente (autoritativo).</summary>
+    public void SetCurrentValue(string statId, float value)
+    {
+        if (IsServer) SetCurrent_Internal(statId, value);
+        else SetCurrentValueServerRpc(statId, value);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SetCurrentValueServerRpc(FixedString64Bytes statId, float value)
+    {
+        SetCurrent_Internal(statId.Value, value);
+    }
+
+    private void SetCurrent_Internal(string statId, float value)
+    {
+        if (!_idToIndex.TryGetValue(statId, out int idx)) return;
+        _currentValues[idx] = Mathf.Clamp(value, 0f, _maxValues[idx]);
+    }
+
+    // ── PUNTOS DE MEJORA (autoritativo) ───────────────────────────────
+    /// <summary>Añade puntos al pool. Llamado por checkpoints (en servidor).</summary>
+    public void AddUpgradePoints(int amount)
+    {
+        if (!IsServer)
         {
-            var s = GetStat(id);
-            if (s == null) { Debug.LogError($"[Tradeoff] Stat '{id}' no existe."); return false; }
-            if (s.Max + s.ValuePerPoint > s.HardMax) { Debug.LogWarning($"[Tradeoff] {s.Id} ya está al máximo."); return false; }
+            AddUpgradePointsServerRpc(amount);
+            return;
+        }
+        if (amount <= 0) return;
+        _upgradePoints.Value += amount;
+        _totalPointsEarned.Value += amount;
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void AddUpgradePointsServerRpc(int amount) => AddUpgradePoints(amount);
+
+    /// <summary>
+    /// Aplica un tradeoff. El cliente lo pide vía RPC, el servidor valida y aplica.
+    /// </summary>
+    public void RequestApplyTradeoff(string[] increaseIds, string[] decreaseIds)
+    {
+        // Convertir a FixedString para RPC
+        var inc = new NetworkArrayString(increaseIds);
+        var dec = new NetworkArrayString(decreaseIds);
+        ApplyTradeoffServerRpc(inc, dec);
+    }
+
+    [ServerRpc(RequireOwnership = true)]
+    private void ApplyTradeoffServerRpc(NetworkArrayString increaseIds, NetworkArrayString decreaseIds)
+    {
+        var incList = increaseIds.ToList();
+        var decList = decreaseIds.ToList();
+
+        // Validar costos
+        int upgradeCost = 0, downgradeValue = 0;
+
+        foreach (var id in incList)
+        {
+            if (!_statsById.TryGetValue(id, out var s)) return;
+            int idx = _idToIndex[id];
+            if (_maxValues[idx] + s.ValuePerPoint > s.HardMax) return;
             upgradeCost += s.UpgradeCost;
         }
-
-        int downgradeValue = 0;
-        foreach (var id in decreaseIds)
+        foreach (var id in decList)
         {
-            var s = GetStat(id);
-            if (s == null) { Debug.LogError($"[Tradeoff] Stat '{id}' no existe."); return false; }
-            if (s.Max - s.ValuePerPoint < s.Min) { Debug.LogWarning($"[Tradeoff] {s.Id} ya está al mínimo."); return false; }
+            if (!_statsById.TryGetValue(id, out var s)) return;
+            int idx = _idToIndex[id];
+            if (_maxValues[idx] - s.ValuePerPoint < s.MinValue) return;
             downgradeValue += s.DowngradeValue;
         }
 
-        int pointsNeeded = Mathf.Max(0, upgradeCost - downgradeValue);
-        if (pointsNeeded > _upgradePoints)
-        {
-            Debug.LogWarning($"[Tradeoff] Faltan puntos. Necesita {pointsNeeded}, tiene {_upgradePoints}.");
-            return false;
-        }
+        int needed = Mathf.Max(0, upgradeCost - downgradeValue);
+        if (needed > _upgradePoints.Value) return;
 
-        foreach (var id in decreaseIds) GetStat(id).RemovePoint();
-        foreach (var id in increaseIds) GetStat(id).AddPoint();
+        // Aplicar
+        foreach (var id in decList) RemovePoint_Internal(id);
+        foreach (var id in incList) AddPoint_Internal(id);
 
-        _upgradePoints -= pointsNeeded;
-        OnPointsChanged?.Invoke(_upgradePoints);
-        return true;
+        _upgradePoints.Value -= needed;
     }
 
-    public bool ApplyTradeoff(string increaseId, string decreaseId)
+    private void AddPoint_Internal(string id)
     {
-        var inc = increaseId != null ? new List<string> { increaseId } : new List<string>();
-        var dec = decreaseId != null ? new List<string> { decreaseId } : new List<string>();
-        return ApplyTradeoff(inc, dec);
+        if (!_idToIndex.TryGetValue(id, out int idx)) return;
+        var stat = _statsById[id];
+        float newMax = _maxValues[idx] + stat.ValuePerPoint;
+        if (newMax > stat.HardMax) return;
+        _maxValues[idx] = newMax;
+        _currentValues[idx] = newMax; // recargar al subir
+        _pointsAssigned[idx] = _pointsAssigned[idx] + 1;
     }
 
-    // ── Puntos ────────────────────────────────────────────────────────
-    public void AddUpgradePoints(int amount)
+    private void RemovePoint_Internal(string id)
     {
-        if (amount <= 0) return;
-        _upgradePoints += amount;
-        TotalPointsEarned += amount;
-        OnPointsChanged?.Invoke(_upgradePoints);
+        if (!_idToIndex.TryGetValue(id, out int idx)) return;
+        var stat = _statsById[id];
+        if (_pointsAssigned[idx] <= 0) return;
+        float newMax = _maxValues[idx] - stat.ValuePerPoint;
+        if (newMax < stat.MinValue) return;
+        _maxValues[idx] = newMax;
+        if (_currentValues[idx] > newMax) _currentValues[idx] = newMax;
+        _pointsAssigned[idx] = _pointsAssigned[idx] - 1;
     }
 
     /// <summary>
-    /// Resetea todas las stats al baseValue del ScriptableObject
-    /// y vacía el pool de puntos. Usado por Savesystem.ResetInPlace().
+    /// Sube un punto a una stat sin gastar upgradePoints. SOLO LLAMAR EN SERVIDOR
+    /// y solo para restaurar snapshot al reconectar un jugador.
     /// </summary>
-    public void ResetToDefaults()
+    public void RestorePointToStat(string id)
     {
-        InitializeStats();
-
-        if (statsById != null)
-        {
-            foreach (var stat in statsById.Values)
-                OnStatChanged?.Invoke(stat.Id, stat.CurrentValue);
-        }
-
-        OnPointsChanged?.Invoke(_upgradePoints);
+        if (!IsServer) return;
+        AddPoint_Internal(id);
     }
 
-    // ── Compatibilidad con PlayerController ───────────────────────────
+    /// <summary>
+    /// Restaura los puntos disponibles y total ganados desde un snapshot.
+    /// SOLO LLAMAR EN SERVIDOR.
+    /// </summary>
+    public void RestoreUpgradePoints(int available, int totalEarned)
+    {
+        if (!IsServer) return;
+        _upgradePoints.Value = available;
+        _totalPointsEarned.Value = totalEarned;
+    }
+
+    // ── HasResource: lectura local, sin RPC ───────────────────────────
     public bool HasResource(ResourceType type, float cost) => type switch
     {
-        ResourceType.Stamina => Stamina != null && Stamina.CurrentValue >= cost,
-        ResourceType.Mana => Mana != null && Mana.CurrentValue >= cost,
-        ResourceType.Health => Health != null && Health.CurrentValue >= cost,
+        ResourceType.Stamina => GetCurrentValue("stamina") >= cost,
+        ResourceType.Mana => GetCurrentValue("mana") >= cost,
+        ResourceType.Health => GetCurrentValue("health") >= cost,
         _ => true
     };
+}
 
-    // ── Guardado / Carga ──────────────────────────────────────────────
-    public PlayerStatsSaveData GetSaveData()
+// ─────────────────────────────────────────────────────────────────────
+// StatView: estructura ligera que imita la API antigua de PlayerStat.
+// Permite que el código existente siga escribiendo `Health.CurrentValue` en lugar de
+// `GetCurrentValue("health")`. Internamente solo enruta llamadas al PlayerStats.
+// ─────────────────────────────────────────────────────────────────────
+public readonly struct StatView
+{
+    private readonly PlayerStats _owner;
+    private readonly string _id;
+
+    public StatView(PlayerStats owner, string id) { _owner = owner; _id = id; }
+
+    public float CurrentValue => _owner.GetCurrentValue(_id);
+    public float Max => _owner.GetMaxValue(_id);
+    public int PointsAssigned => _owner.GetPointsAssigned(_id);
+
+    public void Modify(float amount) => _owner.Modify(_id, amount);
+    public void SetCurrentValue(float value) => _owner.SetCurrentValue(_id, value);
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Wrapper para enviar arrays de strings vía RPC (NGO no soporta string[] directamente).
+// ─────────────────────────────────────────────────────────────────────
+public struct NetworkArrayString : INetworkSerializable
+{
+    private FixedString64Bytes[] _items;
+
+    public NetworkArrayString(string[] strings)
     {
-        var save = new PlayerStatsSaveData
-        {
-            upgradePoints = _upgradePoints,
-            totalPointsEarned = TotalPointsEarned,
-            stats = new List<StatSaveEntry>()
-        };
-
-        foreach (var kv in statsById)
-        {
-            save.stats.Add(new StatSaveEntry
-            {
-                id = kv.Key,
-                pointsAssigned = kv.Value.PointsAssigned,
-                currentValue = kv.Value.CurrentValue
-            });
-        }
-        return save;
+        _items = new FixedString64Bytes[strings?.Length ?? 0];
+        if (strings != null)
+            for (int i = 0; i < strings.Length; i++) _items[i] = strings[i];
     }
 
-    public void LoadFromSaveData(PlayerStatsSaveData save)
+    public List<string> ToList()
     {
-        if (save == null) return;
+        var list = new List<string>();
+        if (_items != null)
+            foreach (var s in _items) list.Add(s.Value);
+        return list;
+    }
 
-        _upgradePoints = save.upgradePoints;
-        TotalPointsEarned = save.totalPointsEarned;
-
-        if (save.stats != null)
-        {
-            foreach (var entry in save.stats)
-            {
-                var stat = GetStat(entry.id);
-                stat?.LoadFromSave(entry.pointsAssigned, entry.currentValue);
-            }
-        }
-
-        OnPointsChanged?.Invoke(_upgradePoints);
+    public void NetworkSerialize<T>(BufferSerializer<T> s) where T : IReaderWriter
+    {
+        int len = _items?.Length ?? 0;
+        s.SerializeValue(ref len);
+        if (s.IsReader) _items = new FixedString64Bytes[len];
+        for (int i = 0; i < len; i++) s.SerializeValue(ref _items[i]);
     }
 }

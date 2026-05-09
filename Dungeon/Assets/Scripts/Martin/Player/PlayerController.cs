@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class PlayerController : NetworkBehaviour, IDamageable
 {
-
     //--> Variables
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 10f;
@@ -20,13 +19,13 @@ public class PlayerController : NetworkBehaviour, IDamageable
     [SerializeField] private float baseGravity = -9.81f;
     [SerializeField] private float fallGravityMultiplier = 2.5f;
     private float currentGravityMultiplier;
-    //[SerializeField] private float maxStamina;
 
     //-->Combat variables
     [Header("Combat")]
     [SerializeField] private bool isRange;
     [SerializeField] private BasicComboData basicComboData;
     [SerializeField] private BasicComboData airComboData;
+
     [Header("Variables for range")]
     [SerializeField] private Transform firePoint;
     [SerializeField] private ShootData shootData;
@@ -51,13 +50,12 @@ public class PlayerController : NetworkBehaviour, IDamageable
     [SerializeField] private Transform playerModel;
     [SerializeField] private LockOnTarget lockOnTarget;
     [SerializeField] private GameObject thirdCam;
-
     [SerializeField] private PlatformRider platformRider;
+    [SerializeField] private PlayerStats stats; // ← stats locales por jugador (NetworkBehaviour)
     public GameObject hitboxPrefab;
 
     public Rigidbody Rb => rb;
     public Transform PlayerModel => playerModel;
-
     public LockOnTarget LockTarget => lockOnTarget;
     public bool IsRange => isRange;
     public Transform FirePoint => firePoint;
@@ -65,20 +63,16 @@ public class PlayerController : NetworkBehaviour, IDamageable
     public BasicComboData ComboData => basicComboData;
     public BasicComboData AirComboData => airComboData;
     public ShootData ShootData => shootData;
-
     public float FallGravityMultiplier => fallGravityMultiplier;
+    public PlayerStats Stats => stats;
 
-    //--> make data accesible to other scripts that has acces to this one.
-
-    //--> ESTADISTICAS (todas leen de PlayerStats.Instance)
-    public float MaxHealth => PlayerStats.Instance.Health.Max;
-    public float CurrentHealth => PlayerStats.Instance.Health.CurrentValue;
-
-    public float CurrentStamina => PlayerStats.Instance.Stamina.CurrentValue;
-    public float MaxStamina => PlayerStats.Instance.Stamina.Max;
-
-    public float MaxMana => PlayerStats.Instance.Mana.Max;
-    public float CurrentMana => PlayerStats.Instance.Mana.CurrentValue;
+    //--> ESTADISTICAS (todas leen del componente local)
+    public float MaxHealth => stats.Health.Max;
+    public float CurrentHealth => stats.Health.CurrentValue;
+    public float CurrentStamina => stats.Stamina.CurrentValue;
+    public float MaxStamina => stats.Stamina.Max;
+    public float MaxMana => stats.Mana.Max;
+    public float CurrentMana => stats.Mana.CurrentValue;
 
     public float DashDistance => dashDistance;
     public float DashDuration => dashDuration;
@@ -103,21 +97,27 @@ public class PlayerController : NetworkBehaviour, IDamageable
     public override void OnNetworkSpawn()
     {
         if (rb == null) rb = GetComponent<Rigidbody>();
-
         if (input == null) input = GetComponent<PlayerInputHandler>();
-
         if (lockOnTarget == null) lockOnTarget = GetComponent<LockOnTarget>();
-
         if (platformRider == null) platformRider = GetComponent<PlatformRider>();
+        if (stats == null) stats = GetComponent<PlayerStats>();
 
-        if (!IsOwner)
+        // Cámara y registro de player local: solo para el dueño del cliente
+        if (IsOwner)
         {
-            thirdCam.SetActive(false);
+            if (thirdCam != null) thirdCam.SetActive(true);
+            LocalPlayer.RegisterLocalPlayer(this);
         }
         else
         {
-            thirdCam.SetActive(true);
+            if (thirdCam != null) thirdCam.SetActive(false);
         }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (IsOwner)
+            LocalPlayer.UnregisterLocalPlayer();
     }
 
     private void Awake()
@@ -138,9 +138,6 @@ public class PlayerController : NetworkBehaviour, IDamageable
         skill_State = new PlayerSkill(this);
 
         skillsCooldown = new float[skills.Length];
-
-        // NOTA: No inicializamos vida/mana aquí.
-        // PlayerStats.Instance ya lo hace con los baseValue del ScriptableObject.
     }
 
     private void Start()
@@ -155,51 +152,50 @@ public class PlayerController : NetworkBehaviour, IDamageable
     {
         if (!IsOwner) return;
 
-        // Chequeo de muerte: usa la propiedad correcta y solo dispara una vez
+        // Chequeo de muerte: solo se dispara una vez gracias al flag isDead
         if (!isDead && CurrentHealth <= 0)
         {
-            Destroy(gameObject);
             Die();
         }
 
-        CheckGround();
-        GetViewPoint();
-        movementSM.Update();
-        actionSM.Update();
+        if (!isDead)
+        {
+            CheckGround();
+            GetViewPoint();
+            movementSM.Update();
+            actionSM.Update();
+        }
 
         for (int i = 0; i < skillsCooldown.Length; i++)
         {
             if (skillsCooldown[i] > 0)
-            {
                 skillsCooldown[i] -= Time.deltaTime;
-            }
         }
     }
 
     private void FixedUpdate()
     {
         if (!IsOwner) return;
+        if (isDead) return;
 
         if (!isPerformingAction)
         {
             rb.AddForce(Vector3.up * baseGravity * currentGravityMultiplier, ForceMode.Acceleration);
             Movement();
         }
+
         if (blockVelocity)
-        {
-            rb.linearVelocity = new Vector3(0, 0, 0);
-        }
+            rb.linearVelocity = Vector3.zero;
 
         movementSM.FixedUpdate();
         actionSM.FixedUpdate();
     }
-    // ── State Machine ──────────────────────────────────────────────────────
 
+    // ── State Machine ──────────────────────────────────────────────────────
     public void ChangeState(PlayerStates nextState) => movementSM.ChangeState(nextState);
     public void ChangeActionState(PlayerStates nextState) => actionSM.ChangeState(nextState);
 
     // ── Movement ──────────────────────────────────────────────────────
-
     private void Movement()
     {
         Vector2 inputDir = input.moveInput.normalized;
@@ -213,7 +209,6 @@ public class PlayerController : NetworkBehaviour, IDamageable
         camRight.Normalize();
 
         Vector3 moveDir = camForward * inputDir.y + camRight * inputDir.x;
-
         Vector3 velocity = moveDir * moveSpeed * moveMultiplier;
         velocity.y = rb.linearVelocity.y;
 
@@ -221,13 +216,10 @@ public class PlayerController : NetworkBehaviour, IDamageable
         {
             velocity.x += platformRider.CurrentPlatformVelocity.x;
             velocity.z += platformRider.CurrentPlatformVelocity.z;
-            // ascensor
-            // velocity.y += platformRider.CurrentPlatformVelocity.y;
             // velocity.y += platformRider.CurrentPlatformVelocity.y; // ascensor
         }
 
         rb.linearVelocity = velocity;
-
         HandleRotation(moveDir);
     }
 
@@ -243,16 +235,13 @@ public class PlayerController : NetworkBehaviour, IDamageable
         rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
     }
 
-
     // ── Stamina ──────────────────────────────────────────────────────
-    public bool HasStamina(float cost) => PlayerStats.Instance.Stamina.CurrentValue >= cost;
-    public void ConsumeStamina(float cost) => PlayerStats.Instance.Stamina.Modify(-cost);
-
+    public bool HasStamina(float cost) => stats.Stamina.CurrentValue >= cost;
+    public void ConsumeStamina(float cost) => stats.Stamina.Modify(-cost);
 
     // ── Mana ─────────────────────────────────────────────────────────
-    public bool HasMana(float cost) => PlayerStats.Instance.Mana.CurrentValue >= cost;
-    public void ConsumeMana(float cost) => PlayerStats.Instance.Mana.Modify(-cost);
-
+    public bool HasMana(float cost) => stats.Mana.CurrentValue >= cost;
+    public void ConsumeMana(float cost) => stats.Mana.Modify(-cost);
 
     // ── Health ───────────────────────────────────────────────────────
     public bool IsAlive => CurrentHealth > 0;
@@ -261,34 +250,27 @@ public class PlayerController : NetworkBehaviour, IDamageable
     public void Heal(float amount)
     {
         if (isDead) return;
-        PlayerStats.Instance.Health.Modify(amount);
+        stats.Health.Modify(amount);
     }
 
     void HandleRotation(Vector3 moveDir)
     {
         Vector3 lookDir;
 
-        if (input.isAiming || lockOnTarget.isTargeting)
+        if (input.isAiming || (lockOnTarget != null && lockOnTarget.isTargeting))
         {
-            lookDir = Camera.main.transform.forward; // Usa la referencia 'mainCamera' que ya tienes en tu script
             lookDir = Camera.main.transform.forward;
             lookDir.y = 0;
             lookDir.Normalize();
         }
         else
         {
-            if (moveDir.magnitude < 0.1f)
-            {
-                return;
-            }
-
             if (moveDir.magnitude < 0.1f) return;
             lookDir = moveDir;
         }
 
         Quaternion targetRotation = Quaternion.LookRotation(lookDir);
         playerModel.rotation = Quaternion.Slerp(playerModel.rotation, targetRotation, rotSpeed * Time.deltaTime);
-
     }
 
     private void CheckGround()
@@ -296,49 +278,36 @@ public class PlayerController : NetworkBehaviour, IDamageable
         bool previous = isGrounded;
         isGrounded = Physics.Raycast(groundCheck.position, Vector3.down, 1.1f, whatIsGround);
 
-        if(!previous && isGrounded)
         if (!previous && isGrounded)
-        {
             hasUsedAirAttack = false;
-        }
     }
 
     public Vector3 GetViewPoint()
     {
-
-        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width/2, Screen.height/2, 0));
+        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
 
         if (Physics.Raycast(ray, out RaycastHit hit, 100f))
         {
             Debug.DrawRay(ray.origin, ray.direction * hit.distance, Color.green);
             Debug.DrawLine(hit.point, hit.point + Vector3.up * 0.5f, Color.blue);
-
             return hit.point;
-
         }
 
         Debug.DrawRay(ray.origin, ray.direction * 100f, Color.red);
-
-        return ray.origin + ray.direction * 100; 
+        return ray.origin + ray.direction * 100;
     }
 
     public Vector3 GetAimPoint(float maxRange, LayerMask groundLayer)
     {
         Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f));
 
-        Vector3 origin = ray.origin;
-        Vector3 dir = ray.direction;
-
         if (Physics.Raycast(ray, out RaycastHit hit, maxRange, groundLayer))
-        {
             return hit.point;
-        }
 
-        return origin + dir * maxRange;
+        return ray.origin + ray.direction * maxRange;
     }
 
     // ── Melee Request ──────────────────────────────────────────────────────
-
     public void RequestMeleeAttack(int comboIndex, bool isGrounded)
     {
         MeleeAttackServerRpc(comboIndex, isGrounded);
@@ -347,32 +316,32 @@ public class PlayerController : NetworkBehaviour, IDamageable
     [ServerRpc]
     private void MeleeAttackServerRpc(int comboIndex, bool isGrounded)
     {
-        AttackSteps attack = isGrounded? ComboData.attackSteps[comboIndex] : airComboData.attackSteps[comboIndex];
+        AttackSteps attack = isGrounded ? ComboData.attackSteps[comboIndex] : airComboData.attackSteps[comboIndex];
 
-        Vector3 center = PlayerModel.transform.position + PlayerModel.transform.forward * attack.hitBoxOffSet.z + Vector3.up * attack.hitBoxOffSet.y;
+        Vector3 center = PlayerModel.transform.position
+                       + PlayerModel.transform.forward * attack.hitBoxOffSet.z
+                       + Vector3.up * attack.hitBoxOffSet.y;
 
         Collider[] hits = Physics.OverlapBox(center, attack.hitBoxSize * 0.5f, PlayerModel.transform.rotation);
-
-        //ShowHitbox(center, attack.hitBoxSize, PlayerModel.transform.rotation);
 
         foreach (var hit in hits)
         {
             if (hit.CompareTag("Enemy"))
             {
-                Debug.Log($"Hit Enemy: {hit.name}");
-
-                //Add damage logic
-
                 IDamageable damageable = hit.GetComponent<IDamageable>();
-
                 if (damageable != null)
                 {
                     Vector3 hitDir = PlayerModel.transform.forward;
-
-                    damageable.TakeDamage(10f * attack.hitData.damageMultiplier, attack.hitData.throwType, hitDir, attack.hitData.stunDuration, attack.hitData.keepInAir, attack.hitData.airLiftForce, attack.hitData.staggerCharge);
+                    damageable.TakeDamage(
+                        10f * attack.hitData.damageMultiplier,
+                        attack.hitData.throwType,
+                        hitDir,
+                        attack.hitData.stunDuration,
+                        attack.hitData.keepInAir,
+                        attack.hitData.airLiftForce,
+                        attack.hitData.staggerCharge);
                 }
-
-                Debug.Log($"HIT {hit.name}");
+                Debug.Log($"[Server] Player {OwnerClientId} hit {hit.name}");
             }
         }
 
@@ -389,27 +358,20 @@ public class PlayerController : NetworkBehaviour, IDamageable
     private void ShootServerRpc(Vector3 shootPos, Vector3 dir)
     {
         GameObject prefab = GameObject.Instantiate(ShootData.proyectilePrefab, FirePoint.position, Quaternion.LookRotation(dir));
-
         prefab.GetComponent<NetworkObject>().Spawn();
 
         PlayerProyectile proyectile = prefab.GetComponent<PlayerProyectile>();
-
         if (proyectile != null)
-        {
             proyectile.Initialize(10, ShootData.hitData, dir, ShootData.proyectileSpeed, Vector3.zero);
-        }
     }
 
     // ── Skill Request ──────────────────────────────────────────────────────
-
     public void RequestSkill(int skillIndex, Vector3 targetPoint)
     {
         Vector3 lockTargetPos = Vector3.zero;
 
         if (lockOnTarget != null && lockOnTarget.isTargeting && lockOnTarget.CurrentTarget != null)
-        {
             lockTargetPos = lockOnTarget.CurrentTarget.position;
-        }
 
         UseSkillServerRpc(skillIndex, targetPoint, lockTargetPos);
     }
@@ -420,39 +382,27 @@ public class PlayerController : NetworkBehaviour, IDamageable
         if (skillIndex < 0 || skillIndex >= skills.Length) return;
 
         Skill skill = skills[skillIndex];
-
-        if ( skill == null) return;
+        if (skill == null) return;
 
         skill.ServerExecute(this, targetPoint, lockTargetPos);
     }
 
-
     //---SECTION RELATED TO SKILLS---
     public Skill GetSkill(int index)
     {
-        if (index < 0 || index >= skills.Length)
-        {
-            return null;
-        }
         if (index < 0 || index >= skills.Length) return null;
         return skills[index];
     }
 
-    public bool HasResource(ResourceType type, float cost) => type switch
-    {
-        ResourceType.Stamina => PlayerStats.Instance.Stamina.CurrentValue >= cost,
-        ResourceType.Mana => PlayerStats.Instance.Mana.CurrentValue >= cost,
-        ResourceType.Health => PlayerStats.Instance.Health.CurrentValue >= cost,
-        _ => true
-    };
+    public bool HasResource(ResourceType type, float cost) => stats.HasResource(type, cost);
 
     public void ConsumeResource(ResourceType type, float cost)
     {
         switch (type)
         {
-            case ResourceType.Stamina: PlayerStats.Instance.Stamina.Modify(-cost); break;
-            case ResourceType.Mana: PlayerStats.Instance.Mana.Modify(-cost); break;
-            case ResourceType.Health: PlayerStats.Instance.Health.Modify(-cost); break;
+            case ResourceType.Stamina: stats.Stamina.Modify(-cost); break;
+            case ResourceType.Mana: stats.Mana.Modify(-cost); break;
+            case ResourceType.Health: stats.Health.Modify(-cost); break;
         }
     }
 
@@ -464,60 +414,64 @@ public class PlayerController : NetworkBehaviour, IDamageable
     public void ShowHitboxClientRpc(Vector3 center, Vector3 size, Quaternion rot)
     {
         GameObject box = GameObject.Instantiate(hitboxPrefab, center, rot);
-
         box.transform.localScale = size;
-
         Destroy(box, 0.2f);
     }
 
     public GameObject ShowHitboxPersistent(Vector3 center, Vector3 size, Quaternion rot, GameObject debugBox)
     {
-        if (debugBox == null)
-        {
-            debugBox = Instantiate(hitboxPrefab);
-        }
-
+        if (debugBox == null) debugBox = Instantiate(hitboxPrefab);
         debugBox.transform.SetPositionAndRotation(center, rot);
         debugBox.transform.localScale = size;
-
         return debugBox;
     }
 
-    public void SetGravityMultiplier(float value)
-    {
-        currentGravityMultiplier = value;
-    }
+    public void SetGravityMultiplier(float value) => currentGravityMultiplier = value;
 
     // ── Daño y muerte ───────────────────────────────────────────────
+    /// <summary>
+    /// Aplicar daño al player. Si llega desde un cliente, se redirige al servidor
+    /// para que sea autoritativo. Si lo llama el servidor (enemigo NPC), se aplica directo.
+    /// </summary>
     public void TakeDamage(float damage, ThrowType throwType, Vector3 hitDir, float stunDuration, bool keepOnAir, float airLift, float staggerBuild)
     {
         if (isDead) return;
 
-        // Modifica la stat de vida. Se clampea a [0, Max] automáticamente.
-        PlayerStats.Instance.Health.Modify(-damage);
+        if (IsServer)
+        {
+            stats.Health.Modify(-damage);
+            Debug.Log($"[Server] Player {OwnerClientId} recibió {damage} daño. Vida: {CurrentHealth}/{MaxHealth}");
+        }
+        else
+        {
+            TakeDamageServerRpc(damage);
+        }
+    }
 
-        Debug.Log($"Player recibió {damage} de daño. Vida actual: {CurrentHealth}/{MaxHealth}");
-
-        // El chequeo de muerte ocurre en Update() para no disparar aquí lógica pesada.
+    [ServerRpc(RequireOwnership = false)]
+    private void TakeDamageServerRpc(float damage)
+    {
+        if (isDead) return;
+        stats.Health.Modify(-damage);
+        Debug.Log($"[Server] Player {OwnerClientId} recibió {damage} daño (vía RPC). Vida: {CurrentHealth}/{MaxHealth}");
     }
 
     /// <summary>Se llama UNA VEZ cuando la vida llega a 0.</summary>
     private void Die()
     {
         isDead = true;
-        Debug.Log("Player ha muerto");
+        Debug.Log($"[Player] {OwnerClientId} ha muerto");
 
-        // Opciones de qué hacer aquí (elige según tu juego):
-        // 1. Respawn en el último checkpoint
-        // 2. Pantalla de game over
-        // 3. Cargar la última partida guardada
-        // De momento solo lo marcamos como muerto para no destruirlo.
+        // Detener velocidad para que no siga moviéndose tras morir
+        if (rb != null) rb.linearVelocity = Vector3.zero;
 
-        // Ejemplo: respawn en último checkpoint si existe
+        // Respawn en último checkpoint si existe
         if (CheckpointManager.Instance != null && CheckpointManager.Instance.activeCheckpoint != null)
         {
             Respawn();
         }
+        // Si no hay checkpoint, el player queda muerto y el sistema decidirá qué hacer
+        // (pantalla de game over, espectador, etc.)
     }
 
     /// <summary>Resetea al jugador al último checkpoint activo.</summary>
@@ -530,13 +484,27 @@ public class PlayerController : NetworkBehaviour, IDamageable
             return;
         }
 
-        // Teletransportar al spawn point
-        transform.position = cp.spawnPoint.position;
-        rb.linearVelocity = Vector3.zero;
-
-        // Restaurar vida al máximo
-        PlayerStats.Instance.Health.SetCurrentValue(MaxHealth);
+        // En multiplayer la teletransportación de la posición debe ser autoritativa.
+        // Si soy owner del Player, pido al servidor que me mueva.
+        if (IsServer)
+        {
+            transform.position = cp.spawnPoint.position;
+            if (rb != null) rb.linearVelocity = Vector3.zero;
+            stats.Health.SetCurrentValue(MaxHealth);
+        }
+        else
+        {
+            RespawnServerRpc(cp.spawnPoint.position);
+        }
 
         isDead = false;
+    }
+
+    [ServerRpc(RequireOwnership = true)]
+    private void RespawnServerRpc(Vector3 spawnPos)
+    {
+        transform.position = spawnPos;
+        if (rb != null) rb.linearVelocity = Vector3.zero;
+        stats.Health.SetCurrentValue(MaxHealth);
     }
 }
