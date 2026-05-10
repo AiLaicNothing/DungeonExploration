@@ -2,8 +2,9 @@ using TMPro;
 using UnityEngine;
 
 /// <summary>
-/// HUD que muestra HP/Stamina/Mana del player LOCAL (el del cliente actual).
-/// Se conecta automáticamente al PlayerController local cuando spawnea.
+/// HUD que muestra HP/Stamina/Mana del player LOCAL.
+/// Se conecta automáticamente al PlayerController local cuando spawnea
+/// y espera a que las stats estén sincronizadas antes de mostrar valores.
 /// </summary>
 public class ShowValue : MonoBehaviour
 {
@@ -16,42 +17,55 @@ public class ShowValue : MonoBehaviour
 
     void OnEnable()
     {
-        // Si el player ya existe (UI tardía), nos conectamos ya. Si no, esperamos al evento.
         LocalPlayer.SubscribeOrInvokeIfReady(OnLocalPlayerReady);
     }
 
     void OnDisable()
     {
         LocalPlayer.Unsubscribe(OnLocalPlayerReady);
-
-        if (_player != null && _player.Stats != null)
-            _player.Stats.OnStatChanged -= HandleStatChanged;
-
+        UnsubscribeFromStats();
         _player = null;
     }
 
     private void OnLocalPlayerReady(PlayerController controller)
     {
+        UnsubscribeFromStats();
         _player = controller;
 
-        // Suscribirse a los cambios del NetworkVariable. Cada vez que el servidor
-        // modifica una stat, los clientes reciben el cambio y disparan este evento.
-        _player.Stats.OnStatChanged += HandleStatChanged;
+        if (_player.Stats == null)
+        {
+            Debug.LogWarning("[ShowValue] PlayerController sin Stats asignados.");
+            return;
+        }
 
-        // Refresco inicial
+        // Esperar a que las stats estén sincronizadas antes de leer
+        _player.Stats.SubscribeOrInvokeWhenReady(OnStatsReady);
+    }
+
+    private void OnStatsReady()
+    {
+        if (_player == null || _player.Stats == null) return;
+
+        _player.Stats.OnStatChanged += HandleStatChanged;
         UpdateAll();
+    }
+
+    private void UnsubscribeFromStats()
+    {
+        if (_player != null && _player.Stats != null)
+            _player.Stats.OnStatChanged -= HandleStatChanged;
     }
 
     private void HandleStatChanged(string id, float value)
     {
-        // Solo nos interesan estas 3 para el HUD
         if (id == "health" || id == "stamina" || id == "mana")
             UpdateAll();
     }
 
     private void UpdateAll()
     {
-        if (_player == null) return;
+        if (_player == null || _player.Stats == null) return;
+        if (!_player.Stats.IsStatsReady) return;
 
         if (hpText != null)
             hpText.text = $"HP: {_player.CurrentHealth:F0} / {_player.MaxHealth:F0}";

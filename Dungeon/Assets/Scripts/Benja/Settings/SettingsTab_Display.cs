@@ -1,82 +1,87 @@
-using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
+using System.Collections.Generic;
 
+/// <summary>
+/// Tab de Display: resolución, ventana, vsync, calidad URP, FPS objetivo.
+/// Lee y escribe a SettingsManager.Instance.
+/// </summary>
 public class SettingsTab_Display : MonoBehaviour
 {
-    [Header("Resolución")]
+    [Header("UI")]
     [SerializeField] private TMP_Dropdown resolutionDropdown;
     [SerializeField] private Toggle fullscreenToggle;
-
-    [Header("Calidad")]
     [SerializeField] private Toggle vsyncToggle;
     [SerializeField] private TMP_Dropdown qualityDropdown;
-
-    [Header("FPS")]
-    [SerializeField] private TMP_Dropdown fpsLimitDropdown;
-    // Opciones del dropdown FPS (orden importa): -1=ilimitado, 30, 60, 120, 144
-    private readonly int[] _fpsOptions = { -1, 30, 60, 120, 144 };
+    [SerializeField] private TMP_Dropdown fpsDropdown;
 
     void OnEnable()
     {
         if (SettingsManager.Instance == null) return;
 
-        SetupResolutionDropdown();
-        SetupQualityDropdown();
-        SetupFPSDropdown();
-
-        fullscreenToggle.SetIsOnWithoutNotify(SettingsManager.Instance.Fullscreen);
-        vsyncToggle.SetIsOnWithoutNotify(SettingsManager.Instance.VSync);
-
-        fullscreenToggle.onValueChanged.AddListener(v => SettingsManager.Instance.Fullscreen = v);
-        vsyncToggle.onValueChanged.AddListener(v => SettingsManager.Instance.VSync = v);
+        SetupResolution();
+        SetupFullscreen();
+        SetupVsync();
+        SetupQuality();
+        SetupFps();
     }
 
-    void OnDisable()
+    private void SetupResolution()
     {
-        fullscreenToggle.onValueChanged.RemoveAllListeners();
-        vsyncToggle.onValueChanged.RemoveAllListeners();
-        resolutionDropdown.onValueChanged.RemoveAllListeners();
-        qualityDropdown.onValueChanged.RemoveAllListeners();
-        fpsLimitDropdown.onValueChanged.RemoveAllListeners();
-    }
+        if (resolutionDropdown == null) return;
 
-    private void SetupResolutionDropdown()
-    {
-        resolutionDropdown.ClearOptions();
         var resolutions = SettingsManager.Instance.AvailableResolutions;
+        resolutionDropdown.ClearOptions();
+
         var options = new List<string>();
         for (int i = 0; i < resolutions.Length; i++)
         {
             var r = resolutions[i];
-            options.Add($"{r.width} x {r.height} @ {r.refreshRateRatio.value:F0}Hz");
+            options.Add($"{r.width} x {r.height} @ {Mathf.RoundToInt((float)r.refreshRateRatio.value)}Hz");
         }
         resolutionDropdown.AddOptions(options);
-        resolutionDropdown.SetValueWithoutNotify(SettingsManager.Instance.ResolutionIndex);
+        resolutionDropdown.value = SettingsManager.Instance.ResolutionIndex;
+        resolutionDropdown.onValueChanged.RemoveAllListeners();
         resolutionDropdown.onValueChanged.AddListener(v => SettingsManager.Instance.ResolutionIndex = v);
     }
 
-    private void SetupQualityDropdown()
+    private void SetupFullscreen()
     {
+        if (fullscreenToggle == null) return;
+        fullscreenToggle.isOn = SettingsManager.Instance.Fullscreen;
+        fullscreenToggle.onValueChanged.RemoveAllListeners();
+        fullscreenToggle.onValueChanged.AddListener(v => SettingsManager.Instance.Fullscreen = v);
+    }
+
+    private void SetupVsync()
+    {
+        if (vsyncToggle == null) return;
+        vsyncToggle.isOn = SettingsManager.Instance.VSync;
+        vsyncToggle.onValueChanged.RemoveAllListeners();
+        vsyncToggle.onValueChanged.AddListener(v => SettingsManager.Instance.VSync = v);
+    }
+
+    private void SetupQuality()
+    {
+        if (qualityDropdown == null) return;
         qualityDropdown.ClearOptions();
         qualityDropdown.AddOptions(new List<string>(QualitySettings.names));
-        qualityDropdown.SetValueWithoutNotify(SettingsManager.Instance.QualityLevel);
+        qualityDropdown.value = SettingsManager.Instance.QualityLevel;
+        qualityDropdown.onValueChanged.RemoveAllListeners();
         qualityDropdown.onValueChanged.AddListener(v => SettingsManager.Instance.QualityLevel = v);
     }
 
-    private void SetupFPSDropdown()
+    private void SetupFps()
     {
-        fpsLimitDropdown.ClearOptions();
-        var labels = new List<string>();
-        foreach (int fps in _fpsOptions)
-            labels.Add(fps == -1 ? "Ilimitado" : fps.ToString());
-        fpsLimitDropdown.AddOptions(labels);
-
-        int currentFps = SettingsManager.Instance.FPSLimit;
-        int idx = System.Array.IndexOf(_fpsOptions, currentFps);
-        if (idx < 0) idx = 0;
-        fpsLimitDropdown.SetValueWithoutNotify(idx);
-        fpsLimitDropdown.onValueChanged.AddListener(v => SettingsManager.Instance.FPSLimit = _fpsOptions[v]);
+        if (fpsDropdown == null) return;
+        fpsDropdown.ClearOptions();
+        fpsDropdown.AddOptions(new List<string> { "30", "60", "120", "144", "Ilimitado" });
+        fpsDropdown.value = FpsToIndex(SettingsManager.Instance.FPSLimit);
+        fpsDropdown.onValueChanged.RemoveAllListeners();
+        fpsDropdown.onValueChanged.AddListener(v => SettingsManager.Instance.FPSLimit = IndexToFps(v));
     }
+
+    private int FpsToIndex(int fps) => fps switch { 30 => 0, 60 => 1, 120 => 2, 144 => 3, _ => 4 };
+    private int IndexToFps(int idx) => idx switch { 0 => 30, 1 => 60, 2 => 120, 3 => 144, _ => -1 };
 }

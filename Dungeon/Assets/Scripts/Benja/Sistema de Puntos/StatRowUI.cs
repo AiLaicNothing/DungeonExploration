@@ -86,9 +86,18 @@ public class StatRowUI : MonoBehaviour
 
     private void OnLocalPlayerReady(PlayerController controller)
     {
-        _stats = controller.Stats;
-        _stats.OnStatChanged += HandleStatChanged;
+        if (controller.Stats == null) return;
 
+        _stats = controller.Stats;
+
+        // Esperar a que las stats estén sincronizadas
+        _stats.SubscribeOrInvokeWhenReady(OnStatsReady);
+    }
+
+    private void OnStatsReady()
+    {
+        if (_stats == null) return;
+        _stats.OnStatChanged += HandleStatChanged;
         Refresh();
     }
 

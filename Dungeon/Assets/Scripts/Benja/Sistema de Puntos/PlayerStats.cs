@@ -49,9 +49,55 @@ public class PlayerStats : NetworkBehaviour
     public int upgradePoints => _upgradePoints.Value; // alias lowercase para compatibilidad
     public int TotalPointsEarned => _totalPointsEarned.Value;
 
-    public float GetCurrentValue(string id) => _idToIndex.TryGetValue(id, out int i) ? _currentValues[i] : 0f;
-    public float GetMaxValue(string id) => _idToIndex.TryGetValue(id, out int i) ? _maxValues[i] : 0f;
-    public int GetPointsAssigned(string id) => _idToIndex.TryGetValue(id, out int i) ? _pointsAssigned[i] : 0;
+    /// <summary>
+    /// True cuando las NetworkList de stats están sincronizadas con el servidor.
+    /// En el servidor, esto es true tras OnNetworkSpawn.
+    /// En el cliente, esto se vuelve true cuando llegan los datos iniciales.
+    /// </summary>
+    public bool IsStatsReady => _currentValues != null
+                              && _currentValues.Count > 0
+                              && _currentValues.Count == _maxValues.Count
+                              && _currentValues.Count == data.stats.Count;
+
+    /// <summary>
+    /// Disparado cuando las stats están listas para ser leídas.
+    /// Útil para UIs que se inicializan al spawnear el player.
+    /// Si ya están listas cuando te suscribes, se invoca inmediatamente.
+    /// </summary>
+    public event Action OnStatsReady;
+    private bool _statsReadyFired = false;
+
+    public float GetCurrentValue(string id)
+    {
+        if (!_idToIndex.TryGetValue(id, out int i)) return 0f;
+        if (i < 0 || i >= _currentValues.Count) return 0f; // listas aún sin sincronizar
+        return _currentValues[i];
+    }
+
+    public float GetMaxValue(string id)
+    {
+        if (!_idToIndex.TryGetValue(id, out int i)) return 0f;
+        if (i < 0 || i >= _maxValues.Count) return 0f;
+        return _maxValues[i];
+    }
+
+    public int GetPointsAssigned(string id)
+    {
+        if (!_idToIndex.TryGetValue(id, out int i)) return 0;
+        if (i < 0 || i >= _pointsAssigned.Count) return 0;
+        return _pointsAssigned[i];
+    }
+
+    /// <summary>
+    /// Suscribe un callback al evento OnStatsReady, o lo invoca inmediatamente
+    /// si las stats ya están listas. Patrón parecido al de LocalPlayer.SubscribeOrInvokeIfReady.
+    /// </summary>
+    public void SubscribeOrInvokeWhenReady(Action callback)
+    {
+        if (callback == null) return;
+        OnStatsReady += callback;
+        if (IsStatsReady) callback();
+    }
 
     // ── Atajos al estilo del singleton anterior ───────────────────────
     public StatView Health => new StatView(this, "health");
@@ -96,12 +142,30 @@ public class PlayerStats : NetworkBehaviour
         _currentValues.OnListChanged += OnCurrentValuesListChanged;
         _maxValues.OnListChanged += OnMaxValuesListChanged;
         _upgradePoints.OnValueChanged += (oldV, newV) => OnPointsChanged?.Invoke(newV);
+
+        // Si ya está listo (caso del servidor: acaba de llenar las listas), disparar el evento
+        TryFireStatsReady();
     }
 
     public override void OnNetworkDespawn()
     {
         _currentValues.OnListChanged -= OnCurrentValuesListChanged;
         _maxValues.OnListChanged -= OnMaxValuesListChanged;
+        _statsReadyFired = false;
+    }
+
+    /// <summary>
+    /// Dispara OnStatsReady la primera vez que detectamos las listas pobladas.
+    /// Se llama desde OnNetworkSpawn (servidor) y desde los OnListChanged (cliente).
+    /// </summary>
+    private void TryFireStatsReady()
+    {
+        if (_statsReadyFired) return;
+        if (!IsStatsReady) return;
+
+        _statsReadyFired = true;
+        Debug.Log($"[PlayerStats] Stats listas (cliente {NetworkManager.Singleton.LocalClientId}, owner {OwnerClientId})");
+        OnStatsReady?.Invoke();
     }
 
     private void BuildLocalConfig()
@@ -124,6 +188,9 @@ public class PlayerStats : NetworkBehaviour
 
     private void OnCurrentValuesListChanged(NetworkListEvent<float> e)
     {
+        // Cualquier cambio en la lista (incluido el primer poblado) puede significar que ya estamos listos
+        TryFireStatsReady();
+
         if (e.Type != NetworkListEvent<float>.EventType.Value) return;
         // Buscamos el ID por índice para emitir el evento
         foreach (var kv in _idToIndex)

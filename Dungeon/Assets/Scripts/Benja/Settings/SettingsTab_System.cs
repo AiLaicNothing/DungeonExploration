@@ -2,122 +2,114 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 /// <summary>
-/// Tab de "Sistema" del menú de pausa. En multiplayer:
-///   - Reiniciar escena → solo permitido si estás solo (host sin clientes)
-///   - Salir al menú → siempre permitido (sale de la sesión actual)
-///   - Salir del juego → cierra la app
-///   - Reset settings → resetea las opciones (volumen, FOV, etc.)
-///
-/// El botón "borrar progreso" se reubica en el menú principal (ResetProgressButton),
-/// no aquí — borrar datos en mitad de una partida no tiene sentido.
+/// Tab "Sistema" del menú. En multiplayer:
+///   - NO hay "borrar progreso" (eso solo en el menú principal)
+///   - NO hay "reiniciar escena" para clientes (rompería la sesión)
+///   - SÍ hay "salir de la sala" — vuelve al menú principal limpiamente
+///   - SÍ hay "reset settings" — devuelve las opciones a sus defaults
+///   - SÍ hay "salir del juego" — cierra la app
 /// </summary>
 public class SettingsTab_System : MonoBehaviour
 {
     [Header("Botones")]
-    [SerializeField] private Button restartSceneButton;
-    [SerializeField] private Button leaveSessionButton;     // ← reemplaza al de "borrar progreso"
+    [SerializeField] private Button leaveSessionButton;
     [SerializeField] private Button quitGameButton;
     [SerializeField] private Button resetSettingsButton;
 
-    [Header("Confirmación de salir")]
-    [SerializeField] private GameObject confirmLeavePanel;
-    [SerializeField] private Button confirmLeaveYesButton;
-    [SerializeField] private Button confirmLeaveNoButton;
+    [Header("Confirmación")]
+    [SerializeField] private GameObject confirmPanel;
+    [SerializeField] private TMP_Text confirmText;
+    [SerializeField] private Button confirmYesButton;
+    [SerializeField] private Button confirmNoButton;
+
+    private System.Action _pendingAction;
 
     void OnEnable()
     {
-        if (confirmLeavePanel != null) confirmLeavePanel.SetActive(false);
+        if (confirmPanel != null) confirmPanel.SetActive(false);
 
-        if (restartSceneButton != null) restartSceneButton.onClick.AddListener(OnRestartScene);
         if (leaveSessionButton != null) leaveSessionButton.onClick.AddListener(OnLeaveSessionClicked);
-        if (quitGameButton != null) quitGameButton.onClick.AddListener(OnQuitGame);
+        if (quitGameButton != null) quitGameButton.onClick.AddListener(OnQuitClicked);
         if (resetSettingsButton != null) resetSettingsButton.onClick.AddListener(OnResetSettings);
 
-        if (confirmLeaveYesButton != null) confirmLeaveYesButton.onClick.AddListener(OnConfirmLeaveYes);
-        if (confirmLeaveNoButton != null) confirmLeaveNoButton.onClick.AddListener(OnConfirmLeaveNo);
+        if (confirmYesButton != null) confirmYesButton.onClick.AddListener(OnConfirmYes);
+        if (confirmNoButton != null) confirmNoButton.onClick.AddListener(OnConfirmNo);
 
-        UpdateButtonStates();
-    }
-
-    void OnDisable()
-    {
-        if (restartSceneButton != null) restartSceneButton.onClick.RemoveListener(OnRestartScene);
-        if (leaveSessionButton != null) leaveSessionButton.onClick.RemoveListener(OnLeaveSessionClicked);
-        if (quitGameButton != null) quitGameButton.onClick.RemoveListener(OnQuitGame);
-        if (resetSettingsButton != null) resetSettingsButton.onClick.RemoveListener(OnResetSettings);
-        if (confirmLeaveYesButton != null) confirmLeaveYesButton.onClick.RemoveListener(OnConfirmLeaveYes);
-        if (confirmLeaveNoButton != null) confirmLeaveNoButton.onClick.RemoveListener(OnConfirmLeaveNo);
-    }
-
-    /// <summary>
-    /// Activa/desactiva botones según si estamos en una sesión multiplayer.
-    /// "Reiniciar escena" solo tiene sentido si estás solo (sin clientes conectados).
-    /// </summary>
-    private void UpdateButtonStates()
-    {
+        // Visibilidad según contexto
         bool inSession = SessionManager.Instance != null && SessionManager.Instance.CurrentSession != null;
-        bool isHostAlone = NetworkManager.Singleton != null
-                        && NetworkManager.Singleton.IsHost
-                        && NetworkManager.Singleton.ConnectedClients.Count <= 1;
-
-        if (restartSceneButton != null)
-            restartSceneButton.interactable = !inSession || isHostAlone;
-
         if (leaveSessionButton != null)
             leaveSessionButton.gameObject.SetActive(inSession);
     }
 
-    // ── Reiniciar escena ──────────────────────────────────────────────
-    private void OnRestartScene()
+    void OnDisable()
+    {
+        if (leaveSessionButton != null) leaveSessionButton.onClick.RemoveListener(OnLeaveSessionClicked);
+        if (quitGameButton != null) quitGameButton.onClick.RemoveListener(OnQuitClicked);
+        if (resetSettingsButton != null) resetSettingsButton.onClick.RemoveListener(OnResetSettings);
+        if (confirmYesButton != null) confirmYesButton.onClick.RemoveListener(OnConfirmYes);
+        if (confirmNoButton != null) confirmNoButton.onClick.RemoveListener(OnConfirmNo);
+    }
+
+    // ── Acciones ──────────────────────────────────────────────────────
+    private void OnLeaveSessionClicked()
+    {
+        ShowConfirm("¿Salir de la sala? Tu progreso se guardará y podrás reconectar desde el menú principal.", DoLeaveSession);
+    }
+
+    private void OnQuitClicked()
+    {
+        bool inSession = SessionManager.Instance != null && SessionManager.Instance.CurrentSession != null;
+        string msg = inSession
+            ? "¿Salir del juego? Tu progreso se guardará."
+            : "¿Salir del juego?";
+        ShowConfirm(msg, DoQuit);
+    }
+
+    private void OnResetSettings()
+    {
+        ShowConfirm("¿Restaurar todas las opciones a sus valores por defecto?", DoResetSettings);
+    }
+
+    // ── Confirmación ──────────────────────────────────────────────────
+    private void ShowConfirm(string text, System.Action action)
+    {
+        if (confirmPanel == null)
+        {
+            action?.Invoke();
+            return;
+        }
+
+        if (confirmText != null) confirmText.text = text;
+        _pendingAction = action;
+        confirmPanel.SetActive(true);
+    }
+
+    private void OnConfirmYes()
+    {
+        if (confirmPanel != null) confirmPanel.SetActive(false);
+        _pendingAction?.Invoke();
+        _pendingAction = null;
+    }
+
+    private void OnConfirmNo()
+    {
+        if (confirmPanel != null) confirmPanel.SetActive(false);
+        _pendingAction = null;
+    }
+
+    // ── Implementaciones ──────────────────────────────────────────────
+    private async void DoLeaveSession()
     {
         Time.timeScale = 1f;
         SettingsManager.Instance?.Flush();
 
         if (SessionManager.Instance != null && SessionManager.Instance.CurrentSession != null)
         {
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsHost)
-            {
-                NetworkManager.Singleton.SceneManager.LoadScene(
-                    SceneManager.GetActiveScene().name,
-                    LoadSceneMode.Single);
-            }
-            else
-            {
-                Debug.LogWarning("[SettingsTab_System] Solo el host puede reiniciar la escena en multiplayer.");
-            }
-            return;
-        }
-
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
-    }
-
-    // ── Salir de la sala ─────────────────────────────────────────────
-    private void OnLeaveSessionClicked()
-    {
-        if (confirmLeavePanel != null) confirmLeavePanel.SetActive(true);
-        else DoLeaveSession();
-    }
-
-    private void OnConfirmLeaveYes()
-    {
-        if (confirmLeavePanel != null) confirmLeavePanel.SetActive(false);
-        DoLeaveSession();
-    }
-
-    private void OnConfirmLeaveNo()
-    {
-        if (confirmLeavePanel != null) confirmLeavePanel.SetActive(false);
-    }
-
-    private async void DoLeaveSession()
-    {
-        Time.timeScale = 1f;
-
-        if (SessionManager.Instance != null && SessionManager.Instance.CurrentSession != null)
-        {
             await SessionManager.Instance.LeaveSession();
+            // SessionManager carga el menú principal automáticamente
         }
         else
         {
@@ -125,14 +117,14 @@ public class SettingsTab_System : MonoBehaviour
         }
     }
 
-    // ── Salir del juego ───────────────────────────────────────────────
-    private void OnQuitGame()
+    private async void DoQuit()
     {
+        Time.timeScale = 1f;
         SettingsManager.Instance?.Flush();
 
         if (SessionManager.Instance != null && SessionManager.Instance.CurrentSession != null)
         {
-            _ = SessionManager.Instance.LeaveSession();
+            try { await SessionManager.Instance.LeaveSession(); } catch { }
         }
 
 #if UNITY_EDITOR
@@ -142,8 +134,7 @@ public class SettingsTab_System : MonoBehaviour
 #endif
     }
 
-    // ── Reset settings ────────────────────────────────────────────────
-    private void OnResetSettings()
+    private void DoResetSettings()
     {
         SettingsManager.Instance?.ResetToDefaults();
     }

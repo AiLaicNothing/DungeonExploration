@@ -25,9 +25,13 @@ public class StatPointsPanel : MonoBehaviour
 
     private void OnLocalPlayerReady(PlayerController controller)
     {
+        if (controller.Stats == null) return;
+
         _stats = controller.Stats;
         _stats.OnPointsChanged += UpdateText;
-        UpdateText(_stats.UpgradePoints);
+
+        // Esperar a que las stats estén sincronizadas para mostrar el primer valor
+        _stats.SubscribeOrInvokeWhenReady(() => UpdateText(_stats.UpgradePoints));
     }
 
     private void UpdateText(int value)

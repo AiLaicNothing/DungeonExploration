@@ -1,78 +1,96 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
+
+/// <summary>
+/// Tab de Gameplay: FOV, ocultar HUD, idioma, dificultad personal.
+/// El SettingsManager usa Language como string ("es", "en") y Difficulty como int.
+/// </summary>
 public class SettingsTab_Gameplay : MonoBehaviour
 {
-    [Header("HUD")]
-    [SerializeField] private Toggle hideHudToggle;
-
-    [Header("Dificultad")]
-    [SerializeField] private TMP_Dropdown difficultyDropdown;
-    private readonly string[] _difficultyLabels = { "Fácil", "Normal", "Difícil" };
-
-    [Header("Idioma")]
-    [SerializeField] private TMP_Dropdown languageDropdown;
-    // Pares (código, etiqueta visible). Añade más cuando añadas idiomas.
-    private readonly (string code, string label)[] _languages =
-    {
-        ("es", "Español"),
-        ("en", "English"),
-    };
-
     [Header("FOV")]
     [SerializeField] private Slider fovSlider;
     [SerializeField] private TMP_Text fovLabel;
 
+    [Header("HUD")]
+    [SerializeField] private Toggle hideHudToggle;
+
+    [Header("Idioma")]
+    [SerializeField] private TMP_Dropdown languageDropdown;
+    [Tooltip("Códigos de idioma alineados al orden del dropdown. Ej: ['es', 'en', 'pt']")]
+    [SerializeField] private string[] languageCodes = new[] { "es", "en" };
+
+    [Header("Dificultad")]
+    [SerializeField] private TMP_Dropdown difficultyDropdown;
+
     void OnEnable()
     {
         if (SettingsManager.Instance == null) return;
-        var s = SettingsManager.Instance;
 
-        // HUD
-        hideHudToggle.SetIsOnWithoutNotify(s.HideHud);
-        hideHudToggle.onValueChanged.AddListener(v => s.HideHud = v);
-
-        // Dificultad
-        difficultyDropdown.ClearOptions();
-        difficultyDropdown.AddOptions(new List<string>(_difficultyLabels));
-        difficultyDropdown.SetValueWithoutNotify(Mathf.Clamp(s.Difficulty, 0, _difficultyLabels.Length - 1));
-        difficultyDropdown.onValueChanged.AddListener(v => s.Difficulty = v);
-
-        // Idioma
-        languageDropdown.ClearOptions();
-        var langLabels = new List<string>();
-        foreach (var l in _languages) langLabels.Add(l.label);
-        languageDropdown.AddOptions(langLabels);
-        int langIdx = System.Array.FindIndex(_languages, l => l.code == s.Language);
-        if (langIdx < 0) langIdx = 0;
-        languageDropdown.SetValueWithoutNotify(langIdx);
-        languageDropdown.onValueChanged.AddListener(v => s.Language = _languages[v].code);
-
-        // FOV
-        fovSlider.minValue = s.MinFOV;
-        fovSlider.maxValue = s.MaxFOV;
-        fovSlider.SetValueWithoutNotify(s.FOV);
-        UpdateFOVLabel(s.FOV);
-        fovSlider.onValueChanged.AddListener(OnFOVChanged);
+        SetupFov();
+        SetupHud();
+        SetupLanguage();
+        SetupDifficulty();
     }
 
-    void OnDisable()
+    private void SetupFov()
     {
-        if (hideHudToggle != null) hideHudToggle.onValueChanged.RemoveAllListeners();
-        if (difficultyDropdown != null) difficultyDropdown.onValueChanged.RemoveAllListeners();
-        if (languageDropdown != null) languageDropdown.onValueChanged.RemoveAllListeners();
-        if (fovSlider != null) fovSlider.onValueChanged.RemoveAllListeners();
+        if (fovSlider == null) return;
+        fovSlider.minValue = SettingsManager.Instance.MinFOV;
+        fovSlider.maxValue = SettingsManager.Instance.MaxFOV;
+        fovSlider.value = SettingsManager.Instance.FOV;
+        UpdateFovLabel(fovSlider.value);
+
+        fovSlider.onValueChanged.RemoveAllListeners();
+        fovSlider.onValueChanged.AddListener(v =>
+        {
+            SettingsManager.Instance.FOV = v;
+            UpdateFovLabel(v);
+        });
     }
 
-    private void OnFOVChanged(float value)
+    private void SetupHud()
     {
-        SettingsManager.Instance.FOV = value;
-        UpdateFOVLabel(value);
+        if (hideHudToggle == null) return;
+        hideHudToggle.isOn = SettingsManager.Instance.HideHud;
+        hideHudToggle.onValueChanged.RemoveAllListeners();
+        hideHudToggle.onValueChanged.AddListener(v => SettingsManager.Instance.HideHud = v);
     }
 
-    private void UpdateFOVLabel(float value)
+    private void SetupLanguage()
     {
-        if (fovLabel != null) fovLabel.text = $"{value:F0}°";
+        if (languageDropdown == null) return;
+        // El dropdown ya debería tener las opciones definidas en el inspector (Español, English, etc.)
+        // El array languageCodes mapea el índice del dropdown al código de idioma.
+        int currentIdx = LanguageCodeToIndex(SettingsManager.Instance.Language);
+        languageDropdown.value = currentIdx;
+        languageDropdown.onValueChanged.RemoveAllListeners();
+        languageDropdown.onValueChanged.AddListener(v =>
+        {
+            if (v >= 0 && v < languageCodes.Length)
+                SettingsManager.Instance.Language = languageCodes[v];
+        });
+    }
+
+    private void SetupDifficulty()
+    {
+        if (difficultyDropdown == null) return;
+        // El dropdown debería tener: Fácil, Normal, Difícil (en el inspector)
+        difficultyDropdown.value = SettingsManager.Instance.Difficulty;
+        difficultyDropdown.onValueChanged.RemoveAllListeners();
+        difficultyDropdown.onValueChanged.AddListener(v => SettingsManager.Instance.Difficulty = v);
+    }
+
+    private int LanguageCodeToIndex(string code)
+    {
+        for (int i = 0; i < languageCodes.Length; i++)
+            if (languageCodes[i] == code) return i;
+        return 0;
+    }
+
+    private void UpdateFovLabel(float v)
+    {
+        if (fovLabel != null) fovLabel.text = $"FOV: {Mathf.RoundToInt(v)}°";
     }
 }

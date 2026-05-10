@@ -1403,12 +1403,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SettingsTab_System
   restartSceneButton: {fileID: 6021794844564862277}
-  deleteSaveButton: {fileID: 7550520580726657818}
+  leaveSessionButton: {fileID: 0}
   quitGameButton: {fileID: 6980320896524412220}
   resetSettingsButton: {fileID: 8349383552395725586}
-  confirmDeletePanel: {fileID: 3156553758390142127}
-  confirmDeleteYesButton: {fileID: 496949988152779447}
-  confirmDeleteNoButton: {fileID: 6385885337947771361}
+  confirmLeavePanel: {fileID: 0}
+  confirmLeaveYesButton: {fileID: 0}
+  confirmLeaveNoButton: {fileID: 0}
 --- !u!1 &1108024274418288439
 GameObject:
   m_ObjectHideFlags: 0
@@ -15448,26 +15448,29 @@ MonoBehaviour:
   - name: Video
     button: {fileID: 3497451267900117724}
     panel: {fileID: 4474154196433041845}
-    indicator: {fileID: 0}
+    activeColor: {r: 0.4, g: 0.7, b: 1, a: 1}
+    inactiveColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
   - name: Audio
     button: {fileID: 1848110849909847125}
     panel: {fileID: 974564733001766181}
-    indicator: {fileID: 0}
+    activeColor: {r: 0.4, g: 0.7, b: 1, a: 1}
+    inactiveColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
   - name: Controles
     button: {fileID: 1937624216296364150}
     panel: {fileID: 1211907653962832516}
-    indicator: {fileID: 0}
+    activeColor: {r: 0.4, g: 0.7, b: 1, a: 1}
+    inactiveColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
   - name: Gameplay
     button: {fileID: 8852748839250491113}
     panel: {fileID: 5750244173222300062}
-    indicator: {fileID: 0}
+    activeColor: {r: 0.4, g: 0.7, b: 1, a: 1}
+    inactiveColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
   - name: Sistema
     button: {fileID: 3110280477986023841}
     panel: {fileID: 992357894730504024}
-    indicator: {fileID: 0}
+    activeColor: {r: 0.4, g: 0.7, b: 1, a: 1}
+    inactiveColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
   defaultTabIndex: 0
-  activeColor: {r: 0, g: 1, b: 0.98099947, a: 1}
-  inactiveColor: {r: 0.3584906, g: 0.3584906, b: 0.3584906, a: 0.4}
 --- !u!1 &8986445471402726902
 GameObject:
   m_ObjectHideFlags: 0

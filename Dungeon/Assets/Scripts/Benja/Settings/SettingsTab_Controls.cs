@@ -1,6 +1,12 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+
+/// <summary>
+/// Tab de Controles: sensibilidad de la cámara y invertir ejes X/Y.
+/// El SettingsManager tiene una sola Sensitivity (no separada en X/Y),
+/// así que aquí usamos un único slider.
+/// </summary>
 public class SettingsTab_Controls : MonoBehaviour
 {
     [Header("Sensibilidad")]
@@ -11,49 +17,42 @@ public class SettingsTab_Controls : MonoBehaviour
     [SerializeField] private Toggle invertXToggle;
     [SerializeField] private Toggle invertYToggle;
 
-    // ── Espacio reservado para opciones de mando ──────────────────────
-    // Cuando quieras añadir opciones específicas de gamepad (PS5/Xbox), por ejemplo:
-    //
-    // [Header("Gamepad")]
-    // [SerializeField] private Slider deadZoneSlider;
-    // [SerializeField] private Toggle vibrationToggle;
-    // [SerializeField] private TMP_Dropdown buttonLayoutDropdown;
-    //
-    // Y añade las propiedades correspondientes en SettingsManager.
-
     void OnEnable()
     {
         if (SettingsManager.Instance == null) return;
-        var s = SettingsManager.Instance;
 
-        sensitivitySlider.minValue = s.MinSensitivity;
-        sensitivitySlider.maxValue = s.MaxSensitivity;
-        sensitivitySlider.SetValueWithoutNotify(s.Sensitivity);
-        UpdateSensitivityLabel(s.Sensitivity);
+        if (sensitivitySlider != null)
+        {
+            sensitivitySlider.minValue = SettingsManager.Instance.MinSensitivity;
+            sensitivitySlider.maxValue = SettingsManager.Instance.MaxSensitivity;
+            sensitivitySlider.value = SettingsManager.Instance.Sensitivity;
+            UpdateSensLabel(sensitivitySlider.value);
 
-        invertXToggle.SetIsOnWithoutNotify(s.InvertX);
-        invertYToggle.SetIsOnWithoutNotify(s.InvertY);
+            sensitivitySlider.onValueChanged.RemoveAllListeners();
+            sensitivitySlider.onValueChanged.AddListener(v =>
+            {
+                SettingsManager.Instance.Sensitivity = v;
+                UpdateSensLabel(v);
+            });
+        }
 
-        sensitivitySlider.onValueChanged.AddListener(OnSensitivityChanged);
-        invertXToggle.onValueChanged.AddListener(v => s.InvertX = v);
-        invertYToggle.onValueChanged.AddListener(v => s.InvertY = v);
+        if (invertXToggle != null)
+        {
+            invertXToggle.isOn = SettingsManager.Instance.InvertX;
+            invertXToggle.onValueChanged.RemoveAllListeners();
+            invertXToggle.onValueChanged.AddListener(v => SettingsManager.Instance.InvertX = v);
+        }
+
+        if (invertYToggle != null)
+        {
+            invertYToggle.isOn = SettingsManager.Instance.InvertY;
+            invertYToggle.onValueChanged.RemoveAllListeners();
+            invertYToggle.onValueChanged.AddListener(v => SettingsManager.Instance.InvertY = v);
+        }
     }
 
-    void OnDisable()
+    private void UpdateSensLabel(float v)
     {
-        if (sensitivitySlider != null) sensitivitySlider.onValueChanged.RemoveAllListeners();
-        if (invertXToggle != null) invertXToggle.onValueChanged.RemoveAllListeners();
-        if (invertYToggle != null) invertYToggle.onValueChanged.RemoveAllListeners();
-    }
-
-    private void OnSensitivityChanged(float value)
-    {
-        SettingsManager.Instance.Sensitivity = value;
-        UpdateSensitivityLabel(value);
-    }
-
-    private void UpdateSensitivityLabel(float value)
-    {
-        if (sensitivityLabel != null) sensitivityLabel.text = value.ToString("F2");
+        if (sensitivityLabel != null) sensitivityLabel.text = $"Sensibilidad: {v:F2}";
     }
 }
