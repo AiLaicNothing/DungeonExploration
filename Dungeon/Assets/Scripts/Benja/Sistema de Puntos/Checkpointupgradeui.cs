@@ -1,185 +1,157 @@
+using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
-using System.Collections.Generic;
 
 /// <summary>
-/// Panel de mejora de stats por tradeoff.
-/// Permite seleccionar múltiples stats a subir y múltiples a bajar.
-/// El botón Confirmar se habilita cuando el balance cuadra con los puntos disponibles.
+/// Panel completo de mejora de stats: muestra todas las filas de stats,
+/// el balance de puntos según las selecciones del jugador, y aplica el tradeoff
+/// vía ServerRpc cuando el jugador confirma.
+///
+/// Este panel se abre típicamente al interactuar con un Checkpoint (cuando ya está
+/// activado) o desde otra UI.
 /// </summary>
-public class Checkpointupgradeui : MonoBehaviour
+public class CheckpointUpgradeUI : MonoBehaviour
 {
-    [Header("Referencias UI")]
-    public TextMeshProUGUI pointsText;
-    public TextMeshProUGUI balanceText;       // muestra "Costo: +3 / Balance: -2 → gastas 1 punto"
-    public Transform statListContainer;       // Content del ScrollView
-    public GameObject statRowPrefab;          // Prefab StatRow
-    public Button confirmButton;
+    [Header("UI")]
+    [SerializeField] private GameObject panelRoot;
+    [SerializeField] private TMP_Text balanceText;
+    [SerializeField] private Button confirmButton;
+    [SerializeField] private Button cancelButton;
+    [SerializeField] private TMP_Text errorText;
+
+    [Header("Filas de stats")]
+    [Tooltip("Las filas StatRowUI se buscan automáticamente como hijos del panel.")]
+    [SerializeField] private Transform statRowsContainer;
 
     private List<StatRowUI> _rows = new();
+    private PlayerStats _stats;
 
-    // Selecciones actuales (listas porque permiten múltiples de la misma stat si se quisiera,
-    // pero StatRowUI es mutuamente excluyente por fila, así que cada ID aparece máx 1 vez)
-    private List<string> _selectedIncreases = new();
-    private List<string> _selectedDecreases = new();
+    void Awake()
+    {
+        if (panelRoot != null) panelRoot.SetActive(false);
+
+        if (confirmButton != null) confirmButton.onClick.AddListener(OnConfirm);
+        if (cancelButton != null) cancelButton.onClick.AddListener(Close);
+    }
 
     void OnEnable()
     {
-        BuildRows();
-
-        confirmButton.onClick.AddListener(OnConfirm);
-        PlayerStats.Instance.OnStatChanged += HandleStatChanged;
-        PlayerStats.Instance.OnPointsChanged += HandlePointsChanged;
-
-        UpdatePointsText();
-        ValidateConfirmButton();
+        LocalPlayer.SubscribeOrInvokeIfReady(OnLocalPlayerReady);
     }
 
     void OnDisable()
     {
-        confirmButton.onClick.RemoveListener(OnConfirm);
-        if (PlayerStats.Instance != null)
-        {
-            PlayerStats.Instance.OnStatChanged -= HandleStatChanged;
-            PlayerStats.Instance.OnPointsChanged -= HandlePointsChanged;
-        }
-
-        _selectedIncreases.Clear();
-        _selectedDecreases.Clear();
+        LocalPlayer.Unsubscribe(OnLocalPlayerReady);
     }
 
-    // ── Construcción ──────────────────────────────────────────────────
-    void BuildRows()
+    private void OnLocalPlayerReady(PlayerController controller)
     {
-        foreach (Transform child in statListContainer)
-            Destroy(child.gameObject);
+        _stats = controller.Stats;
+    }
+
+    public void Open()
+    {
+        if (panelRoot == null) return;
+        panelRoot.SetActive(true);
+
+        // Indexar las filas de stats al abrir
         _rows.Clear();
+        if (statRowsContainer != null)
+            statRowsContainer.GetComponentsInChildren(true, _rows);
 
-        foreach (var stat in PlayerStats.Instance.AllStats)
-        {
-            var go = Instantiate(statRowPrefab, statListContainer);
-            var row = go.GetComponent<StatRowUI>();
-            row.Setup(stat, OnSelectIncrease, OnSelectDecrease);
-            _rows.Add(row);
-        }
+        // Suscribir actualizaciones de balance al cambiar toggles
+        foreach (var row in _rows)
+            row.gameObject.SetActive(true);
+
+        UpdateBalance();
+        ClearError();
     }
 
-    // ── Callbacks de selección ────────────────────────────────────────
-    void OnSelectIncrease(string statId)
+    public void Close()
     {
-        // Al marcar +, remueve de cualquier lista previa
-        if (statId != null)
-        {
-            _selectedDecreases.Remove(statId);
-            if (!_selectedIncreases.Contains(statId))
-                _selectedIncreases.Add(statId);
-        }
-        else
-        {
-            // Cuando el toggle se deselecciona, removemos todo lo que esté solo en increase
-            // (no podemos saber cuál fila llamó con null sin más contexto; la fila ya se desmarcó)
-            // Reconstruimos desde el estado de las filas:
-            RebuildSelectionsFromRows();
-        }
-        ValidateConfirmButton();
+        if (panelRoot != null) panelRoot.SetActive(false);
+        ClearAllToggles();
     }
 
-    void OnSelectDecrease(string statId)
+    /// <summary>
+    /// Recalcula el balance: cuántos puntos cuesta lo seleccionado y cuántos
+    /// se recuperan de las stats que se bajan.
+    /// </summary>
+    void Update()
     {
-        if (statId != null)
-        {
-            _selectedIncreases.Remove(statId);
-            if (!_selectedDecreases.Contains(statId))
-                _selectedDecreases.Add(statId);
-        }
-        else
-        {
-            RebuildSelectionsFromRows();
-        }
-        ValidateConfirmButton();
+        if (panelRoot != null && panelRoot.activeSelf)
+            UpdateBalance();
     }
 
-    /// <summary>Reconstruye las listas de selección leyendo el estado real de cada fila.</summary>
-    void RebuildSelectionsFromRows()
+    private void UpdateBalance()
     {
-        _selectedIncreases.Clear();
-        _selectedDecreases.Clear();
+        if (_stats == null) return;
+
+        int costoSubidas = 0;
+        int valorBajadas = 0;
+
         foreach (var row in _rows)
         {
-            if (row.IsIncreaseSelected) _selectedIncreases.Add(row.StatId);
-            else if (row.IsDecreaseSelected) _selectedDecreases.Add(row.StatId);
-        }
-    }
+            var stat = _stats.GetStat(row.StatId);
+            if (stat == null) continue;
 
-    // ── Validación ────────────────────────────────────────────────────
-    void ValidateConfirmButton()
-    {
-        RebuildSelectionsFromRows();
-
-        int upgradeCost = 0;
-        foreach (var id in _selectedIncreases)
-        {
-            var s = PlayerStats.Instance.GetStat(id);
-            if (s != null) upgradeCost += s.UpgradeCost;
+            if (row.WantsIncrease) costoSubidas += stat.UpgradeCost;
+            if (row.WantsDecrease) valorBajadas += stat.DowngradeValue;
         }
 
-        int downgradeValue = 0;
-        foreach (var id in _selectedDecreases)
-        {
-            var s = PlayerStats.Instance.GetStat(id);
-            if (s != null) downgradeValue += s.DowngradeValue;
-        }
-
-        int pointsNeeded = Mathf.Max(0, upgradeCost - downgradeValue);
-        bool hasSelection = _selectedIncreases.Count > 0 || _selectedDecreases.Count > 0;
-        bool canAfford = pointsNeeded <= PlayerStats.Instance.upgradePoints;
-
-        confirmButton.interactable = hasSelection && canAfford;
+        int needed = Mathf.Max(0, costoSubidas - valorBajadas);
+        int available = _stats.UpgradePoints;
 
         if (balanceText != null)
+            balanceText.text = $"Costo: {costoSubidas} | Recuperas: {valorBajadas} | Necesitas: {needed} | Tienes: {available}";
+
+        if (confirmButton != null)
+            confirmButton.interactable = (needed <= available) && (costoSubidas > 0 || valorBajadas > 0);
+    }
+
+    private void OnConfirm()
+    {
+        if (_stats == null) return;
+
+        // Recolectar IDs seleccionados
+        var increaseIds = new List<string>();
+        var decreaseIds = new List<string>();
+
+        foreach (var row in _rows)
         {
-            balanceText.text = hasSelection
-                ? $"Costo: +{upgradeCost} / Compensado: -{downgradeValue} → gastarás {pointsNeeded} punto(s)"
-                : "Selecciona qué mejorar y qué sacrificar";
+            if (row.WantsIncrease) increaseIds.Add(row.StatId);
+            if (row.WantsDecrease) decreaseIds.Add(row.StatId);
         }
+
+        if (increaseIds.Count == 0 && decreaseIds.Count == 0)
+        {
+            ShowError("Selecciona al menos una stat.");
+            return;
+        }
+
+        // Pedir al servidor que aplique el tradeoff (autoritativo)
+        _stats.RequestApplyTradeoff(increaseIds.ToArray(), decreaseIds.ToArray());
+
+        ClearAllToggles();
+        ClearError();
+
+        // Opcional: cerrar tras aplicar
+        Close();
     }
 
-    // ── Confirmar ─────────────────────────────────────────────────────
-    void OnConfirm()
+    private void ClearAllToggles()
     {
-        RebuildSelectionsFromRows();
-
-        bool success = PlayerStats.Instance.ApplyTradeoff(
-            _selectedIncreases, _selectedDecreases);
-
-        if (!success) return;
-
-        // Limpia selección
-        _selectedIncreases.Clear();
-        _selectedDecreases.Clear();
-        foreach (var row in _rows) row.Deselect();
-
-        ValidateConfirmButton();
-
-        // Auto-guarda al aplicar un cambio de stats
-        if (Savesystem.Instance != null && Savesystem.Instance.autoSaveOnCheckpoint)
-            Savesystem.Instance.Save();
+        foreach (var row in _rows) row.ClearToggles();
     }
 
-    // ── Eventos de PlayerStats ────────────────────────────────────────
-    void HandleStatChanged(string id, float value)
+    private void ShowError(string msg)
     {
-        var row = _rows.Find(r => r.StatId == id);
-        row?.UpdateDisplay();
+        if (errorText != null) errorText.text = msg;
     }
 
-    void HandlePointsChanged(int points)
+    private void ClearError()
     {
-        UpdatePointsText();
-        ValidateConfirmButton();
+        if (errorText != null) errorText.text = "";
     }
-
-    void UpdatePointsText() =>
-        pointsText.text = $"Puntos disponibles: {PlayerStats.Instance.upgradePoints}";
 }

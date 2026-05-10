@@ -1,89 +1,98 @@
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
+/// <summary>
+/// Manager local del cliente. Mantiene un mapa de todos los Checkpoint en escena
+/// para poder localizarlos por nombre, y orquesta la UI del panel de teletransporte.
+///
+/// NO es persistente entre escenas — se crea fresh en cada carga de Gameplay.
+/// La verdad sobre qué checkpoints están descubiertos vive en WorldCheckpointState
+/// (servidor autoritativo).
+/// </summary>
 public class CheckpointManager : MonoBehaviour
 {
-    public static CheckpointManager Instance;
+    public static CheckpointManager Instance { get; private set; }
 
-    public List<Checkpoint> unlockedCheckpoints = new List<Checkpoint>();
-    public Checkpoint activeCheckpoint;
-    public GameObject teleportPanel;
+    [Header("UI")]
+    [SerializeField] private TeleporterPanelUI teleportPanel;
 
-    void Awake()
+    /// <summary>Compatibilidad con el código viejo: el "checkpoint activo" del jugador local.</summary>
+    public Checkpoint activeCheckpoint
     {
-        if (Instance == null)
-            Instance = this;
-        else
-            Destroy(gameObject);
+        get
+        {
+            if (LocalPlayer.Controller == null) return null;
+            var data = LocalPlayer.Controller.GetComponent<PlayerCheckpointData>();
+            if (data == null) return null;
+            string name = data.LastUsedCheckpoint.Value.ToString();
+            return GetByName(name);
+        }
+    }
+
+    private readonly Dictionary<string, Checkpoint> _checkpointsByName = new();
+
+    private void Awake()
+    {
+        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     void Start()
     {
-
-        if (Savesystem.Instance != null)
-        {
-            Savesystem.Instance.OnLoaded += SyncFromSaveSystem;
-
-            SyncFromSaveSystem();
-        }
-    }
-
-    void OnDestroy()
-    {
-        if (Savesystem.Instance != null)
-            Savesystem.Instance.OnLoaded -= SyncFromSaveSystem;
-    }
-
-
-    public void SyncFromSaveSystem()
-    {
-        if (Savesystem.Instance == null) return;
-
-        Checkpoint[] allCheckpoints = FindObjectsByType<Checkpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-
-        string activeName = Savesystem.Instance.GetActiveCheckpointName();
-
+        // Indexar todos los Checkpoint de la escena por nombre
+        var allCheckpoints = FindObjectsByType<Checkpoint>(FindObjectsSortMode.None);
         foreach (var cp in allCheckpoints)
         {
-            if (cp == null || string.IsNullOrEmpty(cp.checkpointName)) continue;
-
-            if (Savesystem.Instance.IsCheckpointActivated(cp.checkpointName))
+            if (string.IsNullOrEmpty(cp.checkpointName))
             {
-                RegisterCheckpoint(cp);
-
-                if (cp.checkpointName == activeName)
-                    activeCheckpoint = cp;
+                Debug.LogError($"[CheckpointManager] Checkpoint en {cp.name} no tiene checkpointName!");
+                continue;
             }
+            if (_checkpointsByName.ContainsKey(cp.checkpointName))
+            {
+                Debug.LogError($"[CheckpointManager] Checkpoint duplicado: '{cp.checkpointName}'. Cada checkpoint debe tener nombre único.");
+                continue;
+            }
+            _checkpointsByName[cp.checkpointName] = cp;
         }
 
-        Debug.Log($"[CheckpointManager] Sincronización: {unlockedCheckpoints.Count} checkpoints desbloqueados.");
+        Debug.Log($"[CheckpointManager] Indexados {_checkpointsByName.Count} checkpoints en la escena.");
     }
 
-    public void SetActiveCheckpoint(Checkpoint checkpoint)
+    /// <summary>Busca un Checkpoint por su nombre único.</summary>
+    public Checkpoint GetByName(string name)
     {
-        activeCheckpoint = checkpoint;
+        if (string.IsNullOrEmpty(name)) return null;
+        _checkpointsByName.TryGetValue(name, out var cp);
+        return cp;
     }
 
-    public void RegisterCheckpoint(Checkpoint checkpoint)
+    /// <summary>Lista de checkpoints descubiertos a nivel mundo (todos los disponibles para teletransporte).</summary>
+    public IEnumerable<Checkpoint> GetWorldDiscoveredCheckpoints()
     {
-        if (checkpoint == null) return;
+        if (WorldCheckpointState.Instance == null) yield break;
 
-        if (!unlockedCheckpoints.Contains(checkpoint))
+        var discoveredList = WorldCheckpointState.Instance.DiscoveredCheckpoints;
+        for (int i = 0; i < discoveredList.Count; i++)
         {
-            unlockedCheckpoints.Add(checkpoint);
-            Debug.Log("Checkpoint registrado: " + checkpoint.checkpointName);
+            var cp = GetByName(discoveredList[i].ToString());
+            if (cp != null) yield return cp;
         }
     }
 
     public void OpenTeleportPanel()
     {
-        if (teleportPanel != null)
-            teleportPanel.SetActive(true);
+        if (teleportPanel != null) teleportPanel.Open();
     }
 
     public void CloseTeleportPanel()
     {
-        if (teleportPanel != null)
-            teleportPanel.SetActive(false);
+        if (teleportPanel != null) teleportPanel.Close();
     }
 }

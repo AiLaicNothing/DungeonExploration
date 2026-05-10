@@ -1,103 +1,70 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
+/// <summary>
+/// Cubo de debug en el mundo que sube/baja una stat específica del jugador local.
+/// Útil para prototipar. En multiplayer, modifica la stat del jugador local
+/// (no afecta a los demás).
+/// </summary>
 public class StatModifierCube : MonoBehaviour
 {
-    public enum StatTarget
+    public enum StatType
     {
-        Health,
-        Mana,
-        Stamina,
-        PhysicalDamage,
-        MagicalDamage,
-        HealthRegen,
-        StaminaRegen,
-        ManaRegen
+        Health, Mana, Stamina, PhysicalDamage, MagicalDamage,
+        HealthRegen, StaminaRegen, ManaRegen
     }
 
-    [Header("Configuración")]
-    [Tooltip("Qué stat modifica este cubo.")]
-    [SerializeField] private StatTarget targetStat = StatTarget.Health;
+    [Header("Config")]
+    [SerializeField] private StatType statType = StatType.Health;
+    [SerializeField] private bool addPoint = true; // true = añade punto, false = lo quita
+    [SerializeField] private TMP_Text labelText; // se autocompleta con el nombre de la stat
 
-    [Tooltip("Cuánto sube/baja el Max de la stat por click.")]
-    [SerializeField] private float modifyAmount = 10f;
-
-    [Header("UI World Space")]
-    [Tooltip("Texto que muestra el nombre de la stat que modifica este cubo.")]
-    [SerializeField] private TMP_Text statNameText;
+    [Header("UI")]
+    [SerializeField] private Button confirmButton;
+    [SerializeField] private GameObject panel; // panel world-space siempre activo
 
     void Start()
     {
-        if (statNameText != null)
-            statNameText.text = targetStat.ToString();
+        if (labelText != null)
+            labelText.text = (addPoint ? "+ " : "- ") + statType.ToString();
+
+        if (panel != null)
+            panel.SetActive(true);
+
+        if (confirmButton != null)
+            confirmButton.onClick.AddListener(OnClick);
     }
 
-    void OnValidate()
+    private void OnClick()
     {
-        if (statNameText != null)
-            statNameText.text = targetStat.ToString();
-    }
-
-    public void OnIncreaseClicked()
-    {
-        PlayerStat stat = GetTargetStat();
-        if (stat == null) return;
-
-        float newMax = stat.Max + modifyAmount;
-
-        if (newMax > stat.HardMax)
+        if (LocalPlayer.Stats == null)
         {
-            Debug.Log($"[StatModifierCube] {targetStat} ya está en el máximo ({stat.HardMax}).");
+            Debug.LogWarning("[StatModifierCube] No hay LocalPlayer.Stats.");
             return;
         }
 
-        int pointsToAdd = Mathf.RoundToInt(modifyAmount / stat.ValuePerPoint);
-        for (int i = 0; i < pointsToAdd; i++)
-        {
-            if (!stat.AddPoint()) break;
-        }
+        string id = ToId(statType);
+        if (string.IsNullOrEmpty(id)) return;
 
-        Debug.Log($"[StatModifierCube] {targetStat} subió a {stat.Max}");
+        // Para subir/bajar puntos en multiplayer usamos RequestApplyTradeoff
+        // (que es autoritativo de servidor y respeta los costos).
+        if (addPoint)
+            LocalPlayer.Stats.RequestApplyTradeoff(new[] { id }, new string[0]);
+        else
+            LocalPlayer.Stats.RequestApplyTradeoff(new string[0], new[] { id });
     }
 
-    public void OnDecreaseClicked()
+    private string ToId(StatType type) => type switch
     {
-        PlayerStat stat = GetTargetStat();
-        if (stat == null) return;
-
-        float newMax = stat.Max - modifyAmount;
-
-        if (newMax < stat.Min)
-        {
-            Debug.Log($"[StatModifierCube] {targetStat} ya está en el mínimo ({stat.Min}).");
-            return;
-        }
-
-        int pointsToRemove = Mathf.RoundToInt(modifyAmount / stat.ValuePerPoint);
-        for (int i = 0; i < pointsToRemove; i++)
-        {
-            if (!stat.RemovePoint()) break;
-        }
-
-        Debug.Log($"[StatModifierCube] {targetStat} bajó a {stat.Max}");
-    }
-
-    private PlayerStat GetTargetStat()
-    {
-        var s = PlayerStats.Instance;
-        if (s == null) { Debug.LogError("[StatModifierCube] PlayerStats.Instance es null."); return null; }
-
-        return targetStat switch
-        {
-            StatTarget.Health => s.Health,
-            StatTarget.Mana => s.Mana,
-            StatTarget.Stamina => s.Stamina,
-            StatTarget.PhysicalDamage => s.PhysicalDamage,
-            StatTarget.MagicalDamage => s.MagicalDamage,
-            StatTarget.HealthRegen => s.HealthRegen,
-            StatTarget.StaminaRegen => s.StaminaRegen,
-            StatTarget.ManaRegen => s.ManaRegen,
-            _ => null
-        };
-    }
+        StatType.Health => "health",
+        StatType.Mana => "mana",
+        StatType.Stamina => "stamina",
+        StatType.PhysicalDamage => "physicalDamage",
+        StatType.MagicalDamage => "magicalDamage",
+        StatType.HealthRegen => "healthRegen",
+        StatType.StaminaRegen => "staminaRegen",
+        StatType.ManaRegen => "manaRegen",
+        _ => null
+    };
 }

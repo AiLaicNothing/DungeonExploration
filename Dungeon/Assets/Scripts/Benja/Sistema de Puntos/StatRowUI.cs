@@ -1,90 +1,91 @@
-using System;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
 
 /// <summary>
-/// Fila individual de una stat en el panel de upgrade.
-/// Permite seleccionar "+" o "-" (toggles mutuamente excluyentes dentro de la fila).
+/// Fila UI de una stat. Muestra nombre, valor actual/max, puntos asignados,
+/// y permite seleccionarla con un toggle "+" para subir o "-" para bajar
+/// (la aplicación real la hace el panel padre con un tradeoff).
+///
+/// En multiplayer, lee del PlayerStats del player local (LocalPlayer.Stats).
 /// </summary>
 public class StatRowUI : MonoBehaviour
 {
-    [Header("Refs")]
-    [SerializeField] private TMP_Text nameLabel;
-    [SerializeField] private TMP_Text valueLabel;
-    [SerializeField] private TMP_Text costLabel;
+    [Header("Config")]
+    [Tooltip("ID exacto de la stat tal como aparece en PlayerStatsData (ej: 'health', 'mana').")]
+    [SerializeField] private string statId;
+
+    [Header("UI")]
+    [SerializeField] private TMP_Text nameText;
+    [SerializeField] private TMP_Text valueText;
+    [SerializeField] private TMP_Text pointsText;
     [SerializeField] private Toggle increaseToggle;
     [SerializeField] private Toggle decreaseToggle;
+    [SerializeField] private TMP_Text costText;
 
-    public string StatId => _stat != null ? _stat.Id : null;
-    public bool IsIncreaseSelected => increaseToggle != null && increaseToggle.isOn;
-    public bool IsDecreaseSelected => decreaseToggle != null && decreaseToggle.isOn;
+    public string StatId => statId;
+    public bool WantsIncrease => increaseToggle != null && increaseToggle.isOn;
+    public bool WantsDecrease => decreaseToggle != null && decreaseToggle.isOn;
 
-    private PlayerStat _stat;
-    private Action<string> _onSelectIncrease;
-    private Action<string> _onSelectDecrease;
+    private PlayerStats _stats;
 
-    public void Setup(PlayerStat stat, Action<string> onSelectIncrease, Action<string> onSelectDecrease)
+    void OnEnable()
     {
-        _stat = stat;
-        _onSelectIncrease = onSelectIncrease;
-        _onSelectDecrease = onSelectDecrease;
-
-        if (nameLabel != null) nameLabel.text = stat.DisplayName;
-        if (costLabel != null)
-            costLabel.text = $"(+{stat.UpgradeCost} / -{stat.DowngradeValue})";
-
-        // Reset toggles
-        increaseToggle.SetIsOnWithoutNotify(false);
-        decreaseToggle.SetIsOnWithoutNotify(false);
-
-        increaseToggle.onValueChanged.RemoveAllListeners();
-        decreaseToggle.onValueChanged.RemoveAllListeners();
-
-        increaseToggle.onValueChanged.AddListener(OnIncreaseChanged);
-        decreaseToggle.onValueChanged.AddListener(OnDecreaseChanged);
-
-        UpdateDisplay();
+        LocalPlayer.SubscribeOrInvokeIfReady(OnLocalPlayerReady);
     }
 
-    private void OnIncreaseChanged(bool isOn)
+    void OnDisable()
     {
-        if (isOn)
-        {
-            // Mutuamente excluyente con decrease
-            decreaseToggle.SetIsOnWithoutNotify(false);
-            _onSelectIncrease?.Invoke(_stat.Id);
-        }
-        else
-        {
-            _onSelectIncrease?.Invoke(null);
-        }
+        LocalPlayer.Unsubscribe(OnLocalPlayerReady);
+        if (_stats != null) _stats.OnStatChanged -= HandleStatChanged;
+        _stats = null;
+
+        if (increaseToggle != null) increaseToggle.onValueChanged.RemoveListener(OnIncreaseToggle);
+        if (decreaseToggle != null) decreaseToggle.onValueChanged.RemoveListener(OnDecreaseToggle);
     }
 
-    private void OnDecreaseChanged(bool isOn)
+    private void OnLocalPlayerReady(PlayerController controller)
     {
-        if (isOn)
-        {
-            increaseToggle.SetIsOnWithoutNotify(false);
-            _onSelectDecrease?.Invoke(_stat.Id);
-        }
-        else
-        {
-            _onSelectDecrease?.Invoke(null);
-        }
+        _stats = controller.Stats;
+        _stats.OnStatChanged += HandleStatChanged;
+
+        if (increaseToggle != null) increaseToggle.onValueChanged.AddListener(OnIncreaseToggle);
+        if (decreaseToggle != null) decreaseToggle.onValueChanged.AddListener(OnDecreaseToggle);
+
+        Refresh();
     }
 
-    /// <summary>Actualiza el texto con el valor actual de la stat.</summary>
-    public void UpdateDisplay()
+    private void HandleStatChanged(string id, float value)
     {
-        if (_stat == null || valueLabel == null) return;
-        valueLabel.text = $"{_stat.CurrentValue:F0} / {_stat.Max:F0}";
+        if (id == statId) Refresh();
     }
 
-    /// <summary>Desmarca los toggles sin disparar eventos (llamado tras confirmar).</summary>
-    public void Deselect()
+    private void OnIncreaseToggle(bool on)
     {
-        increaseToggle.SetIsOnWithoutNotify(false);
-        decreaseToggle.SetIsOnWithoutNotify(false);
+        if (on && decreaseToggle != null) decreaseToggle.isOn = false;
+    }
+
+    private void OnDecreaseToggle(bool on)
+    {
+        if (on && increaseToggle != null) increaseToggle.isOn = false;
+    }
+
+    private void Refresh()
+    {
+        if (_stats == null) return;
+        var stat = _stats.GetStat(statId);
+        if (stat == null) return;
+
+        if (nameText != null) nameText.text = stat.DisplayName;
+        if (valueText != null) valueText.text = $"{_stats.GetCurrentValue(statId):F0} / {_stats.GetMaxValue(statId):F0}";
+        if (pointsText != null) pointsText.text = $"Pts: {_stats.GetPointsAssigned(statId)}";
+        if (costText != null) costText.text = $"+{stat.UpgradeCost} / -{stat.DowngradeValue}";
+    }
+
+    /// <summary>Resetea los toggles (llamado por el panel padre tras aplicar el tradeoff).</summary>
+    public void ClearToggles()
+    {
+        if (increaseToggle != null) increaseToggle.isOn = false;
+        if (decreaseToggle != null) decreaseToggle.isOn = false;
     }
 }

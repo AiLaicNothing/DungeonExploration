@@ -112,8 +112,39 @@ public class LobbyRoomUI : MonoBehaviour
         }
     }
 
-    private void OnClientConnected(ulong clientId) => RefreshPlayerList();
-    private void OnClientDisconnected(ulong clientId) => RefreshPlayerList();
+    private void OnClientConnected(ulong clientId)
+    {
+        Debug.Log($"[LobbyRoomUI] OnClientConnected: clientId={clientId}");
+        // El PlayerObject del cliente nuevo puede no estar aún spawneado en este frame.
+        // Hacemos un refresh diferido para darle tiempo a NGO de propagar el spawn.
+        StartCoroutine(RefreshAfterDelay(0.1f));
+    }
+
+    private void OnClientDisconnected(ulong clientId)
+    {
+        Debug.Log($"[LobbyRoomUI] OnClientDisconnected: clientId={clientId}");
+        RefreshPlayerList();
+    }
+
+    private System.Collections.IEnumerator RefreshAfterDelay(float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        RefreshPlayerList();
+
+        // Segundo refresh por seguridad: si en el primer intento aún no estaba el PlayerObject,
+        // este segundo intento ya lo encontrará.
+        yield return new WaitForSeconds(0.3f);
+        RefreshPlayerList();
+    }
+
+    /// <summary>
+    /// Método público para que cualquier sistema (LobbyPlayerData cuando cambian sus datos)
+    /// pueda pedir un refresh sin tener que importar dependencias internas.
+    /// </summary>
+    public void RequestRefresh()
+    {
+        RefreshPlayerList();
+    }
 
     /// <summary>Refresca la UI con la lista actual de clientes conectados.</summary>
     private void RefreshPlayerList()
@@ -124,19 +155,38 @@ public class LobbyRoomUI : MonoBehaviour
 
         if (NetworkManager.Singleton == null) return;
 
+        Debug.Log($"[LobbyRoomUI] RefreshPlayerList — {NetworkManager.Singleton.ConnectedClients.Count} clientes conectados");
+
         foreach (var clientPair in NetworkManager.Singleton.ConnectedClients)
         {
             var client = clientPair.Value;
             var playerObj = client.PlayerObject;
-            if (playerObj == null) continue;
 
-            var sessionData = playerObj.GetComponent<PlayerSessionData>();
-            string playerName = sessionData != null ? sessionData.PlayerName.Value.ToString() : $"Player {clientPair.Key}";
-
-            // Si el nombre todavía no se ha sincronizado, lo escuchamos
-            if (sessionData != null && string.IsNullOrEmpty(playerName))
+            string playerName;
+            if (playerObj == null)
             {
-                sessionData.PlayerName.OnValueChanged += (_, _) => RefreshPlayerList();
+                // El PlayerObject aún no llegó, mostramos placeholder
+                playerName = $"Player {clientPair.Key} (cargando...)";
+            }
+            else
+            {
+                playerName = $"Player {clientPair.Key}";
+
+                var lobbyData = playerObj.GetComponent<LobbyPlayerData>();
+                if (lobbyData != null)
+                {
+                    string n = lobbyData.PlayerName.Value.ToString();
+                    if (!string.IsNullOrEmpty(n)) playerName = n;
+                }
+                else
+                {
+                    var sessionData = playerObj.GetComponent<PlayerSessionData>();
+                    if (sessionData != null)
+                    {
+                        string n = sessionData.PlayerName.Value.ToString();
+                        if (!string.IsNullOrEmpty(n)) playerName = n;
+                    }
+                }
             }
 
             GameObject entry = Instantiate(playerEntryPrefab, playerListContainer);

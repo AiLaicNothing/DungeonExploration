@@ -462,49 +462,94 @@ public class PlayerController : NetworkBehaviour, IDamageable
         isDead = true;
         Debug.Log($"[Player] {OwnerClientId} ha muerto");
 
-        // Detener velocidad para que no siga moviéndose tras morir
         if (rb != null) rb.linearVelocity = Vector3.zero;
 
-        // Respawn en último checkpoint si existe
-        if (CheckpointManager.Instance != null && CheckpointManager.Instance.activeCheckpoint != null)
+        // Respawn en el último checkpoint que ESTE jugador usó
+        // (puede ser distinto al de otros jugadores en la sala)
+        var data = GetComponent<PlayerCheckpointData>();
+        if (data == null)
         {
-            Respawn();
-        }
-        // Si no hay checkpoint, el player queda muerto y el sistema decidirá qué hacer
-        // (pantalla de game over, espectador, etc.)
-    }
-
-    /// <summary>Resetea al jugador al último checkpoint activo.</summary>
-    public void Respawn()
-    {
-        var cp = CheckpointManager.Instance.activeCheckpoint;
-        if (cp == null || cp.spawnPoint == null)
-        {
-            Debug.LogWarning("No hay checkpoint activo para respawn.");
+            Debug.LogWarning("[PlayerController] No hay PlayerCheckpointData, no se puede respawnear.");
             return;
         }
 
-        // En multiplayer la teletransportación de la posición debe ser autoritativa.
-        // Si soy owner del Player, pido al servidor que me mueva.
-        if (IsServer)
+        string lastCheckpoint = data.LastUsedCheckpoint.Value.ToString();
+        if (string.IsNullOrEmpty(lastCheckpoint))
         {
-            transform.position = cp.spawnPoint.position;
-            if (rb != null) rb.linearVelocity = Vector3.zero;
-            stats.Health.SetCurrentValue(MaxHealth);
-        }
-        else
-        {
-            RespawnServerRpc(cp.spawnPoint.position);
+            Debug.LogWarning("[PlayerController] No hay LastUsedCheckpoint, no se puede respawnear.");
+            // Aquí podrías spawnear en zona inicial: lo dejamos para luego
+            return;
         }
 
-        isDead = false;
+        Respawn();
+    }
+
+    /// <summary>
+    /// Resetea al jugador a su último checkpoint usado.
+    /// El movimiento es autoritativo del servidor.
+    /// </summary>
+    public void Respawn()
+    {
+        var data = GetComponent<PlayerCheckpointData>();
+        if (data == null) return;
+
+        string lastCheckpoint = data.LastUsedCheckpoint.Value.ToString();
+        if (string.IsNullOrEmpty(lastCheckpoint))
+        {
+            Debug.LogWarning("[PlayerController] LastUsedCheckpoint vacío.");
+            return;
+        }
+
+        // El cliente pide al servidor que lo mueva
+        RequestTeleportToCheckpoint(lastCheckpoint);
+    }
+
+    /// <summary>
+    /// Pide al servidor teletransportar al jugador a un checkpoint específico.
+    /// Si soy server, lo aplico directo.
+    /// </summary>
+    public void RequestTeleportToCheckpoint(string checkpointName)
+    {
+        if (IsServer) TeleportToCheckpoint_Server(checkpointName);
+        else TeleportToCheckpointServerRpc(checkpointName);
     }
 
     [ServerRpc(RequireOwnership = true)]
-    private void RespawnServerRpc(Vector3 spawnPos)
+    private void TeleportToCheckpointServerRpc(string checkpointName)
     {
-        transform.position = spawnPos;
+        TeleportToCheckpoint_Server(checkpointName);
+    }
+
+    /// <summary>SOLO SERVIDOR. Aplica el teletransporte y cura al jugador.</summary>
+    private void TeleportToCheckpoint_Server(string checkpointName)
+    {
+        if (CheckpointManager.Instance == null) return;
+        var cp = CheckpointManager.Instance.GetByName(checkpointName);
+        if (cp == null || cp.spawnPoint == null)
+        {
+            Debug.LogWarning($"[PlayerController] Checkpoint '{checkpointName}' no encontrado.");
+            return;
+        }
+
+        transform.position = cp.spawnPoint.position;
         if (rb != null) rb.linearVelocity = Vector3.zero;
-        stats.Health.SetCurrentValue(MaxHealth);
+
+        // Curar al máximo solo si murió (en respawn). El teletransporte por panel no cura.
+        if (isDead)
+        {
+            stats.Health.SetCurrentValue(MaxHealth);
+            isDead = false;
+        }
+
+        // Notificar al cliente que el respawn se completó (para que actualice su estado local)
+        TeleportFinishedClientRpc();
+    }
+
+    [ClientRpc]
+    private void TeleportFinishedClientRpc()
+    {
+        if (!IsOwner) return;
+        // Limpiar flags locales relevantes
+        isDead = false;
     }
 }
