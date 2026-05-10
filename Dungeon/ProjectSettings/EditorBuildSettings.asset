@@ -18,6 +18,9 @@ EditorBuildSettings:
     path: Assets/Scenes/MENU/03_Lobby.unity
     guid: d1fecc6c8f8db8f44b355d4eabf559ca
   - enabled: 1
+    path: Assets/Scenes/MENU/04_Gameplay.unity
+    guid: 2531ad7d77996a74a85a02a5fcd81515
+  - enabled: 1
     path: Assets/Scenes/Checkpoints Test.unity
     guid: 1ca48af29e8a2024a91a7661717b9008
   - enabled: 1
