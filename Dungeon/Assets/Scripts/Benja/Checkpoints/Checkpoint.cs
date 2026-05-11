@@ -4,28 +4,29 @@ using UnityEngine;
 /// <summary>
 /// Checkpoint en multiplayer.
 ///
-/// Reglas:
-///   - Cuando un jugador interactúa, pide al servidor activarlo.
-///   - Si el checkpoint NO estaba descubierto a nivel mundo:
-///       → todos los jugadores presentes reciben puntos
-///       → se marca como descubierto a nivel mundo
-///       → se marca como descubierto personalmente para el activador
-///   - Si YA estaba descubierto a nivel mundo:
-///       → no se dan puntos
-///       → si el activador no lo tenía personalmente, se le marca (pero sin puntos)
-///   - Siempre setea LastUsedCheckpoint del activador para respawn.
+/// Comportamiento:
+///   - Si NO está descubierto a nivel mundo:
+///     * Al activarlo, descubrimiento mundial → da puntos a TODOS los jugadores presentes
+///     * Si era tu primer checkpoint personal, se hace tu respawn automáticamente
+///   - Si YA está descubierto a nivel mundo:
+///     * NO da puntos (ya alguien lo había descubierto)
+///     * Se muestra un toast explicando esto al jugador
+///     * Si era tu primer checkpoint personal, se hace tu respawn automáticamente
+///   - El respawn personal solo se cambia automáticamente la PRIMERA vez.
+///     Después, el jugador lo cambia manualmente desde el panel.
+///   - Al activar, se abre el menú del checkpoint.
 /// </summary>
 public class Checkpoint : MonoBehaviour, IInteractable
 {
     [Header("Info")]
-    public string checkpointName;       // DEBE SER ÚNICO en todo el mundo
+    public string checkpointName;
 
     [Tooltip("Punto donde respawnear/teletransportar al jugador.")]
     public Transform spawnPoint;
 
     [Header("UI mundo")]
-    public GameObject activateUI;
-    public GameObject openPanelUI;
+    public GameObject activateUI;       // "Pulsa E para activar"
+    public GameObject openPanelUI;      // "Pulsa E para usar"
 
     [Header("Recompensa")]
     public int upgradePointsReward = 5;
@@ -37,7 +38,6 @@ public class Checkpoint : MonoBehaviour, IInteractable
 
     void Start()
     {
-        // Esperar a que WorldCheckpointState exista para sincronizar visual
         if (WorldCheckpointState.Instance != null)
         {
             RefreshVisual();
@@ -45,7 +45,6 @@ public class Checkpoint : MonoBehaviour, IInteractable
         }
         else
         {
-            // Si aún no existe, esperamos
             StartCoroutine(WaitForWorldStateAndRefresh());
         }
     }
@@ -55,11 +54,6 @@ public class Checkpoint : MonoBehaviour, IInteractable
         while (WorldCheckpointState.Instance == null) yield return null;
         RefreshVisual();
         WorldCheckpointState.Instance.DiscoveredCheckpoints.OnListChanged += _ => RefreshVisual();
-    }
-
-    void OnDestroy()
-    {
-        // No es estrictamente necesario desuscribir, ya que NetworkList se destruye con el GameObject
     }
 
     private void RefreshVisual()
@@ -75,42 +69,19 @@ public class Checkpoint : MonoBehaviour, IInteractable
     // ── Interacción ───────────────────────────────────────────────────
     public void Interact()
     {
-        if (LocalPlayer.Controller == null)
-        {
-            Debug.LogWarning("[Checkpoint] No hay LocalPlayer registrado.");
-            return;
-        }
+        if (LocalPlayer.Controller == null) return;
 
-        // El cliente local pide al servidor activar el checkpoint
         var checkpointData = LocalPlayer.Controller.GetComponent<PlayerCheckpointData>();
-        if (checkpointData == null)
-        {
-            Debug.LogError("[Checkpoint] El player no tiene PlayerCheckpointData.");
-            return;
-        }
+        if (checkpointData == null) return;
 
-        // Si ya lo descubrió personalmente Y ya está descubierto en el mundo, abre el panel
-        bool worldDiscovered = WorldCheckpointState.Instance != null
-                            && WorldCheckpointState.Instance.IsDiscoveredInWorld(checkpointName);
+        // Pedimos al servidor activar el checkpoint
+        RequestActivateServerRpc();
 
-        if (worldDiscovered && checkpointData.HasPersonallyDiscovered(checkpointName))
-        {
-            // Ya conocido por este jugador → abrir panel teletransporte
-            // Igualmente actualizamos "último usado"
-            RequestActivateServerRpc();
-            CheckpointManager.Instance.OpenTeleportPanel();
-        }
-        else
-        {
-            // Activar (puede dar puntos o solo desbloquear acceso personal)
-            RequestActivateServerRpc();
-        }
+        // Abrimos el menú del checkpoint inmediatamente
+        if (CheckpointMenuUI.Instance != null)
+            CheckpointMenuUI.Instance.Open(checkpointName);
     }
 
-    /// <summary>
-    /// Cliente pide al servidor activar este checkpoint para él.
-    /// El servidor valida y aplica la lógica de puntos según las reglas.
-    /// </summary>
     [ServerRpc(RequireOwnership = false)]
     private void RequestActivateServerRpc(ServerRpcParams rpcParams = default)
     {
@@ -128,31 +99,71 @@ public class Checkpoint : MonoBehaviour, IInteractable
         if (WorldCheckpointState.Instance == null) return;
 
         bool wasNewInWorld = !WorldCheckpointState.Instance.IsDiscoveredInWorld(checkpointName);
+        bool wasNewForPlayer = !checkpointData.HasPersonallyDiscovered(checkpointName);
 
         if (wasNewInWorld)
         {
-            // PRIMER descubrimiento mundial: dar puntos a TODOS los jugadores presentes
+            // Nuevo en el mundo: descubrir + dar puntos a todos
             WorldCheckpointState.Instance.TryDiscoverInWorld(checkpointName, upgradePointsReward);
             GivePointsToAllPlayers(upgradePointsReward);
-            Debug.Log($"[Checkpoint] '{checkpointName}' descubierto mundial por {activatorClientId}. Todos reciben {upgradePointsReward} puntos.");
+            Debug.Log($"[Checkpoint] '{checkpointName}' descubierto mundial por {activatorClientId}. " +
+                      $"Todos reciben {upgradePointsReward} puntos.");
+
+            // Avisar al cliente que lo descubrió por primera vez en el mundo
+            NotifyDiscoveryClientRpc(checkpointName, upgradePointsReward, true,
+                CreateClientRpcParams(activatorClientId));
         }
-        else if (!checkpointData.HasPersonallyDiscovered(checkpointName))
+        else if (wasNewForPlayer)
         {
-            // Ya estaba descubierto a nivel mundo, pero este jugador no lo tenía personalmente.
-            // No se dan puntos, solo se desbloquea acceso para este jugador.
-            Debug.Log($"[Checkpoint] '{checkpointName}' ya descubierto mundialmente. Player {activatorClientId} desbloquea acceso (sin puntos).");
+            // El cliente lo descubre por primera vez personalmente,
+            // pero ya estaba descubierto a nivel mundo → no puntos
+            Debug.Log($"[Checkpoint] '{checkpointName}' ya descubierto mundial. " +
+                      $"Cliente {activatorClientId} desbloquea acceso (sin puntos).");
+
+            NotifyDiscoveryClientRpc(checkpointName, 0, false,
+                CreateClientRpcParams(activatorClientId));
         }
-        // else: ya lo tenía todo. Solo actualizar last used.
+        // else: el cliente ya lo conocía. No mostramos toast, es una interacción normal.
 
-        // Marcar descubrimiento personal y "último usado"
+        // Marcar descubrimiento personal
         checkpointData.MarkPersonallyDiscovered(checkpointName);
-        checkpointData.SetLastUsed(checkpointName);
 
-        // Notificar al CheckpointManager que registre este checkpoint para todos los clientes
-        // (ya lo hace el evento de cambio de DiscoveredCheckpoints, pero por seguridad)
+        // Establecer como respawn SOLO si es el primer checkpoint del jugador
+        checkpointData.SetLastUsedIfEmpty(checkpointName);
     }
 
-    /// <summary>SOLO SERVIDOR. Da puntos a todos los jugadores conectados.</summary>
+    /// <summary>
+    /// Notifica al cliente que activó el checkpoint, para mostrarle un toast informativo.
+    /// </summary>
+    [ClientRpc]
+    private void NotifyDiscoveryClientRpc(string cpName, int pointsAwarded, bool wasNewInWorld,
+                                           ClientRpcParams rpcParams = default)
+    {
+        if (ToastNotificationUI.Instance == null) return;
+
+        if (wasNewInWorld)
+        {
+            ToastNotificationUI.Instance.Show(
+                "¡Checkpoint descubierto!",
+                $"Has descubierto '{cpName}'. Todos los jugadores reciben +{pointsAwarded} puntos.");
+        }
+        else
+        {
+            ToastNotificationUI.Instance.Show(
+                "Checkpoint registrado",
+                $"'{cpName}' ya fue descubierto por otro jugador. Tienes acceso pero no recibes puntos.");
+        }
+    }
+
+    /// <summary>Helper para enviar un ClientRpc solo a un cliente concreto.</summary>
+    private ClientRpcParams CreateClientRpcParams(ulong targetClientId)
+    {
+        return new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { targetClientId } }
+        };
+    }
+
     private void GivePointsToAllPlayers(int amount)
     {
         foreach (var clientPair in NetworkManager.Singleton.ConnectedClients)
@@ -185,10 +196,11 @@ public class Checkpoint : MonoBehaviour, IInteractable
 
         activateUI?.SetActive(false);
         openPanelUI?.SetActive(false);
-        CheckpointManager.Instance?.CloseTeleportPanel();
+
+        if (CheckpointMenuUI.Instance != null && CheckpointMenuUI.Instance.IsOpen)
+            CheckpointMenuUI.Instance.Close();
     }
 
-    /// <summary>Verifica si el collider que entra es el player local del cliente.</summary>
     private bool IsLocalPlayer(Collider col)
     {
         var pc = col.GetComponentInParent<PlayerController>();

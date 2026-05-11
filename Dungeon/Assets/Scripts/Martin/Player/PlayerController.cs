@@ -162,8 +162,14 @@ public class PlayerController : NetworkBehaviour, IDamageable
         {
             CheckGround();
             GetViewPoint();
-            movementSM.Update();
-            actionSM.Update();
+
+            // Bloquear input de gameplay si hay paneles UI abiertos
+            // (las State Machines no se actualizan → no se procesan ataques, skills, etc.)
+            if (!UIBlockingManager.IsAnyUIOpen)
+            {
+                movementSM.Update();
+                actionSM.Update();
+            }
         }
 
         for (int i = 0; i < skillsCooldown.Length; i++)
@@ -177,6 +183,19 @@ public class PlayerController : NetworkBehaviour, IDamageable
     {
         if (!IsOwner) return;
         if (isDead) return;
+
+        // Si hay UI abierta, no procesar movimiento ni state machines
+        // (pero sí gravedad para que no se quede flotando si saltó)
+        if (UIBlockingManager.IsAnyUIOpen)
+        {
+            rb.AddForce(Vector3.up * baseGravity * currentGravityMultiplier, ForceMode.Acceleration);
+            // Detener movimiento horizontal para que no siga deslizándose
+            Vector3 v = rb.linearVelocity;
+            v.x = 0;
+            v.z = 0;
+            rb.linearVelocity = v;
+            return;
+        }
 
         if (!isPerformingAction)
         {
@@ -196,15 +215,33 @@ public class PlayerController : NetworkBehaviour, IDamageable
     public void ChangeActionState(PlayerStates nextState) => actionSM.ChangeState(nextState);
 
     // ── Movement ──────────────────────────────────────────────────────
+    private Camera _cachedCam;
+
+    /// <summary>
+    /// Acceso a Camera.main con cache. Si se pierde (cambio de escena), la rebuscamos.
+    /// Esto evita NullReferenceException cuando hay un frame entre destrucción y creación.
+    /// </summary>
+    private Camera MainCam
+    {
+        get
+        {
+            if (_cachedCam == null) _cachedCam = Camera.main;
+            return _cachedCam;
+        }
+    }
+
     private void Movement()
     {
         Vector2 inputDir = input.moveInput.normalized;
 
-        Vector3 camForward = Camera.main.transform.forward;
+        var cam = MainCam;
+        if (cam == null) return; // no hay cámara aún, saltamos este frame
+
+        Vector3 camForward = cam.transform.forward;
         camForward.y = 0;
         camForward.Normalize();
 
-        Vector3 camRight = Camera.main.transform.right;
+        Vector3 camRight = cam.transform.right;
         camRight.y = 0;
         camRight.Normalize();
 
@@ -259,7 +296,9 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
         if (input.isAiming || (lockOnTarget != null && lockOnTarget.isTargeting))
         {
-            lookDir = Camera.main.transform.forward;
+            var cam = MainCam;
+            if (cam == null) return;
+            lookDir = cam.transform.forward;
             lookDir.y = 0;
             lookDir.Normalize();
         }
@@ -284,7 +323,10 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
     public Vector3 GetViewPoint()
     {
-        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
+        var cam = MainCam;
+        if (cam == null) return transform.position;
+
+        Ray ray = cam.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
 
         if (Physics.Raycast(ray, out RaycastHit hit, 100f))
         {
@@ -299,7 +341,10 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
     public Vector3 GetAimPoint(float maxRange, LayerMask groundLayer)
     {
-        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f));
+        var cam = MainCam;
+        if (cam == null) return transform.position;
+
+        Ray ray = cam.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f));
 
         if (Physics.Raycast(ray, out RaycastHit hit, maxRange, groundLayer))
             return hit.point;

@@ -108,6 +108,36 @@ public class PlayerCheckpointData : NetworkBehaviour
         LastUsedCheckpoint.Value = new FixedString64Bytes(checkpointName);
     }
 
+    /// <summary>
+    /// SOLO SERVIDOR. Setea el respawn SOLO si el jugador no tenía uno previo.
+    /// Usado cuando descubres un checkpoint nuevo personalmente:
+    ///   - Si era tu primer checkpoint, pasa a ser tu respawn
+    ///   - Si ya tenías otro respawn, NO se cambia (decisión consciente del jugador)
+    /// </summary>
+    public void SetLastUsedIfEmpty(string checkpointName)
+    {
+        if (!IsServer) return;
+
+        string current = LastUsedCheckpoint.Value.ToString();
+        if (string.IsNullOrEmpty(current))
+        {
+            LastUsedCheckpoint.Value = new FixedString64Bytes(checkpointName);
+            Debug.Log($"[PlayerCheckpointData] Cliente {OwnerClientId}: primer checkpoint, respawn = '{checkpointName}'");
+        }
+    }
+
+    /// <summary>
+    /// El cliente pide al servidor cambiar su checkpoint de respawn.
+    /// </summary>
+    [ServerRpc]
+    public void RequestSetRespawnServerRpc(string checkpointName, ServerRpcParams rpcParams = default)
+    {
+        if (rpcParams.Receive.SenderClientId != OwnerClientId) return;
+
+        LastUsedCheckpoint.Value = new FixedString64Bytes(checkpointName);
+        Debug.Log($"[PlayerCheckpointData] Cliente {OwnerClientId} cambió su respawn a '{checkpointName}'");
+    }
+
     /// <summary>Guarda los datos en disco local (PlayerPrefs) usando el PlayerId.</summary>
     private void SaveLocalData()
     {

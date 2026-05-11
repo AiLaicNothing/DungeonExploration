@@ -76,6 +76,9 @@ public class CheckpointUpgradeUI : MonoBehaviour
 
         UpdateHeader();
         ClearError();
+
+        if (UIBlockingManager.Instance != null)
+            UIBlockingManager.Instance.Register(this);
     }
 
     public void Close()
@@ -84,7 +87,12 @@ public class CheckpointUpgradeUI : MonoBehaviour
 
         // Cancelar todos los cambios pendientes
         foreach (var row in _rows) row.ResetDelta();
+
+        if (UIBlockingManager.Instance != null)
+            UIBlockingManager.Instance.Unregister(this);
     }
+
+    public bool IsOpen => panelRoot != null && panelRoot.activeSelf;
 
     /// <summary>
     /// Recalcula el balance global y actualiza la cabecera.

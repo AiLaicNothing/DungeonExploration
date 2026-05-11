@@ -29,10 +29,11 @@ public class PlayerInteraction : NetworkBehaviour
     {
         if (!context.performed) return;
 
-        if (PauseMenuUI.Instance != null && PauseMenuUI.Instance.IsOpen)
-            return;
-
+        // Solo el dueño del Player local puede interactuar
         if (!IsOwner) return;
+
+        // No interactuar si hay UI abierta (evita abrir paneles encima de paneles)
+        if (UIBlockingManager.IsAnyUIOpen) return;
 
         _closestInteractable?.Interact();
     }

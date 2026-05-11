@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 8452581069351935317}
   - component: {fileID: 2541752908920863822}
   - component: {fileID: 7468161231857647494}
+  - component: {fileID: 6748556625066555510}
   m_Layer: 0
   m_Name: FreeLook Camera
   m_TagString: Untagged
@@ -234,6 +235,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CinemachineFOVBridge
   freeLook: {fileID: 9128271964599962825}
+--- !u!114 &6748556625066555510
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 638606761920322837}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e90cde18b6a9f654d99e5b76a581cd24, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraInputBlocker
 --- !u!1 &1213454717759071179
 GameObject:
   m_ObjectHideFlags: 0
@@ -575,7 +588,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5282313569105316549}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.01598879, y: 0.105573885, z: -0.0016977069, w: 0.9942815}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -906,7 +919,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7744516880323647543}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.020138992, y: 0.105565876, z: 0.00213838, w: 0.9942061}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1143,7 +1156,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8778673210740311897}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.0020993308, y: 0.1055873, z: 0.00022290922, w: 0.99440783}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -1220,6 +1233,8 @@ GameObject:
   - component: {fileID: 2796060496083993113}
   - component: {fileID: 2062272678127293682}
   - component: {fileID: 5818889905068986199}
+  - component: {fileID: 2357301547682423680}
+  - component: {fileID: 3273879667671522}
   m_Layer: 0
   m_Name: Player_Knight
   m_TagString: Player
@@ -1662,13 +1677,13 @@ MonoBehaviour:
     m_ActionName: 'PlayerInput/OnMelee[/Keyboard/f]'
   - m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
-        m_Mode: 1
+      - m_Target: {fileID: 3273879667671522}
+        m_TargetAssemblyTypeName: PlayerInputBridge, Assembly-CSharp
+        m_MethodName: OnPauseInput
+        m_Mode: 0
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: 
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -2028,3 +2043,34 @@ MonoBehaviour:
         byte0059: 0
         byte0060: 0
         byte0061: 0
+--- !u!114 &2357301547682423680
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8846076826872646024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a52a2ed122d71e6418a5bacdb9c2c255, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LocalCameraSetup
+  ShowTopMostFoldoutHeaderGroup: 1
+  virtualCamera: {fileID: 9128271964599962825}
+  followTarget: {fileID: 0}
+  lookAtTarget: {fileID: 0}
+  ownerPriority: 20
+  remotePriority: 0
+--- !u!114 &3273879667671522
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8846076826872646024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 127d6cb2abeb6ff4c99effa6ab1309d5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInputBridge
+  ShowTopMostFoldoutHeaderGroup: 1
