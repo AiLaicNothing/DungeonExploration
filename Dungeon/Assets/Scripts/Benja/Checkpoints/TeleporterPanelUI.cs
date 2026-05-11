@@ -122,8 +122,18 @@ public class TeleporterPanelUI : MonoBehaviour
         bool isCurrent = cpName == currentName;
         bool isRespawn = cpName == respawnName;
 
+        // Buscar componentes recursivamente (no solo hijos directos)
+        var nameLabel = FindDeepChild<TMP_Text>(entry.transform, "NameText");
+        var statusLabel = FindDeepChild<TMP_Text>(entry.transform, "StatusText");
+        var travelBtn = FindDeepChild<Button>(entry.transform, "TravelButton");
+        var respawnBtn = FindDeepChild<Button>(entry.transform, "RespawnButton");
+
+        // Aviso si falta alguno
+        if (nameLabel == null) Debug.LogWarning($"[TeleporterPanelUI] No se encontró 'NameText' en el prefab CheckpointEntry.");
+        if (travelBtn == null) Debug.LogWarning($"[TeleporterPanelUI] No se encontró 'TravelButton' en el prefab CheckpointEntry.");
+        if (respawnBtn == null) Debug.LogWarning($"[TeleporterPanelUI] No se encontró 'RespawnButton' en el prefab CheckpointEntry.");
+
         // Nombre con icono
-        var nameLabel = entry.transform.Find("NameText")?.GetComponent<TMP_Text>();
         if (nameLabel != null)
         {
             string icon = isRespawn ? iconRespawn : (isCurrent ? iconCurrent : iconNormal);
@@ -134,7 +144,6 @@ public class TeleporterPanelUI : MonoBehaviour
         }
 
         // Status
-        var statusLabel = entry.transform.Find("StatusText")?.GetComponent<TMP_Text>();
         if (statusLabel != null)
         {
             if (isCurrent && isRespawn) statusLabel.text = "Aquí estás · Respawn activo";
@@ -144,7 +153,6 @@ public class TeleporterPanelUI : MonoBehaviour
         }
 
         // Botón Viajar
-        var travelBtn = entry.transform.Find("TravelButton")?.GetComponent<Button>();
         if (travelBtn != null)
         {
             travelBtn.gameObject.SetActive(!isCurrent);
@@ -155,7 +163,6 @@ public class TeleporterPanelUI : MonoBehaviour
         }
 
         // Botón Marcar respawn
-        var respawnBtn = entry.transform.Find("RespawnButton")?.GetComponent<Button>();
         if (respawnBtn != null)
         {
             respawnBtn.gameObject.SetActive(!isRespawn);
@@ -166,38 +173,76 @@ public class TeleporterPanelUI : MonoBehaviour
         }
     }
 
+    /// <summary>Busca un componente en el GameObject o en cualquier hijo (recursivo).</summary>
+    private T FindDeepChild<T>(Transform parent, string childName) where T : Component
+    {
+        foreach (Transform child in parent)
+        {
+            if (child.name == childName)
+            {
+                var component = child.GetComponent<T>();
+                if (component != null) return component;
+            }
+
+            var found = FindDeepChild<T>(child, childName);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
     private void OnTravelClicked(string checkpointName)
     {
-        if (LocalPlayer.Controller == null) return;
+        Debug.Log($"[TeleporterPanelUI] Click VIAJAR a '{checkpointName}'");
 
+        if (LocalPlayer.Controller == null)
+        {
+            Debug.LogError("[TeleporterPanelUI] LocalPlayer.Controller es null. No se puede viajar.");
+            return;
+        }
+
+        Debug.Log($"[TeleporterPanelUI] Llamando a RequestTeleportToCheckpoint('{checkpointName}')");
         LocalPlayer.Controller.RequestTeleportToCheckpoint(checkpointName);
+
         Close();
     }
 
     private void OnSetRespawnClicked(string checkpointName)
     {
-        if (LocalPlayer.Controller == null) return;
+        Debug.Log($"[TeleporterPanelUI] Click MARCAR RESPAWN a '{checkpointName}'");
+
+        if (LocalPlayer.Controller == null)
+        {
+            Debug.LogError("[TeleporterPanelUI] LocalPlayer.Controller es null.");
+            return;
+        }
 
         var playerData = LocalPlayer.Controller.GetComponent<PlayerCheckpointData>();
-        if (playerData == null) return;
+        if (playerData == null)
+        {
+            Debug.LogError("[TeleporterPanelUI] PlayerCheckpointData no encontrado en LocalPlayer.");
+            return;
+        }
 
-        // Cambiar el respawn vía ServerRpc
+        Debug.Log($"[TeleporterPanelUI] Llamando a RequestSetRespawnServerRpc('{checkpointName}')");
         playerData.RequestSetRespawnServerRpc(checkpointName);
 
         // Preguntar si también quiere viajar
         if (ConfirmDialogUI.Instance != null)
         {
+            Debug.Log("[TeleporterPanelUI] Mostrando ConfirmDialog");
             ConfirmDialogUI.Instance.Show(
                 title: "Respawn actualizado",
                 message: $"'{checkpointName}' es ahora tu punto de respawn.\n\n¿Quieres viajar ahí también?",
                 onYes: () =>
                 {
+                    Debug.Log($"[TeleporterPanelUI] Usuario eligió viajar a '{checkpointName}'");
                     LocalPlayer.Controller.RequestTeleportToCheckpoint(checkpointName);
                     Close();
                 },
                 onNo: () =>
                 {
-                    Refresh(); // Refrescamos para reflejar el nuevo respawn
+                    Debug.Log("[TeleporterPanelUI] Usuario eligió quedarse");
+                    Refresh();
                 },
                 yesLabel: "Sí, viajar",
                 noLabel: "No, quedarme"
@@ -205,7 +250,8 @@ public class TeleporterPanelUI : MonoBehaviour
         }
         else
         {
-            // Fallback si no hay diálogo configurado
+            Debug.LogError("[TeleporterPanelUI] ConfirmDialogUI.Instance es NULL. " +
+                          "Asegúrate de tener un GameObject 'ConfirmDialog' con el script ConfirmDialogUI en escena.");
             Refresh();
         }
     }
