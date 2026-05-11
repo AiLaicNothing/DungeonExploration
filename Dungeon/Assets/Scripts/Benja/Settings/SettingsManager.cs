@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.Audio;
-using UnityEngine.Rendering;
+
 public class SettingsManager : MonoBehaviour
 {
     public static SettingsManager Instance { get; private set; }
@@ -28,11 +28,10 @@ public class SettingsManager : MonoBehaviour
     private const float DEFAULT_SENSITIVITY = 1.0f;
     private const float DEFAULT_VOLUME = 0.8f;
     private const float DEFAULT_FOV = 60f;
-    private const int DEFAULT_FPS_LIMIT = -1; // -1 = sin límite
-    private const int DEFAULT_DIFFICULTY = 1; // 0=easy, 1=normal, 2=hard
+    private const int DEFAULT_FPS_LIMIT = -1;
+    private const int DEFAULT_DIFFICULTY = 1;
     private const string DEFAULT_LANGUAGE = "es";
 
-    // ── Refs externas (asignar en inspector) ──────────────────────────
     [Header("Referencias")]
     [Tooltip("AudioMixer con parámetros expuestos: MasterVolume, MusicVolume, SFXVolume, UIVolume.")]
     [SerializeField] private AudioMixer audioMixer;
@@ -48,7 +47,6 @@ public class SettingsManager : MonoBehaviour
     public float MinFOV => minFOV;
     public float MaxFOV => maxFOV;
 
-    // ── Resoluciones disponibles ──────────────────────────────────────
     public Resolution[] AvailableResolutions { get; private set; }
 
     // ── Valores actuales ──────────────────────────────────────────────
@@ -66,33 +64,25 @@ public class SettingsManager : MonoBehaviour
     private float _fov;
 
     // ── Eventos ───────────────────────────────────────────────────────
-    /// <summary>Se dispara cuando cualquier configuración cambia.</summary>
     public event Action OnSettingsChanged;
-    /// <summary>Específico para HUD: el HUD se suscribe a esto.</summary>
     public event Action<bool> OnHudVisibilityChanged;
-    /// <summary>Específico para FOV: la cámara se suscribe a esto.</summary>
     public event Action<float> OnFOVChanged;
-    /// <summary>Específico para dificultad: el sistema de daño puede suscribirse.</summary>
     public event Action<int> OnDifficultyChanged;
-    /// <summary>Específico para idioma: el sistema de localización puede suscribirse.</summary>
     public event Action<string> OnLanguageChanged;
 
     // ── Properties ────────────────────────────────────────────────────
     public float Sensitivity { get => _sensitivity; set { _sensitivity = Mathf.Clamp(value, minSensitivity, maxSensitivity); PlayerPrefs.SetFloat(KEY_SENSITIVITY, _sensitivity); OnSettingsChanged?.Invoke(); } }
     public bool InvertX { get => _invertX; set { _invertX = value; PlayerPrefs.SetInt(KEY_INVERT_X, value ? 1 : 0); OnSettingsChanged?.Invoke(); } }
     public bool InvertY { get => _invertY; set { _invertY = value; PlayerPrefs.SetInt(KEY_INVERT_Y, value ? 1 : 0); OnSettingsChanged?.Invoke(); } }
-
     public int ResolutionIndex { get => _resolutionIndex; set { _resolutionIndex = value; PlayerPrefs.SetInt(KEY_RESOLUTION_INDEX, value); ApplyResolution(); } }
     public bool Fullscreen { get => _fullscreen; set { _fullscreen = value; PlayerPrefs.SetInt(KEY_FULLSCREEN, value ? 1 : 0); ApplyResolution(); } }
     public bool VSync { get => _vsync; set { _vsync = value; PlayerPrefs.SetInt(KEY_VSYNC, value ? 1 : 0); QualitySettings.vSyncCount = value ? 1 : 0; } }
     public int QualityLevel { get => _qualityLevel; set { _qualityLevel = Mathf.Clamp(value, 0, QualitySettings.names.Length - 1); PlayerPrefs.SetInt(KEY_QUALITY, _qualityLevel); QualitySettings.SetQualityLevel(_qualityLevel, true); } }
     public int FPSLimit { get => _fpsLimit; set { _fpsLimit = value; PlayerPrefs.SetInt(KEY_FPS_LIMIT, value); Application.targetFrameRate = value; } }
-
     public float VolumeMaster { get => _volMaster; set { _volMaster = Mathf.Clamp01(value); PlayerPrefs.SetFloat(KEY_VOL_MASTER, _volMaster); ApplyMixerVolume("MasterVolume", _volMaster); } }
     public float VolumeMusic { get => _volMusic; set { _volMusic = Mathf.Clamp01(value); PlayerPrefs.SetFloat(KEY_VOL_MUSIC, _volMusic); ApplyMixerVolume("MusicVolume", _volMusic); } }
     public float VolumeSFX { get => _volSFX; set { _volSFX = Mathf.Clamp01(value); PlayerPrefs.SetFloat(KEY_VOL_SFX, _volSFX); ApplyMixerVolume("SFXVolume", _volSFX); } }
     public float VolumeUI { get => _volUI; set { _volUI = Mathf.Clamp01(value); PlayerPrefs.SetFloat(KEY_VOL_UI, _volUI); ApplyMixerVolume("UIVolume", _volUI); } }
-
     public bool HideHud { get => _hideHud; set { _hideHud = value; PlayerPrefs.SetInt(KEY_HIDE_HUD, value ? 1 : 0); OnHudVisibilityChanged?.Invoke(!_hideHud); } }
     public int Difficulty { get => _difficulty; set { _difficulty = value; PlayerPrefs.SetInt(KEY_DIFFICULTY, value); OnDifficultyChanged?.Invoke(value); } }
     public string Language { get => _language; set { _language = value; PlayerPrefs.SetString(KEY_LANGUAGE, value); OnLanguageChanged?.Invoke(value); } }
@@ -101,12 +91,31 @@ public class SettingsManager : MonoBehaviour
     // ── Lifecycle ─────────────────────────────────────────────────────
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        // Singleton con persistencia entre escenas
+        if (Instance != null && Instance != this)
+        {
+            Debug.LogWarning($"[SettingsManager] Ya existe una instancia (ID: {Instance.GetInstanceID()}), destruyendo duplicado de la escena {gameObject.scene.name} (ID: {GetInstanceID()}).");
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
+        DontDestroyOnLoad(gameObject);
 
         AvailableResolutions = Screen.resolutions;
         LoadFromPrefs();
         ApplyAll();
+
+        Debug.Log($"[SettingsManager] Inicializado y persistente. ID: {GetInstanceID()}");
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this)
+        {
+            Debug.LogWarning($"[SettingsManager] DESTRUYENDO la instancia activa (ID: {GetInstanceID()}).");
+            Instance = null;
+        }
     }
 
     private void LoadFromPrefs()
@@ -115,7 +124,6 @@ public class SettingsManager : MonoBehaviour
         _invertX = PlayerPrefs.GetInt(KEY_INVERT_X, 0) == 1;
         _invertY = PlayerPrefs.GetInt(KEY_INVERT_Y, 0) == 1;
 
-        // Si no hay resolución guardada, usa la actual
         int currentIdx = FindCurrentResolutionIndex();
         _resolutionIndex = PlayerPrefs.GetInt(KEY_RESOLUTION_INDEX, currentIdx);
         _resolutionIndex = Mathf.Clamp(_resolutionIndex, 0, AvailableResolutions.Length - 1);
@@ -136,7 +144,6 @@ public class SettingsManager : MonoBehaviour
         _fov = PlayerPrefs.GetFloat(KEY_FOV, DEFAULT_FOV);
     }
 
-    /// <summary>Aplica TODOS los settings a Unity al iniciar.</summary>
     private void ApplyAll()
     {
         ApplyResolution();
@@ -166,7 +173,6 @@ public class SettingsManager : MonoBehaviour
     private void ApplyMixerVolume(string parameter, float linearValue)
     {
         if (audioMixer == null) return;
-        // Convertir 0..1 lineal a decibelios. -80dB = mute.
         float db = linearValue > 0.0001f ? Mathf.Log10(linearValue) * 20f : -80f;
         audioMixer.SetFloat(parameter, db);
     }
@@ -184,7 +190,6 @@ public class SettingsManager : MonoBehaviour
 
     public void Flush() => PlayerPrefs.Save();
 
-    /// <summary>Resetea todas las settings a defaults.</summary>
     public void ResetToDefaults()
     {
         Sensitivity = DEFAULT_SENSITIVITY;

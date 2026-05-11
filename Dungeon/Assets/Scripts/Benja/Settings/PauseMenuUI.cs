@@ -3,7 +3,7 @@ using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
-
+using System.Collections;
 /// <summary>
 /// Menú local del jugador. En multiplayer NO pausa el mundo — solo abre las opciones.
 /// En singleplayer SÍ congela Time.timeScale.
@@ -25,6 +25,7 @@ public class PauseMenuUI : MonoBehaviour
     [Header("Aviso multiplayer")]
     [SerializeField] private GameObject multiplayerWarningRoot;
     [SerializeField] private TMP_Text multiplayerWarningText;
+
     [SerializeField, TextArea]
     private string multiplayerWarningMessage =
         "El mundo sigue corriendo. No puedes pausar la partida.";
@@ -32,48 +33,86 @@ public class PauseMenuUI : MonoBehaviour
     [Header("Botones cabecera")]
     [SerializeField] private Button closeButton;
 
-    [Header("Input Action Maps (opcional)")]
-    [SerializeField] private string gameplayActionMap = "Player";
-    [SerializeField] private string uiActionMap = "UI";
-
     private bool _isOpen = false;
     public bool IsOpen => _isOpen;
+
+    private PlayerInput playerInput;
+    private InputAction pauseAction;
 
     void Awake()
     {
         Instance = this;
     }
 
-    void Start()
+    private IEnumerator Start()
     {
-        if (pausePanel != null) pausePanel.SetActive(false);
+        if (pausePanel != null)
+            pausePanel.SetActive(false);
 
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = false;
+        Cursor.lockState = CursorLockMode.Locked;
 
-        if (closeButton != null) closeButton.onClick.AddListener(Close);
+        if (closeButton != null)
+            closeButton.onClick.AddListener(Close);
 
         if (multiplayerWarningText != null)
             multiplayerWarningText.text = multiplayerWarningMessage;
+
+        // Esperar hasta que exista el player local
+        yield return new WaitUntil(() => LocalPlayer.Controller != null);
+
+        SubscribeToPauseAction();
     }
 
     void OnDestroy()
     {
-        if (Instance == this) Instance = null;
+        if (pauseAction != null)
+            pauseAction.performed -= OnPausePerformed;
+
+        if (Instance == this)
+            Instance = null;
+
         Time.timeScale = 1f;
     }
 
-    /// <summary>Conectar al evento del Action "Pause" del PlayerInput.</summary>
-    public void OnPause(InputAction.CallbackContext context)
+    private void SubscribeToPauseAction()
     {
-        if (!context.performed) return;
+        if (LocalPlayer.Controller == null)
+        {
+            Debug.LogWarning("LocalPlayer.Controller es null.");
+            return;
+        }
+
+        playerInput = LocalPlayer.Controller.GetComponent<PlayerInput>();
+
+        if (playerInput == null)
+        {
+            Debug.LogWarning("No se encontró PlayerInput.");
+            return;
+        }
+
+        pauseAction = playerInput.actions["Pause"];
+
+        if (pauseAction == null)
+        {
+            Debug.LogWarning("No existe la acción 'Pause'.");
+            return;
+        }
+
+        pauseAction.performed += OnPausePerformed;
+    }
+
+    private void OnPausePerformed(InputAction.CallbackContext context)
+    {
         Toggle();
     }
 
     public void Toggle()
     {
-        if (_isOpen) Close();
-        else Open();
+        if (_isOpen)
+            Close();
+        else
+            Open();
     }
 
     public void Open()
@@ -90,37 +129,32 @@ public class PauseMenuUI : MonoBehaviour
 
     private void ApplyState()
     {
-        bool isInMultiplayer = NetworkManager.Singleton != null
-                            && NetworkManager.Singleton.IsListening;
+        bool isInMultiplayer =
+            NetworkManager.Singleton != null &&
+            NetworkManager.Singleton.IsListening;
 
-        if (pausePanel != null) pausePanel.SetActive(_isOpen);
+        if (pausePanel != null)
+            pausePanel.SetActive(_isOpen);
 
         if (titleText != null)
-            titleText.text = isInMultiplayer ? multiplayerTitle : singleplayerTitle;
+            titleText.text = isInMultiplayer
+                ? multiplayerTitle
+                : singleplayerTitle;
 
         if (multiplayerWarningRoot != null)
             multiplayerWarningRoot.SetActive(_isOpen && isInMultiplayer);
 
-        // Tiempo: solo se pausa en singleplayer
+        // Solo pausa tiempo en singleplayer
         if (!isInMultiplayer)
             Time.timeScale = _isOpen ? 0f : 1f;
         else
             Time.timeScale = 1f;
 
-        // Bloquear gameplay input solo del player local
-        SwitchActionMap(_isOpen ? uiActionMap : gameplayActionMap);
-    }
+        // Cursor
+        Cursor.visible = _isOpen;
 
-    private void SwitchActionMap(string mapName)
-    {
-        if (string.IsNullOrEmpty(mapName)) return;
-        if (LocalPlayer.Controller == null) return;
-
-        var playerInput = LocalPlayer.Controller.GetComponent<PlayerInput>();
-        if (playerInput == null || playerInput.actions == null) return;
-
-        if (playerInput.actions.FindActionMap(mapName) == null) return;
-
-        playerInput.SwitchCurrentActionMap(mapName);
+        Cursor.lockState = _isOpen
+            ? CursorLockMode.None
+            : CursorLockMode.Locked;
     }
 }

@@ -18,13 +18,44 @@ public class SettingsTab_Display : MonoBehaviour
 
     void OnEnable()
     {
-        if (SettingsManager.Instance == null) return;
+        Debug.Log($"[SettingsTab_Display] OnEnable corriendo. Frame: {Time.frameCount}, " +
+                  $"SettingsManager.Instance: {(SettingsManager.Instance == null ? "NULL" : "OK")}");
+        // Si SettingsManager aún no existe, esperar a que aparezca
+        StartCoroutine(WaitForSettingsAndSetup());
+    }
+
+    private System.Collections.IEnumerator WaitForSettingsAndSetup()
+    {
+        // Esperar hasta 5 segundos a que SettingsManager esté disponible
+        float timeout = 5f;
+        float waited = 0f;
+        while (SettingsManager.Instance == null && waited < timeout)
+        {
+            waited += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        if (SettingsManager.Instance == null)
+        {
+            Debug.LogError("[SettingsTab_Display] SettingsManager no encontrado. " +
+                           "Asegúrate de arrancar desde 00_Boot.");
+            yield break;
+        }
+
+        Debug.Log($"[SettingsTab_Display] Setup ejecutando. " +
+                  $"resolutionDropdown={resolutionDropdown != null}, " +
+                  $"fullscreenToggle={fullscreenToggle != null}, " +
+                  $"vsyncToggle={vsyncToggle != null}, " +
+                  $"qualityDropdown={qualityDropdown != null}, " +
+                  $"fpsDropdown={fpsDropdown != null}");
 
         SetupResolution();
         SetupFullscreen();
         SetupVsync();
         SetupQuality();
         SetupFps();
+
+        Debug.Log("[SettingsTab_Display] Setup completado.");
     }
 
     private void SetupResolution()

@@ -152,7 +152,7 @@ MonoBehaviour:
   lobbySceneName: 03_Lobby
   mainMenuSceneName: 02_MainMenu
   gameplaySceneName: 04_Gameplay
-  useRandomProfileForTesting: 1
+  useRandomProfileForTesting: 0
   testProfileName: 
 --- !u!4 &238648635
 Transform:

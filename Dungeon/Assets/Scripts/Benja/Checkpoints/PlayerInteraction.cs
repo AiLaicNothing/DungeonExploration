@@ -29,7 +29,9 @@ public class PlayerInteraction : NetworkBehaviour
     {
         if (!context.performed) return;
 
-        // Solo el dueño del Player local puede interactuar
+        if (PauseMenuUI.Instance != null && PauseMenuUI.Instance.IsOpen)
+            return;
+
         if (!IsOwner) return;
 
         _closestInteractable?.Interact();

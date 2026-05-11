@@ -13,6 +13,8 @@ GameObject:
   - component: {fileID: 9108314015434117692}
   - component: {fileID: 6890493237999941929}
   - component: {fileID: 8452581069351935317}
+  - component: {fileID: 2541752908920863822}
+  - component: {fileID: 7468161231857647494}
   m_Layer: 0
   m_Name: FreeLook Camera
   m_TagString: Untagged
@@ -204,6 +206,34 @@ MonoBehaviour:
   AutoEnableInputs: 1
   XYAxis: {fileID: -5630151704836100654, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   ZAxis: {fileID: 0}
+--- !u!114 &2541752908920863822
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 638606761920322837}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d6e91683c332bf549866ff348158b081, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CinemachineSensitivityBridge
+  freeLook: {fileID: 9128271964599962825}
+  baseSpeedX: 300
+  baseSpeedY: 2
+--- !u!114 &7468161231857647494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 638606761920322837}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8ef5beb0b723e754baef1039929844b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CinemachineFOVBridge
+  freeLook: {fileID: 9128271964599962825}
 --- !u!1 &1213454717759071179
 GameObject:
   m_ObjectHideFlags: 0
@@ -1631,7 +1661,19 @@ MonoBehaviour:
     m_ActionId: dcd193ea-b0d5-4710-bf13-eee1de36c591
     m_ActionName: 'PlayerInput/OnMelee[/Keyboard/f]'
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 0}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: 
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: 2eeb34ae-f338-4ad2-9f6d-e9102f5d2b11
     m_ActionName: 'PlayerInput/Pause[/Keyboard/escape]'
   - m_PersistentCalls:
@@ -1680,6 +1722,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26073f37062df8e43a51b67aa1a08fb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInteraction
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &2656101319054880454
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1716,6 +1759,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a148ec107e573c34fb46ac50c2d6239a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerDitherFade
+  ShowTopMostFoldoutHeaderGroup: 1
   player: {fileID: 2475266143739573949}
   cam: {fileID: 0}
   renderers:

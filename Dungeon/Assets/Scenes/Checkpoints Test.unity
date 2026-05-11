@@ -1628,9 +1628,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: baa853ed118e5d841bcb4ccb67ef0801, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StatModifierCube
-  targetStat: 0
-  modifyAmount: 10
-  statNameText: {fileID: 1008620267}
+  statType: 0
+  addPoint: 1
+  labelText: {fileID: 0}
+  confirmButton: {fileID: 0}
+  panel: {fileID: 0}
 --- !u!65 &189272592
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -3262,9 +3264,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: baa853ed118e5d841bcb4ccb67ef0801, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StatModifierCube
-  targetStat: 2
-  modifyAmount: 10
-  statNameText: {fileID: 1245548785}
+  statType: 0
+  addPoint: 1
+  labelText: {fileID: 0}
+  confirmButton: {fileID: 0}
+  panel: {fileID: 0}
 --- !u!65 &297789482
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -6798,7 +6802,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PauseMenuUI
   pausePanel: {fileID: 1272355019}
-  resumeButton: {fileID: 1349975886}
+  titleText: {fileID: 0}
+  singleplayerTitle: Pausa
+  multiplayerTitle: "Men\xFA"
+  multiplayerWarningRoot: {fileID: 0}
+  multiplayerWarningText: {fileID: 0}
+  multiplayerWarningMessage: El mundo sigue corriendo. No puedes pausar la partida.
+  closeButton: {fileID: 0}
 --- !u!1 &805740803
 GameObject:
   m_ObjectHideFlags: 0
@@ -8556,17 +8566,6 @@ Transform:
   - {fileID: 308013239}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &833228933 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7187626322008412461, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
-  m_PrefabInstance: {fileID: 571254118}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: aa46c6b2449e8534f853ac3be58670bd, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerController
 --- !u!4 &833228936 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5195984443101771771, guid: f0a9eee06cc4fb149bec6b9d2d11ed14, type: 3}
@@ -8629,7 +8628,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 53e87504f50dd654fba8c3dd25ef701e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ShowValue
-  player: {fileID: 833228933}
   hpText: {fileID: 1474759627}
   staminaText: {fileID: 1924533287}
   manaText: {fileID: 1090788258}
@@ -9906,6 +9904,7 @@ GameObject:
   - component: {fileID: 1003293451}
   - component: {fileID: 1003293450}
   - component: {fileID: 1003293453}
+  - component: {fileID: 1003293454}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -9925,8 +9924,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 081f4103cac3e724dbb44df2f6da10f7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Savesystem
-  fileName: savegame.json
-  playerTransform: {fileID: 0}
   autoSaveOnCheckpoint: 1
 --- !u!114 &1003293451
 MonoBehaviour:
@@ -9940,8 +9937,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef9e53deab13397418999aa8e72d4f15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStats
+  ShowTopMostFoldoutHeaderGroup: 1
   data: {fileID: 11400000, guid: 87ba5a4779940854aa887ffcc272787b, type: 2}
-  _upgradePoints: 0
 --- !u!4 &1003293452
 Transform:
   m_ObjectHideFlags: 0
@@ -9974,6 +9971,31 @@ MonoBehaviour:
   maxSensitivity: 5
   minFOV: 40
   maxFOV: 100
+--- !u!114 &1003293454
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1003293449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 52487630
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!1 &1008620265
 GameObject:
   m_ObjectHideFlags: 0
@@ -11125,9 +11147,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: baa853ed118e5d841bcb4ccb67ef0801, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::StatModifierCube
-  targetStat: 1
-  modifyAmount: 10
-  statNameText: {fileID: 126676410}
+  statType: 0
+  addPoint: 1
+  labelText: {fileID: 0}
+  confirmButton: {fileID: 0}
+  panel: {fileID: 0}
 --- !u!65 &1190751328
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -14288,11 +14312,31 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 472184018815285012, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.9772671
+      value: 0.99440783
       objectReference: {fileID: 0}
     - target: {fileID: 472184018815285012, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.21201202
+      value: -0.0020993329
+      objectReference: {fileID: 0}
+    - target: {fileID: 472184018815285012, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.10558729
+      objectReference: {fileID: 0}
+    - target: {fileID: 472184018815285012, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.00022290941
+      objectReference: {fileID: 0}
+    - target: {fileID: 712914310418455739, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
+      propertyPath: GlobalObjectIdHash
+      value: 2725721388
+      objectReference: {fileID: 0}
+    - target: {fileID: 712914310418455739, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
+      propertyPath: SceneMigrationSynchronization
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 712914310418455739, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
+      propertyPath: InScenePlacedSourceGlobalObjectIdHash
+      value: 2261686923
       objectReference: {fileID: 0}
     - target: {fileID: 1536678900943762646, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
       propertyPath: m_TagString
@@ -14420,11 +14464,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6856180307364836973, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.973249
+      value: 0.9942815
       objectReference: {fileID: 0}
     - target: {fileID: 6856180307364836973, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.22975294
+      value: 0.015988786
+      objectReference: {fileID: 0}
+    - target: {fileID: 6856180307364836973, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.10557387
+      objectReference: {fileID: 0}
+    - target: {fileID: 6856180307364836973, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.0016977063
       objectReference: {fileID: 0}
     - target: {fileID: 8846076826872646024, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
       propertyPath: m_Name
@@ -14436,11 +14488,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8879206821679219616, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.98095244
+      value: 0.9942061
       objectReference: {fileID: 0}
     - target: {fileID: 8879206821679219616, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.19424808
+      value: -0.020138994
+      objectReference: {fileID: 0}
+    - target: {fileID: 8879206821679219616, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.10556586
+      objectReference: {fileID: 0}
+    - target: {fileID: 8879206821679219616, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.00213838
       objectReference: {fileID: 0}
     - target: {fileID: 9128271964599962825, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}
       propertyPath: m_XAxis.m_InvertInput
@@ -16207,8 +16267,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9dd02a42758fad24b9ce3428c5527562, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CheckpointManager
-  unlockedCheckpoints: []
-  activeCheckpoint: {fileID: 0}
   teleportPanel: {fileID: 1748002878}
 --- !u!4 &1787394140
 Transform:
@@ -16644,6 +16702,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1879685183}
   - component: {fileID: 1879685184}
+  - component: {fileID: 1879685185}
   m_Layer: 0
   m_Name: PlayerStats
   m_TagString: Untagged
@@ -16678,8 +16737,33 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef9e53deab13397418999aa8e72d4f15, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerStats
+  ShowTopMostFoldoutHeaderGroup: 1
   data: {fileID: 0}
-  _upgradePoints: 0
+--- !u!114 &1879685185
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1879685181}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 317764992
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!43 &1906175969
 Mesh:
   m_ObjectHideFlags: 0
