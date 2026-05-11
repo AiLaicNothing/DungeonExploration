@@ -152,7 +152,7 @@ MonoBehaviour:
   lobbySceneName: 03_Lobby
   mainMenuSceneName: 02_MainMenu
   gameplaySceneName: 04_Gameplay
-  useRandomProfileForTesting: 0
+  useRandomProfileForTesting: 1
   testProfileName: 
 --- !u!4 &238648635
 Transform:
@@ -466,7 +466,7 @@ MonoBehaviour:
     LoadSceneTimeOut: 120
     SpawnTimeout: 10
     EnableNetworkLogs: 1
-    NetworkTopology: 1
+    NetworkTopology: 0
     UseCMBService: 0
     AutoSpawnPlayerPrefabClientSide: 1
     NetworkMessageMetrics: 1
