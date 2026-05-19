@@ -97,7 +97,7 @@ public class MagicBeam : Skill
 
             if (damageable != null)
             {
-                damageable.TakeDamage( 10, hitData.throwType, dir,  hitData.stunDuration, hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
+                damageable.TakeDamage((player.Stats.PhysicalDamage.CurrentValue * hitData.physicalScale) + (player.Stats.MagicalDamage.CurrentValue * hitData.magicalScale), hitData.throwType, dir,  hitData.stunDuration, hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
             }
         }
     }

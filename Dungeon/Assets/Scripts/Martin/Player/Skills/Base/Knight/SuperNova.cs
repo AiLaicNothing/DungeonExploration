@@ -49,6 +49,6 @@ public class SuperNova : Skill
 
         // initialize behavior
         SuperNovaOrb orbScript = orb.GetComponent<SuperNovaOrb>();
-        orbScript.Initialize(player, radius, angularSpeed, duration, startAngle, hitData, explosionRadius, explosionDamage, enemyLayer);
+        orbScript.Initialize(player, radius, angularSpeed, duration, startAngle, hitData, explosionRadius, (player.Stats.PhysicalDamage.CurrentValue * hitData.physicalScale) + (player.Stats.MagicalDamage.CurrentValue * hitData.magicalScale), enemyLayer);
     }
 }

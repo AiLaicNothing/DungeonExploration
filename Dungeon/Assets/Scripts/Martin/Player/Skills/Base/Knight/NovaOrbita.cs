@@ -44,6 +44,6 @@ public class NovaOrbita : Skill
 
         // initialize behavior
         NovaOrbitaOrb orbScript = orb.GetComponent<NovaOrbitaOrb>();
-        orbScript.Initialize(player, radius, angularSpeed, duration, startAngle, hitData);
+        orbScript.Initialize(player, radius, angularSpeed, duration, startAngle, hitData, (player.Stats.PhysicalDamage.CurrentValue * hitData.physicalScale) + (player.Stats.MagicalDamage.CurrentValue * hitData.magicalScale));
     }
 }

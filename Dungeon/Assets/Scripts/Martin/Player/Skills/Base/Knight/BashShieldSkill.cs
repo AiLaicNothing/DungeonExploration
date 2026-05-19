@@ -79,7 +79,7 @@ public class BashShieldSkill : Skill
 
                     if (dmg != null)
                     {
-                        dmg.TakeDamage(10 * hitData.damageMultiplier, hitData.throwType, player.PlayerModel.transform.forward, hitData.stunDuration, hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
+                        dmg.TakeDamage((player.Stats.PhysicalDamage.CurrentValue * hitData.physicalScale) + (player.Stats.MagicalDamage.CurrentValue * hitData.magicalScale), hitData.throwType, player.PlayerModel.transform.forward, hitData.stunDuration, hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
 
                         yield break; 
                     }

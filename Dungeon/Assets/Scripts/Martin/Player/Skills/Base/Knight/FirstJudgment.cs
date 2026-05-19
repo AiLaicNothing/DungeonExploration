@@ -1,11 +1,14 @@
 using Unity.Netcode;
 using UnityEngine;
+using static UnityEngine.Analytics.IAnalytic;
 
 [CreateAssetMenu(menuName = "Skills/First Judgment")]
 public class FirstJudgment : Skill
 {
     [Header("Prefab")]
     public GameObject swordPrefab;
+
+    public HitData hitData;
 
     [Header("Targeting")]
     public float maxRange = 20f;
@@ -39,7 +42,7 @@ public class FirstJudgment : Skill
         sword.GetComponent<NetworkObject>().Spawn();
 
         FirstJudgementSword proj = sword.GetComponent<FirstJudgementSword>();
-        proj.Initialize(finalTarget);
+        proj.Initialize(finalTarget, hitData, (player.Stats.PhysicalDamage.CurrentValue * hitData.physicalScale) + (player.Stats.MagicalDamage.CurrentValue * hitData.magicalScale));
 
         if (spawnSFX != null)
         {

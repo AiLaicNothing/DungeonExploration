@@ -16,8 +16,8 @@ public class FirstJudgementSword : NetworkBehaviour
     [Header("Damage")]
     public float radius = 5f;
     public LayerMask enemyLayer;
-    public HitData hitData;
-    public float damage = 40f;
+    private HitData hitData;
+    public float damage ;
 
     [Header("VFX")]
     public GameObject impactSFX;
@@ -33,9 +33,11 @@ public class FirstJudgementSword : NetworkBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    public void Initialize(Vector3 target)
+    public void Initialize(Vector3 target, HitData hitData,float damage)
     {
         velocity = Vector3.down * initialSpeed;
+        this.hitData = hitData;
+        this.damage = damage;
     }
 
     void FixedUpdate()

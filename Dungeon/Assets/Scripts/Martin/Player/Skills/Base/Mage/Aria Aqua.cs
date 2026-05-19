@@ -85,7 +85,7 @@ public class AriaAqua : Skill
             Instantiate(explosionVFX, airCenter, Quaternion.identity);
         }
 
-        Explode(groundCenter);
+        Explode(groundCenter, player);
     }
 
     void SpawnNodes(PlayerController player, Vector3 center, Transform lockTarget, System.Action onArrive)
@@ -113,7 +113,7 @@ public class AriaAqua : Skill
         node.Initialize(center, lockTarget, travelTime, onArrive);
     }
 
-    void Explode(Vector3 center)
+    void Explode(Vector3 center, PlayerController player)
     {
         Collider[] hits = Physics.OverlapSphere(center, explosionRadius, enemyLayer);
 
@@ -125,7 +125,7 @@ public class AriaAqua : Skill
             {
                 Vector3 dir = (hit.transform.position - center).normalized;
 
-                dmg.TakeDamage(damage,  hitData.throwType,  dir, hitData.stunDuration,  hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
+                dmg.TakeDamage((player.Stats.PhysicalDamage.CurrentValue * hitData.physicalScale) + (player.Stats.MagicalDamage.CurrentValue * hitData.magicalScale),  hitData.throwType,  dir, hitData.stunDuration,  hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
             }
         }
     }
