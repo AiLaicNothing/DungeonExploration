@@ -37,13 +37,22 @@ public class TeleporterPanelUI : MonoBehaviour
     private readonly List<GameObject> _spawnedEntries = new();
 
     public bool IsOpen => panelRoot != null && panelRoot.activeSelf;
-
+    public static TeleporterPanelUI Instance { get; private set; }
     void Awake()
     {
-        if (panelRoot != null) panelRoot.SetActive(false);
-        if (closeButton != null) closeButton.onClick.AddListener(Close);
-    }
+        Instance = this;
 
+        if (panelRoot != null)
+            panelRoot.SetActive(false);
+
+        if (closeButton != null)
+            closeButton.onClick.AddListener(Close);
+    }
+    void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
     public void Open()
     {
         if (panelRoot != null) panelRoot.SetActive(true);

@@ -319,6 +319,12 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
         if (!previous && isGrounded)
             hasUsedAirAttack = false;
+
+        Debug.DrawRay(
+    groundCheck.position,
+    Vector3.down * 1.1f,
+    Color.red
+);
     }
 
     public Vector3 GetViewPoint()

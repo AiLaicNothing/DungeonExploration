@@ -1,5 +1,5 @@
-using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 #if CINEMACHINE_V3 || CINEMACHINE_3_0_0_OR_NEWER
@@ -8,36 +8,35 @@ using Unity.Cinemachine;
 using Cinemachine;
 #endif
 
-public class PuzzleReceiver : MonoBehaviour
+public class PuzzleReceiver : NetworkBehaviour
 {
     public enum LogicMode { AND, OR }
 
-    [Header("Lógica (Ambos o solo uno)")]
+    [Header("Lógica")]
     public LogicMode logicMode = LogicMode.AND;
 
-    [Header("Qué activa")]
+    [Header("Targets")]
     public List<MonoBehaviour> targets;
 
-    [Header("Cámara de Cutaway (opcional)")]
-    [Tooltip("Si se asigna, al completarse el puzle la cámara sube su prioridad temporalmente para mostrar el mecanismo.")]
+    [Header("Cámara")]
 #if CINEMACHINE_V3 || CINEMACHINE_3_0_0_OR_NEWER
     [SerializeField] private CinemachineCamera puzzleCamera;
 #else
     [SerializeField] private CinemachineVirtualCameraBase puzzleCamera;
 #endif
+
     [SerializeField] private int activePriority = 20;
     [SerializeField] private int inactivePriority = 0;
-    [Tooltip("Segundos que la cámara muestra el mecanismo antes de volver a la del jugador.")]
     [SerializeField] private float cameraDuration = 2.5f;
-    [Tooltip("Si está activo, el cutaway solo ocurre la primera vez que el puzle se completa.")]
     [SerializeField] private bool cameraTriggerOnlyOnce = true;
 
     private List<IActivator> _activators = new();
+
     private bool _currentState = false;
     private bool _cameraHasTriggered = false;
     private Coroutine _cameraRoutine;
 
-    void Awake()
+    private void Awake()
     {
         if (puzzleCamera != null)
             puzzleCamera.Priority = inactivePriority;
@@ -51,6 +50,21 @@ public class PuzzleReceiver : MonoBehaviour
 
     public void Evaluate()
     {
+        Debug.Log("[PuzzleReceiver] Evaluate llamado");
+
+        if (!IsServer)
+        {
+            Debug.Log("[PuzzleReceiver] Ignorado porque no soy servidor");
+            return;
+        }
+
+        Debug.Log($"[PuzzleReceiver] Activators registrados: {_activators.Count}");
+
+        foreach (var a in _activators)
+        {
+            Debug.Log($"Activator: {a} | Active = {a.IsActive}");
+        }
+
         bool shouldBeActive = logicMode switch
         {
             LogicMode.AND => _activators.TrueForAll(a => a.IsActive),
@@ -58,51 +72,64 @@ public class PuzzleReceiver : MonoBehaviour
             _ => false
         };
 
-        if (shouldBeActive == _currentState) return;
+        Debug.Log($"[PuzzleReceiver] shouldBeActive = {shouldBeActive}");
+
+        if (shouldBeActive == _currentState)
+        {
+            Debug.Log("[PuzzleReceiver] Estado no cambió");
+            return;
+        }
+
         _currentState = shouldBeActive;
+
+        Debug.Log($"[PuzzleReceiver] Nuevo estado = {_currentState}");
 
         foreach (var target in targets)
         {
+            Debug.Log($"[PuzzleReceiver] Activando target: {target}");
+
             if (target is IActivatable activatable)
             {
-                if (_currentState) activatable.Activate();
-                else activatable.Deactivate();
+                if (_currentState)
+                {
+                    Debug.Log("[PuzzleReceiver] Activate()");
+                    activatable.Activate();
+                }
+                else
+                {
+                    Debug.Log("[PuzzleReceiver] Deactivate()");
+                    activatable.Deactivate();
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[PuzzleReceiver] {target} NO implementa IActivatable");
             }
         }
-
-        if (_currentState)
-            TriggerCameraCutaway();
-        else
-            CancelCameraCutaway();
     }
 
-    private void TriggerCameraCutaway()
+    [ClientRpc]
+    private void TriggerCameraCutawayClientRpc()
     {
         if (puzzleCamera == null) return;
         if (cameraTriggerOnlyOnce && _cameraHasTriggered) return;
 
         _cameraHasTriggered = true;
 
-        if (_cameraRoutine != null) StopCoroutine(_cameraRoutine);
+        if (_cameraRoutine != null)
+            StopCoroutine(_cameraRoutine);
+
         _cameraRoutine = StartCoroutine(CameraRoutine());
     }
 
-    private void CancelCameraCutaway()
-    {
-        if (_cameraRoutine != null)
-        {
-            StopCoroutine(_cameraRoutine);
-            _cameraRoutine = null;
-        }
-        if (puzzleCamera != null)
-            puzzleCamera.Priority = inactivePriority;
-    }
-
-    private IEnumerator CameraRoutine()
+    private System.Collections.IEnumerator CameraRoutine()
     {
         puzzleCamera.Priority = activePriority;
+
         yield return new WaitForSeconds(cameraDuration);
+
         puzzleCamera.Priority = inactivePriority;
+
         _cameraRoutine = null;
     }
 }

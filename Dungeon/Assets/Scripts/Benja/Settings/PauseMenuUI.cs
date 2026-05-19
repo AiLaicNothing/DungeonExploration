@@ -40,6 +40,11 @@ public class PauseMenuUI : MonoBehaviour
     void Awake()
     {
         Instance = this;
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
     }
 
     void Start()
@@ -64,7 +69,28 @@ public class PauseMenuUI : MonoBehaviour
     /// <summary>Conectar al evento del Action "Pause" del PlayerInput.</summary>
     public void OnPause(InputAction.CallbackContext context)
     {
-        if (!context.performed) return;
+        if (CheckpointUpgradeUI.Instance != null &&
+            CheckpointUpgradeUI.Instance.IsOpen)
+        {
+            CheckpointUpgradeUI.Instance.Close();
+            return;
+        }
+
+        if (TeleporterPanelUI.Instance != null &&
+            TeleporterPanelUI.Instance.IsOpen)
+        {
+            TeleporterPanelUI.Instance.Close();
+            return;
+        }
+
+        if (CheckpointMenuUI.Instance != null &&
+            CheckpointMenuUI.Instance.IsOpen)
+        {
+            CheckpointMenuUI.Instance.Close();
+            return;
+        }
+
+        // Si no hay otros paneles abiertos:
         Toggle();
     }
 
