@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using static UnityEngine.Analytics.IAnalytic;
 
 public class PlayerController : NetworkBehaviour, IDamageable
 {
@@ -375,7 +376,8 @@ public class PlayerController : NetworkBehaviour, IDamageable
                 IDamageable damageable = hit.GetComponent<IDamageable>();
                 if (damageable != null)
                 {
-                    Vector3 hitDir = PlayerModel.transform.forward; damageable.TakeDamage( 10f * attack.hitData.damageMultiplier, attack.hitData.throwType,  hitDir, attack.hitData.stunDuration, attack.hitData.keepInAir, attack.hitData.airLiftForce, attack.hitData.staggerCharge);
+                    Vector3 hitDir = PlayerModel.transform.forward; 
+                    damageable.TakeDamage((Stats.PhysicalDamage.CurrentValue * attack.hitData.physicalScale) + (Stats.MagicalDamage.CurrentValue * attack.hitData.magicalScale), attack.hitData.throwType,  hitDir, attack.hitData.stunDuration, attack.hitData.keepInAir, attack.hitData.airLiftForce, attack.hitData.staggerCharge);
                 }
                 Debug.Log($"[Server] Player {OwnerClientId} hit {hit.name}");
             }

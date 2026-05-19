@@ -25,8 +25,8 @@ MonoBehaviour:
   tickRate: 0.2
   startOffset: {x: 0, y: 0.3, z: 0}
   hitData:
-    physicalScale: 1
-    magicalScale: 1
+    physicalScale: 1.5
+    magicalScale: 0
     damageMultiplier: 1
     staggerCharge: 10
     throwType: 0
