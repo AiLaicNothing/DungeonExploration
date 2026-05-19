@@ -9,18 +9,21 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d73c7eef9f560974fbed523e68c16e2c, type: 3}
-  m_Name: Nova Orbita
-  m_EditorClassIdentifier: Assembly-CSharp::NovaOrbita
-  skillName: Nova Orbita
-  resourceType: 2
-  cost: 15
+  m_Script: {fileID: 11500000, guid: 1a903d71be4a903499fc3119417a2499, type: 3}
+  m_Name: Spin Attack
+  m_EditorClassIdentifier: Assembly-CSharp::SpinAttack
+  skillName: Spin Attack
+  resourceType: 1
+  cost: 20
   castTime: 0.2
-  cooldown: 0
-  actionTime: 0.5
+  cooldown: 5
+  actionTime: 2
   castAnimation: 
   actionAnimation: 
-  orbPrefab: {fileID: 7803720243544684117, guid: b88fd86fc81135740b3b48f91150fc90, type: 3}
+  hitBoxSize: {x: 5, y: 2.5, z: 5}
+  duration: 2
+  tickRate: 0.2
+  startOffset: {x: 0, y: 0.3, z: 0}
   hitData:
     physicalScale: 1
     magicalScale: 1
@@ -30,6 +33,6 @@ MonoBehaviour:
     stunDuration: 0
     keepInAir: 0
     airLiftForce: 0
-  radius: 3
-  angularSpeed: 180
-  duration: 5
+  enemyLayer:
+    serializedVersion: 2
+    m_Bits: 4096
