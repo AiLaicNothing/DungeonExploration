@@ -1,33 +1,60 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public class Lever : MonoBehaviour, IInteractable, IActivator
+public class Lever : NetworkBehaviour, IInteractable, IActivator
 {
     [Header("Configuración")]
-    public bool canToggleOff = true;        // ¿Se puede desactivar?
+    public bool canToggleOff = true;
     public PuzzleReceiver receiver;
 
     [Header("Visual")]
-    public Animator animator;               // Animación de palanca
+    public Animator animator;
 
-    private bool _isActive = false;
-    public bool IsActive => _isActive;
+    private NetworkVariable<bool> _isActive =
+        new NetworkVariable<bool>(false);
 
-    void Start()
+    public bool IsActive => _isActive.Value;
+
+    private void Start()
     {
         receiver?.RegisterActivator(this);
     }
 
+    public override void OnNetworkSpawn()
+    {
+        _isActive.OnValueChanged += OnLeverStateChanged;
+
+        animator?.SetBool("IsActive", _isActive.Value);
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        _isActive.OnValueChanged -= OnLeverStateChanged;
+    }
+
+    private void OnLeverStateChanged(bool previous, bool current)
+    {
+        animator?.SetBool("IsActive", current);
+    }
+
     public void Interact()
     {
-        if (_isActive && !canToggleOff) return; // Solo activa una vez
+        ToggleLeverServerRpc();
+    }
 
-        _isActive = !_isActive;
+    [ServerRpc(RequireOwnership = false)]
+    private void ToggleLeverServerRpc()
+    {
+        if (_isActive.Value && !canToggleOff)
+            return;
 
-        animator?.SetBool("IsActive", _isActive);
+        _isActive.Value = !_isActive.Value;
 
         receiver?.Evaluate();
     }
 
-    // Registra manualmente desde el Inspector si hace falta
-    public void RegisterReceiver(PuzzleReceiver r) => receiver = r;
+    public void RegisterReceiver(PuzzleReceiver r)
+    {
+        receiver = r;
+    }
 }

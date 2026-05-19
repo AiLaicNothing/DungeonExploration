@@ -26,15 +26,27 @@ public class CheckpointUpgradeUI : MonoBehaviour
 
     private List<StatRowUI> _rows = new();
     private PlayerStats _stats;
+    public static CheckpointUpgradeUI Instance { get; private set; }
 
     void Awake()
     {
-        if (panelRoot != null) panelRoot.SetActive(false);
+        Instance = this;
 
-        if (confirmButton != null) confirmButton.onClick.AddListener(OnConfirm);
-        if (cancelButton != null) cancelButton.onClick.AddListener(Close);
+        if (panelRoot != null)
+            panelRoot.SetActive(false);
+
+        if (confirmButton != null)
+            confirmButton.onClick.AddListener(OnConfirm);
+
+        if (cancelButton != null)
+            cancelButton.onClick.AddListener(Close);
     }
 
+    void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
+    }
     void OnEnable()
     {
         LocalPlayer.SubscribeOrInvokeIfReady(OnLocalPlayerReady);

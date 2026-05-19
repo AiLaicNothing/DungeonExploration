@@ -28,7 +28,7 @@ public class PlayerInputBridge : NetworkBehaviour
 
         if (PauseMenuUI.Instance != null)
         {
-            PauseMenuUI.Instance.Toggle();
+            PauseMenuUI.Instance.OnPause(context);
         }
         else
         {
