@@ -2685,7 +2685,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 353, y: 450}
+  m_AnchoredPosition: {x: -714, y: -493}
   m_SizeDelta: {x: 300, y: 150}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &194006168
@@ -2708,7 +2708,9 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: El mundo sigue corriendo. No puedes pausar la partida
+  m_text: 'El mundo sigue corriendo.
+
+    No puedes pausar la partida . . .'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2735,8 +2737,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 25
+  m_fontSizeBase: 25
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -2774,7 +2776,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_margin: {x: -52.657745, y: 0, z: -155.92294, w: 51.693977}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -5802,7 +5804,7 @@ MonoBehaviour:
   pausePanel: {fileID: 5511334546561787767}
   titleText: {fileID: 0}
   singleplayerTitle: Pausa
-  multiplayerTitle: "Men\xFA"
+  multiplayerTitle: "MEN\xDA"
   multiplayerWarningRoot: {fileID: 1481126380}
   multiplayerWarningText: {fileID: 194006168}
   multiplayerWarningMessage: El mundo sigue corriendo. No puedes pausar la partida.
@@ -14376,7 +14378,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -27, y: 69}
+  m_AnchoredPosition: {x: -27, y: 56}
   m_SizeDelta: {x: -1684, y: -1163}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1210502678
@@ -14426,8 +14428,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 35
-  m_fontSizeBase: 35
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -14465,7 +14467,7 @@ MonoBehaviour:
   m_VertexBufferAutoSizeReduction: 0
   m_useMaxVisibleDescender: 1
   m_pageToDisplay: 1
-  m_margin: {x: 0, y: 0, z: 0, w: 0}
+  m_margin: {x: -128.38629, y: 45.060234, z: -116.594406, w: -39.314445}
   m_isUsingLegacyAnimationComponent: 0
   m_isVolumetricText: 0
   m_hasFontAssetChanged: 0
@@ -28181,6 +28183,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PauseTabSwitcher
   tabs:
+  - name: Gameplay
+    button: {fileID: 8852748839273785300}
+    panel: {fileID: 5750244173265524899}
+    activeColor: {r: 0.4, g: 0.7, b: 1, a: 1}
+    inactiveColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
+  - name: Sistema
+    button: {fileID: 3110280477980555420}
+    panel: {fileID: 992357894749668965}
+    activeColor: {r: 0.4, g: 0.7, b: 1, a: 1}
+    inactiveColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
   - name: Video
     button: {fileID: 3497451267884680161}
     panel: {fileID: 4474154196477307016}
@@ -28194,16 +28206,6 @@ MonoBehaviour:
   - name: Controles
     button: {fileID: 1937624216344365387}
     panel: {fileID: 1211907653926947769}
-    activeColor: {r: 0.4, g: 0.7, b: 1, a: 1}
-    inactiveColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
-  - name: Gameplay
-    button: {fileID: 8852748839273785300}
-    panel: {fileID: 5750244173265524899}
-    activeColor: {r: 0.4, g: 0.7, b: 1, a: 1}
-    inactiveColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
-  - name: Sistema
-    button: {fileID: 3110280477980555420}
-    panel: {fileID: 992357894749668965}
     activeColor: {r: 0.4, g: 0.7, b: 1, a: 1}
     inactiveColor: {r: 0.6, g: 0.6, b: 0.6, a: 1}
   defaultTabIndex: 0
@@ -32281,7 +32283,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 493, y: 310}
+  m_AnchoredPosition: {x: 0, y: 114}
   m_SizeDelta: {x: 892, y: 379}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2173044899903270758
@@ -34740,7 +34742,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -630, y: 310}
+  m_AnchoredPosition: {x: 0, y: 414}
   m_SizeDelta: {x: 892, y: 379}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &3018683181840541125
@@ -36687,7 +36689,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -255, y: 310}
+  m_AnchoredPosition: {x: 0, y: 314}
   m_SizeDelta: {x: 892, y: 379}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &3704267345006932808
@@ -38825,7 +38827,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &4476861890895696268
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -46590,7 +46592,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 249, y: -76}
+  m_AnchoredPosition: {x: 443, y: -256}
   m_SizeDelta: {x: 892, y: 379}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!224 &7202460976555140231
@@ -48130,7 +48132,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -320, y: -76}
+  m_AnchoredPosition: {x: -443, y: -256}
   m_SizeDelta: {x: 892, y: 379}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &7727626424314944775
@@ -51388,7 +51390,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 121, y: 310}
+  m_AnchoredPosition: {x: 0, y: 214}
   m_SizeDelta: {x: 892, y: 379}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!33 &8661176801517070453
