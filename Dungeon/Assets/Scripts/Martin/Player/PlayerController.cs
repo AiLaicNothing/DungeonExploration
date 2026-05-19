@@ -319,6 +319,12 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
         if (!previous && isGrounded)
             hasUsedAirAttack = false;
+
+        Debug.DrawRay(
+    groundCheck.position,
+    Vector3.down * 1.1f,
+    Color.red
+);
     }
 
     public Vector3 GetViewPoint()
@@ -557,29 +563,55 @@ public class PlayerController : NetworkBehaviour, IDamageable
         TeleportToCheckpoint_Server(checkpointName);
     }
 
-    /// <summary>SOLO SERVIDOR. Aplica el teletransporte y cura al jugador.</summary>
     private void TeleportToCheckpoint_Server(string checkpointName)
     {
         if (CheckpointManager.Instance == null) return;
+
         var cp = CheckpointManager.Instance.GetByName(checkpointName);
+
         if (cp == null || cp.spawnPoint == null)
         {
             Debug.LogWarning($"[PlayerController] Checkpoint '{checkpointName}' no encontrado.");
             return;
         }
 
-        transform.position = cp.spawnPoint.position;
-        if (rb != null) rb.linearVelocity = Vector3.zero;
+        Vector3 targetPos = cp.spawnPoint.position;
 
-        // Curar al máximo solo si murió (en respawn). El teletransporte por panel no cura.
+        ApplyTeleport(targetPos);
+
+        ForceTeleportClientRpc(targetPos);
+
         if (isDead)
         {
             stats.Health.SetCurrentValue(MaxHealth);
             isDead = false;
         }
 
-        // Notificar al cliente que el respawn se completó (para que actualice su estado local)
         TeleportFinishedClientRpc();
+    }
+
+    private void ApplyTeleport(Vector3 pos)
+    {
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+
+            rb.position = pos;
+
+            rb.Sleep();
+            rb.WakeUp();
+        }
+        else
+        {
+            transform.position = pos;
+        }
+    }
+
+    [ClientRpc]
+    private void ForceTeleportClientRpc(Vector3 pos)
+    {
+        ApplyTeleport(pos);
     }
 
     [ClientRpc]

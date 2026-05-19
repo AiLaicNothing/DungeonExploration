@@ -1,7 +1,8 @@
+using Unity.Netcode;
 using UnityEngine;
-[RequireComponent(typeof(Rigidbody))]
 
-public class MovingPlatform : MonoBehaviour, IActivatable
+[RequireComponent(typeof(Rigidbody))]
+public class MovingPlatform : NetworkBehaviour, IActivatable
 {
     [Header("Movimiento")]
     public Transform pointA;
@@ -14,24 +15,41 @@ public class MovingPlatform : MonoBehaviour, IActivatable
     public Vector3 CurrentVelocity { get; private set; }
 
     private Rigidbody _rb;
+
     private bool _moving = false;
     private Transform _target;
     private Vector3 _prevPosition;
 
-    void Awake()
+    private NetworkVariable<bool> _isActive =
+        new NetworkVariable<bool>(false);
+
+    private void Awake()
     {
         _rb = GetComponent<Rigidbody>();
+
         _rb.isKinematic = true;
         _rb.interpolation = RigidbodyInterpolation.Interpolate;
     }
 
-    void Start()
+    private void Start()
     {
         _target = pointA;
         _prevPosition = _rb.position;
     }
 
-    void FixedUpdate()
+    public override void OnNetworkSpawn()
+    {
+        _isActive.OnValueChanged += OnPlatformStateChanged;
+
+        ApplyState(_isActive.Value, false);
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        _isActive.OnValueChanged -= OnPlatformStateChanged;
+    }
+
+    private void FixedUpdate()
     {
         if (!_moving)
         {
@@ -40,40 +58,71 @@ public class MovingPlatform : MonoBehaviour, IActivatable
         }
 
         Vector3 newPosition = Vector3.MoveTowards(
-            _rb.position, _target.position, speed * Time.fixedDeltaTime);
+            _rb.position,
+            _target.position,
+            speed * Time.fixedDeltaTime);
 
         _rb.MovePosition(newPosition);
 
-        CurrentVelocity = (newPosition - _prevPosition) / Time.fixedDeltaTime;
+        CurrentVelocity =
+            (newPosition - _prevPosition) / Time.fixedDeltaTime;
+
         _prevPosition = newPosition;
 
         if (Vector3.Distance(newPosition, _target.position) < 0.01f)
+        {
+            _rb.MovePosition(_target.position);
+
+            CurrentVelocity = Vector3.zero;
             _moving = false;
+        }
+    }
+
+    private void OnPlatformStateChanged(bool previous, bool current)
+    {
+        ApplyState(current, true);
+    }
+
+    private void ApplyState(bool active, bool playAudio)
+    {
+        _target = active ? pointB : pointA;
+
+        _moving = true;
+
+        if (playAudio && audioSource != null)
+        {
+            if (!audioSource.isPlaying)
+                audioSource.Play();
+        }
     }
 
     public void Activate()
     {
-        _target = pointB;
-        _moving = true;
-        audioSource?.Play();
+        if (!IsServer) return;
+
+        _isActive.Value = true;
     }
 
     public void Deactivate()
     {
-        _target = pointA;
-        _moving = true;
+        if (!IsServer) return;
+
+        _isActive.Value = false;
     }
 
-    void OnCollisionEnter(Collision collision)
+    private void OnCollisionEnter(Collision collision)
     {
-
         var rider = collision.collider.GetComponentInParent<PlatformRider>();
-        if (rider != null) rider.SetPlatform(this);
+
+        if (rider != null)
+            rider.SetPlatform(this);
     }
 
-    void OnCollisionExit(Collision collision)
+    private void OnCollisionExit(Collision collision)
     {
         var rider = collision.collider.GetComponentInParent<PlatformRider>();
-        if (rider != null) rider.ClearPlatform(this);
+
+        if (rider != null)
+            rider.ClearPlatform(this);
     }
 }
