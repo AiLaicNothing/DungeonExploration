@@ -317,14 +317,9 @@ public class PlayerController : NetworkBehaviour, IDamageable
         bool previous = isGrounded;
         isGrounded = Physics.Raycast(groundCheck.position, Vector3.down, 1.1f, whatIsGround);
 
-        if (!previous && isGrounded)
-            hasUsedAirAttack = false;
+        if (!previous && isGrounded) hasUsedAirAttack = false;
 
-        Debug.DrawRay(
-    groundCheck.position,
-    Vector3.down * 1.1f,
-    Color.red
-);
+        Debug.DrawRay( groundCheck.position, Vector3.down * 1.1f,Color.red);
     }
 
     public Vector3 GetViewPoint()
@@ -369,9 +364,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
     {
         AttackSteps attack = isGrounded ? ComboData.attackSteps[comboIndex] : airComboData.attackSteps[comboIndex];
 
-        Vector3 center = PlayerModel.transform.position
-                       + PlayerModel.transform.forward * attack.hitBoxOffSet.z
-                       + Vector3.up * attack.hitBoxOffSet.y;
+        Vector3 center = PlayerModel.transform.position  + PlayerModel.transform.forward * attack.hitBoxOffSet.z + Vector3.up * attack.hitBoxOffSet.y;
 
         Collider[] hits = Physics.OverlapBox(center, attack.hitBoxSize * 0.5f, PlayerModel.transform.rotation);
 

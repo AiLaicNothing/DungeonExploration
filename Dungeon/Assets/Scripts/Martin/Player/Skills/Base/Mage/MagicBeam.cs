@@ -29,10 +29,10 @@ public class MagicBeam : Skill
     }
     public override void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
-        player.StartCoroutine(BeamRoutine(player));
+        player.StartCoroutine(BeamRoutine(player, targetPoint, lockTargetPos));
     }
 
-    private IEnumerator BeamRoutine(PlayerController player)
+    private IEnumerator BeamRoutine(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
         player.blockVelocity = true;
 
@@ -40,7 +40,7 @@ public class MagicBeam : Skill
 
         while (timer < duration)
         {
-            FireBeam(player);
+            FireBeam(player, targetPoint, lockTargetPos);
 
             yield return new WaitForSeconds(tickRate);
 
@@ -54,14 +54,28 @@ public class MagicBeam : Skill
         }
     }
 
-    private void FireBeam(PlayerController player)
+    private void FireBeam(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
         Vector3 startPos = player.transform.position + player.PlayerModel.right * startOffset.x + player.PlayerModel.up * startOffset.y + player.PlayerModel.forward * startOffset.z;
 
-        Vector3 dir = player.PlayerModel.forward;
+        Vector3 finalTarget;
+
+        // PRIORITIZE LOCK TARGET
+        if (lockTargetPos != Vector3.zero)
+        {
+            finalTarget = lockTargetPos;
+        }
+        else
+        {
+            finalTarget = targetPoint;
+        }
+
+        // Direction toward target
+        Vector3 dir = (finalTarget - startPos).normalized;
 
         float finalDistance = maxRange;
 
+        // Obstacle check
         if (Physics.Raycast(startPos, dir, out RaycastHit hit, maxRange, obstacleLayer))
         {
             finalDistance = hit.distance;
@@ -83,9 +97,8 @@ public class MagicBeam : Skill
 
             if (damageable != null)
             {
-                damageable.TakeDamage(10, hitData.throwType, dir, hitData.stunDuration, hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
+                damageable.TakeDamage( 10, hitData.throwType, dir,  hitData.stunDuration, hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
             }
         }
-
     }
 }

@@ -22,9 +22,14 @@ public class FireSlashSkill : Skill
 
     public override void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
-        Vector3 spawnPos = player.PlayerModel.transform.position + player.PlayerModel.transform.forward * spawnOffset.z + Vector3.up * spawnOffset.y;
+        Vector3 finalTarget = lockTargetPos != Vector3.zero? lockTargetPos : targetPoint;
+        
+        Vector3 dir =(finalTarget - player.PlayerModel.position).normalized;
+        dir.y = 0;
 
-        Quaternion rot = Quaternion.LookRotation(player.PlayerModel.transform.forward);
+        Vector3 spawnPos = player.PlayerModel.transform.position + dir * spawnOffset.z + Vector3.up * spawnOffset.y;
+
+        Quaternion rot = Quaternion.LookRotation(dir);
 
         GameObject prefab = Instantiate(proyectilePrefab, spawnPos, rot);
 
@@ -34,7 +39,7 @@ public class FireSlashSkill : Skill
 
         if (proyectile != null )
         {
-            proyectile.Initialize(damage, hitData, player.PlayerModel.forward, proyectileSpeed, Vector3.zero);
+            proyectile.Initialize(damage, hitData, dir, proyectileSpeed, Vector3.zero);
         }
     }
 

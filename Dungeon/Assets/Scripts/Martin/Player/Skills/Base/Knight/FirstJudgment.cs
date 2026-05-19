@@ -20,26 +20,26 @@ public class FirstJudgment : Skill
 
     public override void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
-        Vector3 aimPoint = targetPoint;
+        Vector3 finalTarget = lockTargetPos != Vector3.zero ? lockTargetPos : targetPoint;
 
         // clamp range
-        Vector3 dir = (aimPoint - player.transform.position);
+        Vector3 dir = (finalTarget - player.transform.position);
         float dist = dir.magnitude;
 
         if (dist > maxRange)
         {
-            aimPoint = player.transform.position + dir.normalized * maxRange;
+            finalTarget = player.transform.position + dir.normalized * maxRange;
         }
 
         // spawn above target
-        Vector3 spawnPos = aimPoint + Vector3.up * spawnHeight;
+        Vector3 spawnPos = finalTarget + Vector3.up * spawnHeight;
 
         GameObject sword = Instantiate(swordPrefab, spawnPos, Quaternion.identity);
 
         sword.GetComponent<NetworkObject>().Spawn();
 
         FirstJudgementSword proj = sword.GetComponent<FirstJudgementSword>();
-        proj.Initialize(aimPoint);
+        proj.Initialize(finalTarget);
 
         if (spawnSFX != null)
         {
