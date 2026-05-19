@@ -34,6 +34,7 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
     protected Coroutine staggerCourutine;
     protected Coroutine airRoutine;
 
+    public float CurrentHp => currentHp.Value;
     public bool IsStunned => isStunned;
     public bool IsStaggered => isStaggered;
 
