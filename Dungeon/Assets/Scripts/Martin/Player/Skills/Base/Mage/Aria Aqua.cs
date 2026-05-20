@@ -35,16 +35,18 @@ public class AriaAqua : Skill
 
     public override void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
-        player.StartCoroutine(ExecuteRoutine(player, targetPoint));
+        player.StartCoroutine(ExecuteRoutine(player, targetPoint, lockTargetPos));
     }
 
-    private IEnumerator ExecuteRoutine(PlayerController player, Vector3 targetPoint)
+    private IEnumerator ExecuteRoutine(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
         player.blockVelocity = true;
 
-        Vector3 groundCenter = targetPoint;
+        Vector3 finalTarget = lockTargetPos != Vector3.zero? lockTargetPos : targetPoint;
 
-        // ensure ground
+        Vector3 groundCenter = finalTarget;
+
+        // Snap to ground
         if (Physics.Raycast(groundCenter + Vector3.up * 5f, Vector3.down, out RaycastHit hit, 20f, groundLayer))
         {
             groundCenter = hit.point;
@@ -54,7 +56,7 @@ public class AriaAqua : Skill
 
         if (centerVFX != null)
         {
-            GameObject.Instantiate(centerVFX, groundCenter, Quaternion.identity);
+            Instantiate(centerVFX, groundCenter, Quaternion.identity);
         }
 
         int arrivedCount = 0;
@@ -64,23 +66,29 @@ public class AriaAqua : Skill
             arrivedCount++;
         }
 
-        SpawnNodes(player, airCenter, OnNodeArrive);
+        Transform lockTarget = null;
 
-        // wait until all 3 arrive
+        if (player.LockTarget != null && player.LockTarget.isTargeting && player.LockTarget.CurrentTarget != null)
+        {
+            lockTarget = player.LockTarget.CurrentTarget;
+        }
+
+        SpawnNodes(player, airCenter, lockTarget, OnNodeArrive);
+
+        // Wait until all projectiles arrive
         yield return new WaitUntil(() => arrivedCount >= 3);
 
-        // small delay
         yield return new WaitForSeconds(explosionDelay);
 
         if (explosionVFX != null)
         {
-            GameObject.Instantiate(explosionVFX, airCenter, Quaternion.identity);
+            Instantiate(explosionVFX, airCenter, Quaternion.identity);
         }
 
-        Explode(groundCenter);
+        Explode(groundCenter, player);
     }
 
-    void SpawnNodes(PlayerController player, Vector3 center, System.Action onArrive)
+    void SpawnNodes(PlayerController player, Vector3 center, Transform lockTarget, System.Action onArrive)
     {
         Vector3 forward = player.PlayerModel.forward;
         Vector3 right = player.PlayerModel.right;
@@ -89,22 +97,23 @@ public class AriaAqua : Skill
         Vector3 p2 = center - forward * spawnDistance + right * spawnDistance;
         Vector3 p3 = center - forward * spawnDistance - right * spawnDistance;
 
-        CreateNode(p1, center, onArrive);
-        CreateNode(p2, center, onArrive);
-        CreateNode(p3, center, onArrive);
+        CreateNode(p1, center, lockTarget, onArrive);
+        CreateNode(p2, center, lockTarget, onArrive);
+        CreateNode(p3, center, lockTarget, onArrive);
     }
 
-    void CreateNode(Vector3 pos, Vector3 center, System.Action onArrive)
+    void CreateNode(Vector3 pos, Vector3 center, Transform lockTarget, System.Action onArrive)
     {
         GameObject obj = Instantiate(projectilePrefab, pos, Quaternion.identity);
 
         obj.GetComponent<NetworkObject>().Spawn();
 
         var node = obj.GetComponent<AriaAquaproj>();
-        node.Initialize(center, travelTime, onArrive);
+
+        node.Initialize(center, lockTarget, travelTime, onArrive);
     }
 
-    void Explode(Vector3 center)
+    void Explode(Vector3 center, PlayerController player)
     {
         Collider[] hits = Physics.OverlapSphere(center, explosionRadius, enemyLayer);
 
@@ -116,7 +125,7 @@ public class AriaAqua : Skill
             {
                 Vector3 dir = (hit.transform.position - center).normalized;
 
-                dmg.TakeDamage(damage,  hitData.throwType,  dir, hitData.stunDuration,  hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
+                dmg.TakeDamage((player.Stats.PhysicalDamage.CurrentValue * hitData.physicalScale) + (player.Stats.MagicalDamage.CurrentValue * hitData.magicalScale),  hitData.throwType,  dir, hitData.stunDuration,  hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
             }
         }
     }

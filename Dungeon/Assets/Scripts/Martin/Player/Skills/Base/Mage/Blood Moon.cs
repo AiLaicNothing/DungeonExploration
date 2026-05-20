@@ -30,7 +30,7 @@ public class BloodMoon : Skill
 
         if (moonProj != null)
         {
-            moonProj.Initialize(player, hitData, targetPoint);
+            moonProj.Initialize(player, hitData, targetPoint, (player.Stats.PhysicalDamage.CurrentValue * hitData.physicalScale) + (player.Stats.MagicalDamage.CurrentValue * hitData.magicalScale));
         } 
     }
 }

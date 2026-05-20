@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 448588643fb9ae344b678ec61f7a6220, type: 3}
   m_Name: First Judgment
   m_EditorClassIdentifier: Assembly-CSharp::FirstJudgment
-  skillName: 
+  skillName: First Judgment
   resourceType: 2
   cost: 30
   castTime: 0
@@ -21,6 +21,15 @@ MonoBehaviour:
   castAnimation: 
   actionAnimation: 
   swordPrefab: {fileID: 4001187048571639140, guid: a8b2f8815fd4a1b42add7c63a43d01df, type: 3}
+  hitData:
+    physicalScale: 1.5
+    magicalScale: 2
+    damageMultiplier: 1
+    staggerCharge: 10
+    throwType: 2
+    stunDuration: 0
+    keepInAir: 0
+    airLiftForce: 0
   maxRange: 20
   spawnHeight: 15
   spawnSFX: {fileID: 0}

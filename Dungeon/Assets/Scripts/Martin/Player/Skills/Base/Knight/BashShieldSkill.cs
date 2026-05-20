@@ -14,6 +14,21 @@ public class BashShieldSkill : Skill
 
     public override void LocalExecute(PlayerController player, Vector3 targetPoint)
     {
+        Vector3 finalTarget = targetPoint; ;
+
+        if (player.LockTarget != null && player.LockTarget.isTargeting && player.LockTarget.CurrentTarget != null)
+        {
+            finalTarget = player.LockTarget.CurrentTarget.position;
+        }
+
+        Vector3 dir = (finalTarget - player.transform.position).normalized;
+        dir.y = 0f;
+
+        if (dir != Vector3.zero)
+        {
+            player.PlayerModel.rotation = Quaternion.LookRotation(dir);
+        }
+
         player.StartCoroutine(BashMove(player));
     }
     public override void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
@@ -64,7 +79,7 @@ public class BashShieldSkill : Skill
 
                     if (dmg != null)
                     {
-                        dmg.TakeDamage(10 * hitData.damageMultiplier, hitData.throwType, player.PlayerModel.transform.forward, hitData.stunDuration, hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
+                        dmg.TakeDamage((player.Stats.PhysicalDamage.CurrentValue * hitData.physicalScale) + (player.Stats.MagicalDamage.CurrentValue * hitData.magicalScale), hitData.throwType, player.PlayerModel.transform.forward, hitData.stunDuration, hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
 
                         yield break; 
                     }

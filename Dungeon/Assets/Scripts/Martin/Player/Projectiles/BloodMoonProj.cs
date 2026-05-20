@@ -24,7 +24,7 @@ public class BloodMoonProj : MonoBehaviour
 
     public LayerMask enemyLayer;
     private HitData hitData;
-
+    private float damage;
     private bool hasLanded;
     private float timer;
 
@@ -33,9 +33,10 @@ public class BloodMoonProj : MonoBehaviour
         rb = GetComponent<Rigidbody>();
     }
 
-    public void Initialize(PlayerController player, HitData data, Vector3 targetPos)
+    public void Initialize(PlayerController player, HitData data, Vector3 targetPos, float damage)
     {
         hitData = data;
+        this.damage = damage;
 
         Vector3 targetPoint = targetPos;
 
@@ -126,7 +127,7 @@ public class BloodMoonProj : MonoBehaviour
             {
                 Vector3 dir = (hit.transform.position - transform.position).normalized;
 
-                dmg.TakeDamage(20, hitData.throwType, dir, hitData.stunDuration, hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
+                dmg.TakeDamage(damage, hitData.throwType, dir, hitData.stunDuration, hitData.keepInAir, hitData.airLiftForce, hitData.staggerCharge);
             }
         }
     }

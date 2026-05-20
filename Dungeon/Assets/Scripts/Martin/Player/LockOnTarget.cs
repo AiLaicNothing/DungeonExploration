@@ -171,9 +171,8 @@ public class LockOnTarget : MonoBehaviour
 
         if (validTarget.Count == 0) return;
 
-        currentTarget = validTarget.OrderBy(t => Vector3.Angle(mainCamera.transform.forward, (t.position - mainCamera.transform.position))).First();
-
-        currentIndex = validTarget.IndexOf(currentTarget);
+        currentIndex = 0;
+        currentTarget = validTarget[currentIndex];
 
         isTargeting = true;
 
@@ -194,56 +193,67 @@ public class LockOnTarget : MonoBehaviour
 
     List<Transform> GetValidTargets()
     {
-        GameObject[] enemies = GameObject.FindGameObjectsWithTag(enemyTag);
+        Collider[] hits = Physics.OverlapSphere(transform.position, maxDistance);
 
-        List<Transform> list = new List<Transform>();
+        List<Transform> targets = new List<Transform>();
 
-        foreach (var enemy in enemies)
+        foreach (Collider col in hits)
         {
-            Vector3 dir = enemy.transform.position - transform.position;
-            float dist = dir.magnitude;
+            if (!col.CompareTag(enemyTag)) continue;
 
-            if (dist < minDistance || dist > maxDistance)
-                continue;
+            Transform enemy = col.transform;
 
-            float angle = Vector3.Angle(mainCamera.transform.forward, dir.normalized);
-            if (angle > maxAngle)
-                continue;
+            float dist = Vector3.Distance(transform.position, enemy.position);
 
-            // Cast a raycast to check if they are behind a wall
-            if (Physics.Raycast(mainCamera.transform.position, dir.normalized, out RaycastHit hit, maxDistance, obstacleLayer))
+            if (dist < minDistance || dist > maxDistance) continue;
+
+            // BETTER CAMERA CHECK
+            Vector3 camForward = mainCamera.transform.forward;
+            Vector3 toEnemy = (enemy.position - mainCamera.transform.position).normalized;
+
+            float dot = Vector3.Dot(camForward, toEnemy);
+
+            if (dot < 0.5f) continue;
+
+            // SCREEN CHECK
+            Vector3 viewportPos = mainCamera.WorldToViewportPoint(enemy.position);
+
+            if (viewportPos.z <= 0) continue;
+
+            if (viewportPos.x < 0.1f || viewportPos.x > 0.9f) continue;
+
+            if (viewportPos.y < 0.1f || viewportPos.y > 0.9f) continue;
+
+            // OBSTACLE CHECK
+            Vector3 origin = mainCamera.transform.position;
+            Vector3 targetPos = enemy.position + Vector3.up;
+
+            Vector3 dir = (targetPos - origin).normalized;
+
+            float rayDistance = Vector3.Distance(origin, targetPos);
+
+            if (Physics.Raycast(origin, dir, out RaycastHit hit, rayDistance, obstacleLayer))
             {
-                if (hit.transform != enemy.transform)
-                    continue;
+                continue;
             }
 
-            list.Add(enemy.transform);
+            targets.Add(enemy);
         }
 
-        //Order the list of targets in base of distance, the closer the lower in list
-        return list.OrderBy(t => Vector3.Distance(transform.position, t.position)).ToList();
+        // SORT BY SCREEN CENTER
+        targets = targets.OrderBy(t =>
+        {
+            Vector3 viewPos = mainCamera.WorldToViewportPoint(t.position);
+
+            return Vector2.Distance( new Vector2(viewPos.x, viewPos.y), new Vector2(0.5f, 0.5f) ); }).ToList();
+
+        return targets;
     }
     bool IsTargetValid(Transform target)
     {
         if (target == null) return false;
 
-        Vector3 dir = target.position - transform.position;
-        float dist = dir.magnitude;
-
-        if (dist < minDistance || dist > maxDistance)
-            return false;
-
-        float angle = Vector3.Angle(mainCamera.transform.forward, dir.normalized);
-        if (angle > maxAngle)
-            return false;
-
-        if (Physics.Raycast(mainCamera.transform.position, dir.normalized, out RaycastHit hit, maxDistance, obstacleLayer))
-        {
-            if (hit.transform != target)
-                return false;
-        }
-
-        return true;
+        return GetValidTargets().Contains(target);
     }
 
     void OnDrawGizmos()

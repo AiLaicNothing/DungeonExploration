@@ -4,6 +4,7 @@ public class NovaOrbitaOrb : NetworkBehaviour
 {
     private Transform player;
 
+    private float damage;
     private float radius;
     private float angularSpeed;
     private float duration;
@@ -16,9 +17,10 @@ public class NovaOrbitaOrb : NetworkBehaviour
 
     private HitData hitData;
 
-    public void Initialize(PlayerController owner, float r, float speed, float time, float startAngle, HitData data)
+    public void Initialize(PlayerController owner, float r, float speed, float time, float startAngle, HitData data, float damage)
     {
         hitData = data;
+        this.damage = damage;
 
         player = owner.transform;
 

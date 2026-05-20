@@ -5,7 +5,9 @@ public class AriaAquaproj : MonoBehaviour
 {
     private Rigidbody rb;
 
-    private Vector3 center;
+    private Vector3 targetPoint;
+    private Transform lockTarget;
+
     private float travelTime;
     private float timer;
 
@@ -14,27 +16,30 @@ public class AriaAquaproj : MonoBehaviour
     [Header("Spiral")]
     public float spiralStrength = 5f;
 
-    private bool initilized;
+    private bool initialized;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
     }
-    public void Initialize(Vector3 centerPos, float time, Action callback)
+
+    public void Initialize(Vector3 point, Transform target, float time, Action callback)
     {
-        center = centerPos;
+        targetPoint = point;
+        lockTarget = target;
+
         travelTime = time;
         onArrive = callback;
 
         rb.useGravity = false;
         rb.linearVelocity = Vector3.zero;
 
-        initilized = true;
+        initialized = true;
     }
 
     void FixedUpdate()
     {
-        if (!initilized) return;
+        if (!initialized) return;
 
         timer += Time.fixedDeltaTime;
 
@@ -46,19 +51,34 @@ public class AriaAquaproj : MonoBehaviour
             return;
         }
 
-        Vector3 toCenter = (center - transform.position).normalized;
+        Vector3 currentCenter;
+
+        if (lockTarget != null)
+        {
+            currentCenter = lockTarget.position;
+        }
+        else
+        {
+            currentCenter = targetPoint;
+        }
+
+        Vector3 toCenter = (currentCenter - transform.position).normalized;
 
         Vector3 perpendicular = Vector3.Cross(toCenter, Vector3.up).normalized;
 
         Vector3 finalDir = (toCenter + perpendicular * spiralStrength * (1f - t)).normalized;
 
-        float distance = Vector3.Distance(transform.position, center);
-        float speed = distance / (travelTime - timer + 0.01f); // ensures same  time
+        float distance = Vector3.Distance(transform.position, currentCenter);
+
+        float speed = distance / (travelTime - timer + 0.01f);
 
         rb.linearVelocity = finalDir * speed;
 
-        // rotate for visuals
-        transform.rotation = Quaternion.LookRotation(rb.linearVelocity);
+        // Visual rotation
+        if (rb.linearVelocity.sqrMagnitude > 0.01f)
+        {
+            transform.rotation = Quaternion.LookRotation(rb.linearVelocity.normalized);
+        }
     }
 
     void ReachCenter()

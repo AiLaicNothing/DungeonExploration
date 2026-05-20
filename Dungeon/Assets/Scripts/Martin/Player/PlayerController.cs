@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using static UnityEngine.Analytics.IAnalytic;
 
 public class PlayerController : NetworkBehaviour, IDamageable
 {
@@ -317,8 +318,9 @@ public class PlayerController : NetworkBehaviour, IDamageable
         bool previous = isGrounded;
         isGrounded = Physics.Raycast(groundCheck.position, Vector3.down, 1.1f, whatIsGround);
 
-        if (!previous && isGrounded)
-            hasUsedAirAttack = false;
+        if (!previous && isGrounded) hasUsedAirAttack = false;
+
+        Debug.DrawRay( groundCheck.position, Vector3.down * 1.1f,Color.red);
     }
 
     public Vector3 GetViewPoint()
@@ -363,9 +365,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
     {
         AttackSteps attack = isGrounded ? ComboData.attackSteps[comboIndex] : airComboData.attackSteps[comboIndex];
 
-        Vector3 center = PlayerModel.transform.position
-                       + PlayerModel.transform.forward * attack.hitBoxOffSet.z
-                       + Vector3.up * attack.hitBoxOffSet.y;
+        Vector3 center = PlayerModel.transform.position  + PlayerModel.transform.forward * attack.hitBoxOffSet.z + Vector3.up * attack.hitBoxOffSet.y;
 
         Collider[] hits = Physics.OverlapBox(center, attack.hitBoxSize * 0.5f, PlayerModel.transform.rotation);
 
@@ -376,15 +376,8 @@ public class PlayerController : NetworkBehaviour, IDamageable
                 IDamageable damageable = hit.GetComponent<IDamageable>();
                 if (damageable != null)
                 {
-                    Vector3 hitDir = PlayerModel.transform.forward;
-                    damageable.TakeDamage(
-                        10f * attack.hitData.damageMultiplier,
-                        attack.hitData.throwType,
-                        hitDir,
-                        attack.hitData.stunDuration,
-                        attack.hitData.keepInAir,
-                        attack.hitData.airLiftForce,
-                        attack.hitData.staggerCharge);
+                    Vector3 hitDir = PlayerModel.transform.forward; 
+                    damageable.TakeDamage((Stats.PhysicalDamage.CurrentValue * attack.hitData.physicalScale) + (Stats.MagicalDamage.CurrentValue * attack.hitData.magicalScale), attack.hitData.throwType,  hitDir, attack.hitData.stunDuration, attack.hitData.keepInAir, attack.hitData.airLiftForce, attack.hitData.staggerCharge);
                 }
                 Debug.Log($"[Server] Player {OwnerClientId} hit {hit.name}");
             }
@@ -565,29 +558,55 @@ public class PlayerController : NetworkBehaviour, IDamageable
         TeleportToCheckpoint_Server(checkpointName);
     }
 
-    /// <summary>SOLO SERVIDOR. Aplica el teletransporte y cura al jugador.</summary>
     private void TeleportToCheckpoint_Server(string checkpointName)
     {
         if (CheckpointManager.Instance == null) return;
+
         var cp = CheckpointManager.Instance.GetByName(checkpointName);
+
         if (cp == null || cp.spawnPoint == null)
         {
             Debug.LogWarning($"[PlayerController] Checkpoint '{checkpointName}' no encontrado.");
             return;
         }
 
-        transform.position = cp.spawnPoint.position;
-        if (rb != null) rb.linearVelocity = Vector3.zero;
+        Vector3 targetPos = cp.spawnPoint.position;
 
-        // Curar al máximo solo si murió (en respawn). El teletransporte por panel no cura.
+        ApplyTeleport(targetPos);
+
+        ForceTeleportClientRpc(targetPos);
+
         if (isDead)
         {
             stats.Health.SetCurrentValue(MaxHealth);
             isDead = false;
         }
 
-        // Notificar al cliente que el respawn se completó (para que actualice su estado local)
         TeleportFinishedClientRpc();
+    }
+
+    private void ApplyTeleport(Vector3 pos)
+    {
+        if (rb != null)
+        {
+            rb.linearVelocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+
+            rb.position = pos;
+
+            rb.Sleep();
+            rb.WakeUp();
+        }
+        else
+        {
+            transform.position = pos;
+        }
+    }
+
+    [ClientRpc]
+    private void ForceTeleportClientRpc(Vector3 pos)
+    {
+        ApplyTeleport(pos);
     }
 
     [ClientRpc]

@@ -16,6 +16,7 @@ public class PlatformRider : MonoBehaviour
 
     public void ClearPlatform(MovingPlatform platform)
     {
-        if (_current == platform) _current = null;
+        if (_current == platform)
+            _current = null;
     }
 }
