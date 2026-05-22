@@ -3,43 +3,101 @@ using System.Threading.Tasks;
 using UnityEngine;
 
 /// <summary>
-/// Sistema de rejoin: guarda el ID de la última sesión a la que el jugador
-/// se unió, y permite reconectarse si la sesión sigue activa.
+/// Sistema de rejoin:
+/// - Guarda la última sesión jugada
+/// - Permite reconectar
+/// - Mantiene sesiones persistentes incluso si sales al menú
 ///
-/// Vive como singleton persistente. Auto-guarda cuando el jugador entra a una sala.
+/// IMPORTANTE:
+/// - Ya NO se borra automáticamente al salir
+/// - Solo se limpia si:
+///     • la sesión expiró
+///     • el usuario la elimina manualmente
+///     • el rejoin falla
+///
+/// Vive como singleton persistente.
 /// </summary>
 public class RejoinManager : MonoBehaviour
 {
     public static RejoinManager Instance { get; private set; }
 
-    private const string KEY_LAST_SESSION_ID = "rejoin_last_session_id";
-    private const string KEY_LAST_SESSION_NAME = "rejoin_last_session_name";
-    private const string KEY_LAST_SESSION_TIME = "rejoin_last_session_time_ticks";
+    private const string KEY_LAST_SESSION_ID =
+        "rejoin_last_session_id";
 
-    [Tooltip("Ventana de tiempo en segundos durante la cual se considera 'reciente' una sesión.")]
-    [SerializeField] private int rejoinWindowSeconds = 600; // 10 minutos por defecto
+    private const string KEY_LAST_SESSION_NAME =
+        "rejoin_last_session_name";
 
-    public string LastSessionId => PlayerPrefs.GetString(KEY_LAST_SESSION_ID, "");
-    public string LastSessionName => PlayerPrefs.GetString(KEY_LAST_SESSION_NAME, "");
+    private const string KEY_LAST_SESSION_TIME =
+        "rejoin_last_session_time_ticks";
 
-    /// <summary>True si hay una sesión guardada que está dentro de la ventana de rejoin.</summary>
+    [Header("Config")]
+
+    [Tooltip(
+        "Tiempo máximo para considerar válida una sesión reciente."
+    )]
+    [SerializeField]
+    private int rejoinWindowSeconds = 600;
+
+    // ════════════════════════════════════════════════════════════════
+    // PROPERTIES
+    // ════════════════════════════════════════════════════════════════
+
+    public string LastSessionId =>
+        PlayerPrefs.GetString(KEY_LAST_SESSION_ID, "");
+
+    public string LastSessionName =>
+        PlayerPrefs.GetString(KEY_LAST_SESSION_NAME, "");
+
+    /// <summary>
+    /// True si existe una sesión almacenada.
+    /// </summary>
+    public bool HasStoredSession =>
+        !string.IsNullOrEmpty(LastSessionId);
+
+    /// <summary>
+    /// True si la sesión guardada sigue dentro
+    /// de la ventana de rejoin.
+    /// </summary>
     public bool HasRecentSession
     {
         get
         {
-            if (string.IsNullOrEmpty(LastSessionId)) return false;
-            long ticks = long.Parse(PlayerPrefs.GetString(KEY_LAST_SESSION_TIME, "0"));
-            if (ticks == 0) return false;
+            if (!HasStoredSession)
+                return false;
 
-            DateTime savedAt = new DateTime(ticks, DateTimeKind.Utc);
-            return (DateTime.UtcNow - savedAt).TotalSeconds < rejoinWindowSeconds;
+            long ticks = long.Parse(
+                PlayerPrefs.GetString(
+                    KEY_LAST_SESSION_TIME,
+                    "0"
+                )
+            );
+
+            if (ticks == 0)
+                return false;
+
+            DateTime savedAt =
+                new DateTime(ticks, DateTimeKind.Utc);
+
+            return
+                (DateTime.UtcNow - savedAt).TotalSeconds
+                < rejoinWindowSeconds;
         }
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // UNITY
+    // ════════════════════════════════════════════════════════════════
+
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
+
         DontDestroyOnLoad(gameObject);
     }
 
@@ -47,8 +105,8 @@ public class RejoinManager : MonoBehaviour
     {
         if (SessionManager.Instance != null)
         {
+            // SOLO guardar automáticamente
             SessionManager.Instance.OnSessionJoined += SaveCurrentSession;
-            SessionManager.Instance.OnSessionLeft += ClearSession;
         }
     }
 
@@ -57,58 +115,107 @@ public class RejoinManager : MonoBehaviour
         if (SessionManager.Instance != null)
         {
             SessionManager.Instance.OnSessionJoined -= SaveCurrentSession;
-            SessionManager.Instance.OnSessionLeft -= ClearSession;
         }
     }
 
-    /// <summary>Guarda la sesión actual del SessionManager (llamado automáticamente).</summary>
+    // ════════════════════════════════════════════════════════════════
+    // SAVE SESSION
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Guarda automáticamente la sesión actual.
+    /// </summary>
     private void SaveCurrentSession()
     {
-        var s = SessionManager.Instance.CurrentSession;
-        if (s == null) return;
+        if (SessionManager.Instance == null)
+            return;
 
-        PlayerPrefs.SetString(KEY_LAST_SESSION_ID, s.Id);
-        PlayerPrefs.SetString(KEY_LAST_SESSION_NAME, s.Name);
-        PlayerPrefs.SetString(KEY_LAST_SESSION_TIME, DateTime.UtcNow.Ticks.ToString());
+        var session = SessionManager.Instance.CurrentSession;
+
+        if (session == null)
+            return;
+
+        PlayerPrefs.SetString(
+            KEY_LAST_SESSION_ID,
+            session.Id
+        );
+
+        PlayerPrefs.SetString(
+            KEY_LAST_SESSION_NAME,
+            session.Name
+        );
+
+        PlayerPrefs.SetString(
+            KEY_LAST_SESSION_TIME,
+            DateTime.UtcNow.Ticks.ToString()
+        );
+
         PlayerPrefs.Save();
 
-        Debug.Log($"[RejoinManager] Guardado para rejoin: {s.Name} ({s.Id})");
+        Debug.Log(
+            $"[RejoinManager] Rejoin guardado: " +
+            $"{session.Name} ({session.Id})"
+        );
     }
 
-    /// <summary>Borra la sesión guardada (cuando el jugador sale voluntariamente).</summary>
+    // ════════════════════════════════════════════════════════════════
+    // CLEAR SESSION
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Borra manualmente la sesión guardada.
+    /// </summary>
     public void ClearSession()
     {
         PlayerPrefs.DeleteKey(KEY_LAST_SESSION_ID);
         PlayerPrefs.DeleteKey(KEY_LAST_SESSION_NAME);
         PlayerPrefs.DeleteKey(KEY_LAST_SESSION_TIME);
+
         PlayerPrefs.Save();
 
-        Debug.Log("[RejoinManager] Sesión guardada borrada.");
+        Debug.Log(
+            "[RejoinManager] Datos de rejoin borrados."
+        );
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // TRY REJOIN
+    // ════════════════════════════════════════════════════════════════
+
     /// <summary>
-    /// Intenta reconectar a la última sesión. Retorna true si funcionó.
-    /// Si la sesión ya no existe, retorna false y limpia el dato guardado.
+    /// Intenta reconectar a la última sesión.
     /// </summary>
     public async Task<bool> TryRejoin()
     {
         if (!HasRecentSession)
         {
-            Debug.Log("[RejoinManager] No hay sesión reciente para reconectar.");
+            Debug.Log(
+                "[RejoinManager] No hay sesión reciente."
+            );
+
             return false;
         }
 
         string sessionId = LastSessionId;
-        Debug.Log($"[RejoinManager] Intentando reconectar a {sessionId}...");
 
-        bool ok = await SessionManager.Instance.JoinSessionById(sessionId);
+        Debug.Log(
+            $"[RejoinManager] Intentando rejoin a {sessionId}..."
+        );
 
-        if (!ok)
+        bool success =
+            await SessionManager.Instance
+                .JoinSessionById(sessionId);
+
+        if (!success)
         {
-            Debug.LogWarning("[RejoinManager] La sesión ya no existe o no se puede acceder. Limpiando.");
+            Debug.LogWarning(
+                "[RejoinManager] " +
+                "La sesión ya no existe. Limpiando datos."
+            );
+
             ClearSession();
         }
 
-        return ok;
+        return success;
     }
 }

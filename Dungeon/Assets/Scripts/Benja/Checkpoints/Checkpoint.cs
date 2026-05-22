@@ -82,8 +82,9 @@ public class Checkpoint : MonoBehaviour, IInteractable
             CheckpointMenuUI.Instance.Open(checkpointName);
     }
 
-    [ServerRpc(RequireOwnership = false)]
-    private void RequestActivateServerRpc(ServerRpcParams rpcParams = default)
+
+[ServerRpc(RequireOwnership = false)]
+private void RequestActivateServerRpc(ServerRpcParams rpcParams = default)
     {
         ulong activatorClientId = rpcParams.Receive.SenderClientId;
 
@@ -103,34 +104,49 @@ public class Checkpoint : MonoBehaviour, IInteractable
 
         if (wasNewInWorld)
         {
-            // Nuevo en el mundo: descubrir + dar puntos a todos
+            // Nuevo en el mundo
             WorldCheckpointState.Instance.TryDiscoverInWorld(checkpointName, upgradePointsReward);
+
             GivePointsToAllPlayers(upgradePointsReward);
+
             Debug.Log($"[Checkpoint] '{checkpointName}' descubierto mundial por {activatorClientId}. " +
                       $"Todos reciben {upgradePointsReward} puntos.");
 
-            // Avisar al cliente que lo descubrió por primera vez en el mundo
-            NotifyDiscoveryClientRpc(checkpointName, upgradePointsReward, true,
+            NotifyDiscoveryClientRpc(
+                checkpointName,
+                upgradePointsReward,
+                true,
                 CreateClientRpcParams(activatorClientId));
         }
         else if (wasNewForPlayer)
         {
-            // El cliente lo descubre por primera vez personalmente,
-            // pero ya estaba descubierto a nivel mundo → no puntos
-            Debug.Log($"[Checkpoint] '{checkpointName}' ya descubierto mundial. " +
-                      $"Cliente {activatorClientId} desbloquea acceso (sin puntos).");
+            // Ya existía mundialmente
+            Debug.Log($"[Checkpoint] '{checkpointName}' ya descubierto mundial.");
 
-            NotifyDiscoveryClientRpc(checkpointName, 0, false,
+            NotifyDiscoveryClientRpc(
+                checkpointName,
+                0,
+                false,
                 CreateClientRpcParams(activatorClientId));
         }
-        // else: el cliente ya lo conocía. No mostramos toast, es una interacción normal.
 
-        // Marcar descubrimiento personal
+        // ── Descubrimiento personal ─────────────────────
+
         checkpointData.MarkPersonallyDiscovered(checkpointName);
 
-        // Establecer como respawn SOLO si es el primer checkpoint del jugador
+        // ── Primer respawn automático ───────────────────
+
         checkpointData.SetLastUsedIfEmpty(checkpointName);
+
+        // ── NUEVA INTEGRACIÓN: autosave ─────────────────
+
+        if (SaveGameIntegration.Instance != null)
+        {
+            SaveGameIntegration.Instance.OnCheckpointActivated();
+        }
     }
+
+
 
     /// <summary>
     /// Notifica al cliente que activó el checkpoint, para mostrarle un toast informativo.

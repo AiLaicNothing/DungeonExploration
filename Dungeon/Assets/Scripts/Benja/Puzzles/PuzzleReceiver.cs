@@ -10,6 +10,10 @@ using Cinemachine;
 
 public class PuzzleReceiver : NetworkBehaviour
 {
+    [Header("Save System")]
+    [SerializeField] private string receiverID;
+
+    public string ReceiverID => receiverID;
     public enum LogicMode { AND, OR }
 
     [Header("Lógica")]
@@ -33,6 +37,7 @@ public class PuzzleReceiver : NetworkBehaviour
     private List<IActivator> _activators = new();
 
     private bool _currentState = false;
+    public bool IsActive => _currentState;
     private bool _cameraHasTriggered = false;
     private Coroutine _cameraRoutine;
 
@@ -131,5 +136,29 @@ public class PuzzleReceiver : NetworkBehaviour
         puzzleCamera.Priority = inactivePriority;
 
         _cameraRoutine = null;
+    }
+    /// <summary>
+    /// Restauración directa desde save.
+    /// SOLO SERVIDOR.
+    /// </summary>
+    public void SetStateDirectly(bool active)
+    {
+        if (!IsServer)
+            return;
+
+        _currentState = active;
+
+        foreach (var target in targets)
+        {
+            if (target is IActivatable activatable)
+            {
+                if (_currentState)
+                    activatable.Activate();
+                else
+                    activatable.Deactivate();
+            }
+        }
+
+        Debug.Log($"[PuzzleReceiver] Estado restaurado manualmente: {_currentState}");
     }
 }

@@ -5,17 +5,25 @@ using UnityEngine.SceneManagement;
 using TMPro;
 
 /// <summary>
-/// Tab "Sistema" del menú. En multiplayer:
-///   - NO hay "borrar progreso" (eso solo en el menú principal)
-///   - NO hay "reiniciar escena" para clientes (rompería la sesión)
-///   - SÍ hay "salir de la sala" — vuelve al menú principal limpiamente
-///   - SÍ hay "reset settings" — devuelve las opciones a sus defaults
-///   - SÍ hay "salir del juego" — cierra la app
+/// Tab "Sistema" del menú.
+///
+/// Funciones:
+/// - Guardar y salir
+/// - Salir sin guardar
+/// - Salir del juego
+/// - Reset settings
+/// - Confirmaciones
+///
+/// Multiplayer-safe:
+/// - SOLO el host guarda
+/// - Se prepara shutdown antes de salir
+/// - SessionManager limpia correctamente la sesión
 /// </summary>
 public class SettingsTab_System : MonoBehaviour
 {
     [Header("Botones")]
-    [SerializeField] private Button leaveSessionButton;
+    [SerializeField] private Button saveAndLeaveButton;
+    [SerializeField] private Button leaveWithoutSavingButton;
     [SerializeField] private Button quitGameButton;
     [SerializeField] private Button resetSettingsButton;
 
@@ -27,54 +35,126 @@ public class SettingsTab_System : MonoBehaviour
 
     private System.Action _pendingAction;
 
-    void OnEnable()
+    // ════════════════════════════════════════════════════════════════
+    // ENABLE / DISABLE
+    // ════════════════════════════════════════════════════════════════
+
+    private void OnEnable()
     {
-        if (confirmPanel != null) confirmPanel.SetActive(false);
+        if (confirmPanel != null)
+            confirmPanel.SetActive(false);
 
-        if (leaveSessionButton != null) leaveSessionButton.onClick.AddListener(OnLeaveSessionClicked);
-        if (quitGameButton != null) quitGameButton.onClick.AddListener(OnQuitClicked);
-        if (resetSettingsButton != null) resetSettingsButton.onClick.AddListener(OnResetSettings);
+        // ─────────────────────────────────────────────
+        // BOTONES
+        // ─────────────────────────────────────────────
 
-        if (confirmYesButton != null) confirmYesButton.onClick.AddListener(OnConfirmYes);
-        if (confirmNoButton != null) confirmNoButton.onClick.AddListener(OnConfirmNo);
+        if (saveAndLeaveButton != null)
+            saveAndLeaveButton.onClick.AddListener(OnSaveAndLeaveClicked);
 
-        // Visibilidad según contexto
-        bool inSession = SessionManager.Instance != null && SessionManager.Instance.CurrentSession != null;
-        if (leaveSessionButton != null)
-            leaveSessionButton.gameObject.SetActive(inSession);
+        if (leaveWithoutSavingButton != null)
+            leaveWithoutSavingButton.onClick.AddListener(OnLeaveWithoutSavingClicked);
+
+        if (quitGameButton != null)
+            quitGameButton.onClick.AddListener(OnQuitClicked);
+
+        if (resetSettingsButton != null)
+            resetSettingsButton.onClick.AddListener(OnResetSettings);
+
+        // ─────────────────────────────────────────────
+        // CONFIRM PANEL
+        // ─────────────────────────────────────────────
+
+        if (confirmYesButton != null)
+            confirmYesButton.onClick.AddListener(OnConfirmYes);
+
+        if (confirmNoButton != null)
+            confirmNoButton.onClick.AddListener(OnConfirmNo);
+
+        // ─────────────────────────────────────────────
+        // VISIBILIDAD
+        // ─────────────────────────────────────────────
+
+        bool inSession =
+            SessionManager.Instance != null &&
+            SessionManager.Instance.CurrentSession != null;
+
+        if (saveAndLeaveButton != null)
+            saveAndLeaveButton.gameObject.SetActive(inSession);
+
+        if (leaveWithoutSavingButton != null)
+            leaveWithoutSavingButton.gameObject.SetActive(inSession);
     }
 
-    void OnDisable()
+    private void OnDisable()
     {
-        if (leaveSessionButton != null) leaveSessionButton.onClick.RemoveListener(OnLeaveSessionClicked);
-        if (quitGameButton != null) quitGameButton.onClick.RemoveListener(OnQuitClicked);
-        if (resetSettingsButton != null) resetSettingsButton.onClick.RemoveListener(OnResetSettings);
-        if (confirmYesButton != null) confirmYesButton.onClick.RemoveListener(OnConfirmYes);
-        if (confirmNoButton != null) confirmNoButton.onClick.RemoveListener(OnConfirmNo);
+        if (saveAndLeaveButton != null)
+            saveAndLeaveButton.onClick.RemoveListener(OnSaveAndLeaveClicked);
+
+        if (leaveWithoutSavingButton != null)
+            leaveWithoutSavingButton.onClick.RemoveListener(OnLeaveWithoutSavingClicked);
+
+        if (quitGameButton != null)
+            quitGameButton.onClick.RemoveListener(OnQuitClicked);
+
+        if (resetSettingsButton != null)
+            resetSettingsButton.onClick.RemoveListener(OnResetSettings);
+
+        if (confirmYesButton != null)
+            confirmYesButton.onClick.RemoveListener(OnConfirmYes);
+
+        if (confirmNoButton != null)
+            confirmNoButton.onClick.RemoveListener(OnConfirmNo);
     }
 
-    // ── Acciones ──────────────────────────────────────────────────────
-    private void OnLeaveSessionClicked()
+    // ════════════════════════════════════════════════════════════════
+    // BOTONES
+    // ════════════════════════════════════════════════════════════════
+
+    private void OnSaveAndLeaveClicked()
     {
-        ShowConfirm("¿Salir de la sala? Tu progreso se guardará y podrás reconectar desde el menú principal.", DoLeaveSession);
+        ShowConfirm(
+            "¿Guardar la partida y salir de la sesión?",
+            DoSaveAndLeave
+        );
+    }
+
+    private void OnLeaveWithoutSavingClicked()
+    {
+        ShowConfirm(
+            "¿Salir sin guardar?",
+            DoLeaveWithoutSaving
+        );
     }
 
     private void OnQuitClicked()
     {
-        bool inSession = SessionManager.Instance != null && SessionManager.Instance.CurrentSession != null;
+        bool inSession =
+            SessionManager.Instance != null &&
+            SessionManager.Instance.CurrentSession != null;
+
         string msg = inSession
-            ? "¿Salir del juego? Tu progreso se guardará."
+            ? "¿Salir del juego? El progreso será guardado."
             : "¿Salir del juego?";
+
         ShowConfirm(msg, DoQuit);
     }
 
     private void OnResetSettings()
     {
-        ShowConfirm("¿Restaurar todas las opciones a sus valores por defecto?", DoResetSettings);
+        ShowConfirm(
+            "¿Restaurar todas las opciones a sus valores por defecto?",
+            DoResetSettings
+        );
     }
 
-    // ── Confirmación ──────────────────────────────────────────────────
-    private void ShowConfirm(string text, System.Action action)
+    // ════════════════════════════════════════════════════════════════
+    // CONFIRM PANEL
+    // ════════════════════════════════════════════════════════════════
+
+    private void ShowConfirm(
+        string text,
+        System.Action action
+    )
     {
         if (confirmPanel == null)
         {
@@ -82,34 +162,61 @@ public class SettingsTab_System : MonoBehaviour
             return;
         }
 
-        if (confirmText != null) confirmText.text = text;
+        if (confirmText != null)
+            confirmText.text = text;
+
         _pendingAction = action;
+
         confirmPanel.SetActive(true);
     }
 
     private void OnConfirmYes()
     {
-        if (confirmPanel != null) confirmPanel.SetActive(false);
+        if (confirmPanel != null)
+            confirmPanel.SetActive(false);
+
         _pendingAction?.Invoke();
         _pendingAction = null;
     }
 
     private void OnConfirmNo()
     {
-        if (confirmPanel != null) confirmPanel.SetActive(false);
+        if (confirmPanel != null)
+            confirmPanel.SetActive(false);
+
         _pendingAction = null;
     }
 
-    // ── Implementaciones ──────────────────────────────────────────────
-    private async void DoLeaveSession()
+    // ════════════════════════════════════════════════════════════════
+    // IMPLEMENTACIONES
+    // ════════════════════════════════════════════════════════════════
+
+    /// <summary>
+    /// Guardar y salir.
+    /// SOLO el host guarda.
+    /// </summary>
+    private async void DoSaveAndLeave()
     {
         Time.timeScale = 1f;
+
         SettingsManager.Instance?.Flush();
 
-        if (SessionManager.Instance != null && SessionManager.Instance.CurrentSession != null)
+        bool isServer =
+            SaveGameIntegration.Instance != null &&
+            SaveGameIntegration.Instance.IsServer;
+
+        // SOLO EL HOST/SERVIDOR GUARDA
+        if (isServer)
+        {
+            SaveGameIntegration.Instance.PerformManualSave();
+            SaveGameIntegration.Instance.PrepareForShutdown();
+        }
+
+        // Salir de sesión
+        if (SessionManager.Instance != null &&
+            SessionManager.Instance.CurrentSession != null)
         {
             await SessionManager.Instance.LeaveSession();
-            // SessionManager carga el menú principal automáticamente
         }
         else
         {
@@ -117,14 +224,68 @@ public class SettingsTab_System : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Salir sin guardar.
+    /// </summary>
+    private async void DoLeaveWithoutSaving()
+    {
+        Time.timeScale = 1f;
+
+        SettingsManager.Instance?.Flush();
+
+        if (SaveGameIntegration.Instance != null)
+        {
+            SaveGameIntegration.Instance.PrepareForShutdown();
+        }
+
+        if (SessionManager.Instance != null &&
+            SessionManager.Instance.CurrentSession != null)
+        {
+            await SessionManager.Instance.LeaveSession();
+        }
+        else
+        {
+            SceneManager.LoadScene("02_MainMenu");
+        }
+    }
+
+    /// <summary>
+    /// Salir del juego.
+    /// </summary>
     private async void DoQuit()
     {
         Time.timeScale = 1f;
+
         SettingsManager.Instance?.Flush();
 
-        if (SessionManager.Instance != null && SessionManager.Instance.CurrentSession != null)
+        bool isHost =
+            NetworkManager.Singleton != null &&
+            NetworkManager.Singleton.IsServer;
+
+        // Preparar shutdown
+        if (SaveGameIntegration.Instance != null)
         {
-            try { await SessionManager.Instance.LeaveSession(); } catch { }
+            SaveGameIntegration.Instance.PrepareForShutdown();
+        }
+
+        // Guardar si eres host
+        if (isHost)
+        {
+            SaveGameIntegration.Instance?.PerformManualSave();
+        }
+
+        // Salir sesión
+        if (SessionManager.Instance != null &&
+            SessionManager.Instance.CurrentSession != null)
+        {
+            try
+            {
+                await SessionManager.Instance.LeaveSession();
+            }
+            catch
+            {
+                // ignorar
+            }
         }
 
 #if UNITY_EDITOR
@@ -134,6 +295,9 @@ public class SettingsTab_System : MonoBehaviour
 #endif
     }
 
+    /// <summary>
+    /// Restaurar settings default.
+    /// </summary>
     private void DoResetSettings()
     {
         SettingsManager.Instance?.ResetToDefaults();

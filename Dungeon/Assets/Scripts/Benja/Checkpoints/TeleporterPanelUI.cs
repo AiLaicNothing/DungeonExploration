@@ -15,7 +15,7 @@ using UnityEngine.UI;
 ///   - 🏠 Checkpoint marcado como tu respawn
 ///   - 📍 Checkpoint disponible
 /// </summary>
-public class TeleporterPanelUI : MonoBehaviour
+public class    TeleporterPanelUI : MonoBehaviour
 {
     [Header("UI")]
     [SerializeField] private GameObject panelRoot;

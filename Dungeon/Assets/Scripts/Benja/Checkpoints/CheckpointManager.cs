@@ -17,7 +17,7 @@ public class CheckpointManager : MonoBehaviour
     [Header("UI")]
     [SerializeField] private TeleporterPanelUI teleportPanel;
 
-    /// <summary>Compatibilidad con el código viejo: el "checkpoint activo" del jugador local.</summary>
+    /// <summary>Compatibilidad con el código viejo: el "checkpoint activo" del jugador loc al.</summary>
     public Checkpoint activeCheckpoint
     {
         get

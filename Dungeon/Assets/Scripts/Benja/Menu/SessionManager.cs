@@ -8,8 +8,12 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 
 /// <summary>
-/// Singleton persistente que orquesta el flujo de sesiones.
-/// Incluye soporte para múltiples PlayerId en testing (vía profile de Auth).
+/// Singleton persistente que controla:
+/// - Unity Services
+/// - Authentication
+/// - Multiplayer Sessions
+/// - Relay + NGO
+/// - Cambio de escenas
 /// </summary>
 public class SessionManager : MonoBehaviour
 {
@@ -17,207 +21,357 @@ public class SessionManager : MonoBehaviour
 
     [Header("Config")]
     [SerializeField] private int maxPlayers = 4;
-    [SerializeField] private string lobbySceneName = "03_Lobby";
+
+    [Header("Scenes")]
     [SerializeField] private string mainMenuSceneName = "02_MainMenu";
+    [SerializeField] private string lobbySceneName = "03_Lobby";
     [SerializeField] private string gameplaySceneName = "04_Gameplay";
 
-    [Header("Testing — múltiples cuentas en el mismo PC")]
-    [Tooltip("Si está marcado, usa un Auth profile distinto en cada arranque, " +
-             "permitiendo simular múltiples PlayerId desde la misma instalación.")]
+    [Header("Testing")]
     [SerializeField] private bool useRandomProfileForTesting = false;
 
-    [Tooltip("Profile fijo opcional. Si está vacío, se genera uno aleatorio. " +
-             "Útil para tener una cuenta 'host' y otra 'cliente' fijas.")]
-    [SerializeField] private string testProfileName = "";
+    [SerializeField]
+    private string testProfileName = "";
 
-    public string LobbySceneName => lobbySceneName;
-    public string MainMenuSceneName => mainMenuSceneName;
-    public string GameplaySceneName => gameplaySceneName;
+    public bool IsInitialized { get; private set; }
 
     public ISession CurrentSession { get; private set; }
-    public bool IsHost => CurrentSession != null && CurrentSession.IsHost;
+
+    public bool IsHost =>
+        CurrentSession != null &&
+        CurrentSession.IsHost;
 
     public string PlayerName
     {
         get => PlayerPrefs.GetString("player_name", "Player");
-        set { PlayerPrefs.SetString("player_name", value); PlayerPrefs.Save(); }
+        set
+        {
+            PlayerPrefs.SetString("player_name", value);
+            PlayerPrefs.Save();
+        }
     }
 
     public event Action OnSessionJoined;
     public event Action OnSessionLeft;
     public event Action<string> OnError;
 
+    // ════════════════════════════════════════════════════════════════
+    // UNITY
+    // ════════════════════════════════════════════════════════════════
+
     private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-        Instance = this;
-        DontDestroyOnLoad(gameObject);
-        Debug.Log($"[SessionManager] Awake completado. ID instancia: {GetInstanceID()}");
-    }
-
-    public async Task InitializeAsync()
-    {
-        if (UnityServices.State == ServicesInitializationState.Initialized)
+        if (Instance != null && Instance != this)
         {
-            // Ya inicializado (caso típico al reentrar al menú sin reiniciar)
-            if (!AuthenticationService.Instance.IsSignedIn)
-                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            Destroy(gameObject);
             return;
         }
 
-        // CONFIGURAR PROFILE PARA TESTING (debe ser ANTES de InitializeAsync)
-        if (useRandomProfileForTesting)
-        {
-            string profile = string.IsNullOrEmpty(testProfileName)
-                ? $"test_{Guid.NewGuid().ToString("N").Substring(0, 8)}"
-                : testProfileName;
+        Instance = this;
 
-            var options = new InitializationOptions();
-            options.SetProfile(profile);
-            await UnityServices.InitializeAsync(options);
-            Debug.Log($"[SessionManager] Inicializado con profile: '{profile}'");
-        }
-        else
-        {
-            await UnityServices.InitializeAsync();
-        }
+        DontDestroyOnLoad(gameObject);
 
-        if (!AuthenticationService.Instance.IsSignedIn)
-            await AuthenticationService.Instance.SignInAnonymouslyAsync();
-
-        Debug.Log($"[SessionManager] Auth OK. PlayerId: {AuthenticationService.Instance.PlayerId}");
+        Debug.Log("[SessionManager] Inicializado.");
     }
 
-    // ── CREAR SALA ────────────────────────────────────────────────────
-    public async Task<bool> CreateSession(string sessionName, bool isPrivate = false)
+    // ════════════════════════════════════════════════════════════════
+    // INITIALIZE
+    // ════════════════════════════════════════════════════════════════
+
+    public async Task InitializeAsync()
+    {
+        if (IsInitialized)
+            return;
+
+        try
+        {
+            if (UnityServices.State != ServicesInitializationState.Initialized)
+            {
+                if (useRandomProfileForTesting)
+                {
+                    string profile =
+                        string.IsNullOrWhiteSpace(testProfileName)
+                        ? $"test_{Guid.NewGuid().ToString("N")[..8]}"
+                        : testProfileName;
+
+                    InitializationOptions options =
+                        new InitializationOptions();
+
+                    options.SetProfile(profile);
+
+                    await UnityServices.InitializeAsync(options);
+
+                    Debug.Log($"[SessionManager] Profile: {profile}");
+                }
+                else
+                {
+                    await UnityServices.InitializeAsync();
+                }
+            }
+
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                await AuthenticationService.Instance.SignInAnonymouslyAsync();
+            }
+
+            Debug.Log(
+                $"[SessionManager] Auth OK. PlayerID: {AuthenticationService.Instance.PlayerId}"
+            );
+
+            IsInitialized = true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[SessionManager] Initialize error: {e}");
+            OnError?.Invoke("Error inicializando servicios.");
+        }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // CREATE SESSION
+    // ════════════════════════════════════════════════════════════════
+
+    public async Task<bool> CreateSession(
+        string sessionName,
+        bool isPrivate = false
+    )
     {
         try
         {
-            var options = new SessionOptions
+            SessionOptions options = new SessionOptions
             {
                 MaxPlayers = maxPlayers,
                 IsPrivate = isPrivate,
                 Name = sessionName,
-            }.WithRelayNetwork();
+            }
+            .WithRelayNetwork();
 
-            CurrentSession = await MultiplayerService.Instance.CreateSessionAsync(options);
+            CurrentSession =
+                await MultiplayerService.Instance.CreateSessionAsync(options);
 
-            Debug.Log($"[SessionManager] Sesión creada: {CurrentSession.Name} (Code: {CurrentSession.Code})");
-            OnSessionJoined?.Invoke();
+            Debug.Log(
+                $"[SessionManager] Sesión creada: {CurrentSession.Name}"
+            );
 
             await WaitForServerReady();
-            NetworkManager.Singleton.SceneManager.LoadScene(lobbySceneName, LoadSceneMode.Single);
+
+            OnSessionJoined?.Invoke();
+
+            NetworkManager.Singleton.SceneManager.LoadScene(
+                lobbySceneName,
+                LoadSceneMode.Single
+            );
+
             return true;
         }
         catch (Exception e)
         {
-            Debug.LogError($"[SessionManager] Error al crear sesión: {e.Message}");
-            OnError?.Invoke($"Error al crear sala: {e.Message}");
+            Debug.LogError($"[SessionManager] CreateSession error: {e}");
+
+            OnError?.Invoke($"Error creando sala:\n{e.Message}");
+
             return false;
         }
     }
+
+    // ════════════════════════════════════════════════════════════════
+    // JOIN BY ID
+    // ════════════════════════════════════════════════════════════════
 
     public async Task<bool> JoinSessionById(string sessionId)
     {
         try
         {
-            CurrentSession = await MultiplayerService.Instance.JoinSessionByIdAsync(sessionId);
+            CurrentSession =
+                await MultiplayerService.Instance.JoinSessionByIdAsync(sessionId);
+
             await WaitForClientConnected();
+
             OnSessionJoined?.Invoke();
+
             return true;
         }
         catch (Exception e)
         {
-            Debug.LogError($"[SessionManager] Error al unirse: {e.Message}");
-            OnError?.Invoke($"Error al unirse a la sala: {e.Message}");
+            Debug.LogError($"[SessionManager] JoinSessionById error: {e}");
+
+            OnError?.Invoke($"Error al unirse:\n{e.Message}");
+
             return false;
         }
     }
+
+    // ════════════════════════════════════════════════════════════════
+    // JOIN BY CODE
+    // ════════════════════════════════════════════════════════════════
 
     public async Task<bool> JoinSessionByCode(string code)
     {
         try
         {
-            CurrentSession = await MultiplayerService.Instance.JoinSessionByCodeAsync(code);
+            CurrentSession =
+                await MultiplayerService.Instance.JoinSessionByCodeAsync(code);
+
             await WaitForClientConnected();
+
             OnSessionJoined?.Invoke();
+
             return true;
         }
         catch (Exception e)
         {
-            Debug.LogError($"[SessionManager] Error al unirse por código: {e.Message}");
-            OnError?.Invoke($"Código inválido o sala llena: {e.Message}");
+            Debug.LogError($"[SessionManager] JoinSessionByCode error: {e}");
+
+            OnError?.Invoke($"Código inválido o sala llena.");
+
             return false;
         }
     }
+
+    // ════════════════════════════════════════════════════════════════
+    // QUERY
+    // ════════════════════════════════════════════════════════════════
 
     public async Task<QuerySessionsResults> QueryAvailableSessions()
     {
         try
         {
-            return await MultiplayerService.Instance.QuerySessionsAsync(new QuerySessionsOptions());
+            return await MultiplayerService.Instance.QuerySessionsAsync(
+                new QuerySessionsOptions()
+            );
         }
         catch (Exception e)
         {
-            Debug.LogError($"[SessionManager] Error al buscar sesiones: {e.Message}");
-            OnError?.Invoke($"Error al buscar salas: {e.Message}");
+            Debug.LogError($"[SessionManager] QuerySessions error: {e}");
+
+            OnError?.Invoke("Error buscando salas.");
+
             return null;
         }
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // LEAVE
+    // ════════════════════════════════════════════════════════════════
+
     public async Task LeaveSession()
     {
-        if (CurrentSession == null) return;
-        try { await CurrentSession.LeaveAsync(); }
-        catch (Exception e) { Debug.LogWarning($"[SessionManager] Error al salir: {e.Message}"); }
+        try
+        {
+            if (CurrentSession != null)
+            {
+                await CurrentSession.LeaveAsync();
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[SessionManager] Leave error: {e}");
+        }
 
         CurrentSession = null;
+
         OnSessionLeft?.Invoke();
 
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsListening)
+        if (NetworkManager.Singleton != null &&
+            NetworkManager.Singleton.IsListening)
+        {
             NetworkManager.Singleton.Shutdown();
+        }
 
         SceneManager.LoadScene(mainMenuSceneName);
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // KICK
+    // ════════════════════════════════════════════════════════════════
+
     public async Task KickPlayer(string playerId)
     {
-        if (!IsHost) return;
-        try { await CurrentSession.AsHost().RemovePlayerAsync(playerId); }
-        catch (Exception e) { Debug.LogError($"[SessionManager] Error al expulsar: {e.Message}"); }
+        if (!IsHost || CurrentSession == null)
+            return;
+
+        try
+        {
+            await CurrentSession
+                .AsHost()
+                .RemovePlayerAsync(playerId);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[SessionManager] KickPlayer error: {e}");
+        }
     }
+
+    // ════════════════════════════════════════════════════════════════
+    // START GAME
+    // ════════════════════════════════════════════════════════════════
 
     public void StartGame()
     {
-        if (!IsHost) return;
-        NetworkManager.Singleton.SceneManager.LoadScene(gameplaySceneName, LoadSceneMode.Single);
+        if (!IsHost)
+            return;
+
+        if (NetworkManager.Singleton == null)
+        {
+            Debug.LogError("NetworkManager no encontrado.");
+            return;
+        }
+
+        NetworkManager.Singleton.SceneManager.LoadScene(
+            gameplaySceneName,
+            LoadSceneMode.Single
+        );
     }
+
+    // ════════════════════════════════════════════════════════════════
+    // HELPERS
+    // ════════════════════════════════════════════════════════════════
 
     private async Task WaitForServerReady()
     {
-        const int maxWaitMs = 5000, pollMs = 50;
+        const int maxWaitMs = 5000;
+        const int pollMs = 50;
+
         int waited = 0;
+
         while (waited < maxWaitMs)
         {
-            if (NetworkManager.Singleton != null
-                && NetworkManager.Singleton.IsServer
-                && NetworkManager.Singleton.IsListening
-                && NetworkManager.Singleton.SceneManager != null) return;
+            if (NetworkManager.Singleton != null &&
+                NetworkManager.Singleton.IsServer &&
+                NetworkManager.Singleton.IsListening &&
+                NetworkManager.Singleton.SceneManager != null)
+            {
+                return;
+            }
+
             await Task.Delay(pollMs);
+
             waited += pollMs;
         }
+
+        throw new TimeoutException("Timeout esperando servidor.");
     }
 
     private async Task WaitForClientConnected()
     {
-        const int maxWaitMs = 10000, pollMs = 50;
+        const int maxWaitMs = 10000;
+        const int pollMs = 50;
+
         int waited = 0;
+
         while (waited < maxWaitMs)
         {
-            if (NetworkManager.Singleton != null && NetworkManager.Singleton.IsConnectedClient) return;
+            if (NetworkManager.Singleton != null &&
+                NetworkManager.Singleton.IsConnectedClient)
+            {
+                return;
+            }
+
             await Task.Delay(pollMs);
+
             waited += pollMs;
         }
-        throw new TimeoutException("Timeout esperando conexión del cliente.");
+
+        throw new TimeoutException("Timeout esperando cliente.");
     }
 }
