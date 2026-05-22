@@ -14,20 +14,21 @@ public class BashShieldSkill : Skill
 
     public override void LocalExecute(PlayerController player, Vector3 targetPoint)
     {
-        Vector3 finalTarget = targetPoint; ;
-
+        // Only rotate if lock-on target exists
         if (player.LockTarget != null && player.LockTarget.isTargeting && player.LockTarget.CurrentTarget != null)
         {
-            finalTarget = player.LockTarget.CurrentTarget.position;
+            Vector3 targetPos = player.LockTarget.CurrentTarget.position;
+
+            Vector3 dir = (targetPos - player.transform.position).normalized;
+            dir.y = 0f;
+
+            if (dir.sqrMagnitude > 0.01f)
+            {
+                player.PlayerModel.rotation = Quaternion.LookRotation(dir);
+            }
         }
 
-        Vector3 dir = (finalTarget - player.transform.position).normalized;
-        dir.y = 0f;
-
-        if (dir != Vector3.zero)
-        {
-            player.PlayerModel.rotation = Quaternion.LookRotation(dir);
-        }
+        // No target -> keep current forward direction
 
         player.StartCoroutine(BashMove(player));
     }
