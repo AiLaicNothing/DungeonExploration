@@ -50,7 +50,19 @@ public class SessionManager : MonoBehaviour
             PlayerPrefs.Save();
         }
     }
+    public string GetPlayerId()
+    {
+        if (!IsInitialized)
+        {
+            Debug.LogWarning(
+                "[SessionManager] GetPlayerId llamado antes de Initialize."
+            );
 
+            return string.Empty;
+        }
+
+        return AuthenticationService.Instance.PlayerId;
+    }
     public event Action OnSessionJoined;
     public event Action OnSessionLeft;
     public event Action<string> OnError;

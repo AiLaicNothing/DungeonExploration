@@ -5,6 +5,7 @@ public class Lever : NetworkBehaviour, IInteractable, IActivator
 {
     [Header("Configuración")]
     public bool canToggleOff = true;
+
     public PuzzleReceiver receiver;
 
     [Header("Visual")]
@@ -34,21 +35,47 @@ public class Lever : NetworkBehaviour, IInteractable, IActivator
 
     private void OnLeverStateChanged(bool previous, bool current)
     {
+        Debug.Log(
+            $"[Lever] OnValueChanged -> {name} | {previous} -> {current}");
+
         animator?.SetBool("IsActive", current);
     }
 
     public void Interact()
     {
+        Debug.Log($"[Lever] Interact llamado -> {name}");
+
         ToggleLeverServerRpc();
     }
 
     [ServerRpc(RequireOwnership = false)]
     private void ToggleLeverServerRpc()
     {
+        Debug.Log($"[Lever] ToggleLeverServerRpc -> {name}");
+
         if (_isActive.Value && !canToggleOff)
+        {
+            Debug.Log("[Lever] No se puede apagar");
+            return;
+        }
+
+        SetStateInternal(!_isActive.Value);
+    }
+
+    public void SetState(bool state)
+    {
+        if (!IsServer)
             return;
 
-        _isActive.Value = !_isActive.Value;
+        SetStateInternal(state);
+    }
+
+    private void SetStateInternal(bool state)
+    {
+        Debug.Log(
+            $"[Lever] SetStateInternal -> {name} | Nuevo estado: {state}");
+
+        _isActive.Value = state;
 
         receiver?.Evaluate();
     }

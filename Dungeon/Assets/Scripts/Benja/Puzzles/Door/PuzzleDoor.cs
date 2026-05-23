@@ -114,6 +114,7 @@ public class PuzzleDoor : NetworkBehaviour, IActivatable
 
     public void Activate()
     {
+        Debug.Log($"[PuzzleDoor] Activate -> {name}");
         Debug.Log("[PuzzleDoor] Activate() llamado");
 
         if (!IsServer)
@@ -129,6 +130,7 @@ public class PuzzleDoor : NetworkBehaviour, IActivatable
 
     public void Deactivate()
     {
+        Debug.Log($"[PuzzleDoor] Deactivate -> {name}");
         Debug.Log("[PuzzleDoor] Deactivate() llamado");
 
         if (!IsServer)

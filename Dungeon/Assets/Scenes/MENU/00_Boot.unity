@@ -149,8 +149,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SessionManager
   maxPlayers: 4
-  lobbySceneName: 03_Lobby
   mainMenuSceneName: 02_MainMenu
+  lobbySceneName: 03_Lobby
   gameplaySceneName: 04_Gameplay
   useRandomProfileForTesting: 0
   testProfileName: 

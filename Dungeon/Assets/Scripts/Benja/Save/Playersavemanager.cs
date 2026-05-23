@@ -37,37 +37,56 @@ public class PlayerSaveManager : MonoBehaviour
     {
         if (!NetworkManager.Singleton.IsServer)
         {
-            Debug.LogError("[PlayerSaveManager] Solo el servidor puede capturar estado.");
+            Debug.LogError(
+                "[PlayerSaveManager] Solo el servidor puede capturar estado."
+            );
+
             return null;
         }
 
         if (playerObject == null)
         {
-            Debug.LogError("[PlayerSaveManager] playerObject es null.");
+            Debug.LogError(
+                "[PlayerSaveManager] playerObject es null."
+            );
+
             return null;
         }
 
-        var sessionData = playerObject.GetComponent<PlayerSessionData>();
-        var stats = playerObject.GetComponent<PlayerStats>();
-        var checkpointData = playerObject.GetComponent<PlayerCheckpointData>();
+        var sessionData =
+            playerObject.GetComponent<PlayerSessionData>();
+
+        var stats =
+            playerObject.GetComponent<PlayerStats>();
+
+        var checkpointData =
+            playerObject.GetComponent<PlayerCheckpointData>();
 
         if (sessionData == null || stats == null)
         {
-            Debug.LogError("[PlayerSaveManager] Faltan componentes requeridos.");
+            Debug.LogError(
+                "[PlayerSaveManager] Faltan componentes requeridos."
+            );
+
             return null;
         }
 
         var entry = new PlayerSaveEntry
         {
-            playerId = sessionData.PlayerId.Value.ToString(),
-            playerName = sessionData.PlayerName.Value.ToString(),
+            playerId =
+                sessionData.PlayerId.Value.ToString(),
 
-            stats = CaptureStats(stats),
+            playerName =
+                sessionData.PlayerName.Value.ToString(),
 
-            unlockedSkills = new List<string>(),
+            stats =
+                CaptureStats(stats),
 
-            // 🔥 ESTA posición es la de reconexión
-            position = playerObject.transform.position,
+            unlockedSkills =
+                new List<string>(),
+
+            position =
+                playerObject.transform.position,
 
             currentScene =
                 UnityEngine.SceneManagement
@@ -75,27 +94,35 @@ public class PlayerSaveManager : MonoBehaviour
                     .GetActiveScene()
                     .name,
 
-            // 🔥 SOLO para respawn de muerte
             activeCheckpoint = "",
 
-            personalCheckpoints = new List<string>()
+            personalCheckpoints =
+                new List<string>()
         };
 
-        // ── Capturar checkpoints personales ───────────────────────
+        // ─────────────────────────────────────────────
+        // CHECKPOINTS PERSONALES
+        // ─────────────────────────────────────────────
 
         if (checkpointData != null)
         {
             entry.activeCheckpoint =
-                checkpointData.LastUsedCheckpoint.Value.ToString();
+                checkpointData
+                    .LastUsedCheckpoint
+                    .Value
+                    .ToString();
 
-            foreach (var cpName in checkpointData.PersonallyDiscovered)
+            foreach (var cpName
+                     in checkpointData.PersonallyDiscovered)
             {
-                entry.personalCheckpoints.Add(cpName.ToString());
+                entry.personalCheckpoints
+                    .Add(cpName.ToString());
             }
         }
 
         Debug.Log(
-            $"[PlayerSaveManager] Estado capturado para '{entry.playerName}'");
+            $"[PlayerSaveManager] Estado capturado para '{entry.playerName}'"
+        );
 
         return entry;
     }
@@ -104,18 +131,29 @@ public class PlayerSaveManager : MonoBehaviour
     {
         return new PlayerStatsSnapshot
         {
-            // Valores actuales
-            currentHealth = stats.Health.CurrentValue,
-            currentMana = stats.Mana.CurrentValue,
-            currentStamina = stats.Stamina.CurrentValue,
+            currentHealth =
+                stats.Health.CurrentValue,
 
-            // Puntos disponibles
-            upgradePoints = stats.UpgradePoints,
+            currentMana =
+                stats.Mana.CurrentValue,
 
-            // Puntos invertidos
-            healthPoints = stats.Health.PointsAssigned,
-            manaPoints = stats.Mana.PointsAssigned,
-            staminaPoints = stats.Stamina.PointsAssigned,
+            currentStamina =
+                stats.Stamina.CurrentValue,
+
+            upgradePoints =
+                stats.UpgradePoints,
+
+            totalPointsEarned =
+                stats.TotalPointsEarned,
+
+            healthPoints =
+                stats.Health.PointsAssigned,
+
+            manaPoints =
+                stats.Mana.PointsAssigned,
+
+            staminaPoints =
+                stats.Stamina.PointsAssigned,
 
             physicalDamagePoints =
                 stats.PhysicalDamage.PointsAssigned,
@@ -144,13 +182,19 @@ public class PlayerSaveManager : MonoBehaviour
     {
         if (!NetworkManager.Singleton.IsServer)
         {
-            Debug.LogError("[PlayerSaveManager] Solo el servidor puede restaurar.");
+            Debug.LogError(
+                "[PlayerSaveManager] Solo el servidor puede restaurar."
+            );
+
             return;
         }
 
         if (playerObject == null || entry == null)
         {
-            Debug.LogError("[PlayerSaveManager] playerObject o entry es null.");
+            Debug.LogError(
+                "[PlayerSaveManager] playerObject o entry es null."
+            );
+
             return;
         }
 
@@ -179,22 +223,25 @@ public class PlayerSaveManager : MonoBehaviour
         if (checkpointData != null)
         {
             checkpointData.SetLastUsed(
-                entry.activeCheckpoint);
+                entry.activeCheckpoint
+            );
 
             checkpointData.PersonallyDiscovered.Clear();
 
-            foreach (var cpName in entry.personalCheckpoints)
+            foreach (var cpName
+                     in entry.personalCheckpoints)
             {
-                checkpointData.MarkPersonallyDiscovered(cpName);
+                checkpointData
+                    .MarkPersonallyDiscovered(cpName);
             }
         }
 
         // ─────────────────────────────────────────────
         // RESTAURAR POSICIÓN
-        // 🔥 RECONEXIÓN
         // ─────────────────────────────────────────────
 
-        Vector3 pos = entry.position.ToVector3();
+        Vector3 pos =
+            entry.position.ToVector3();
 
         StartCoroutine(
             RestorePositionNextFrame(
@@ -204,88 +251,168 @@ public class PlayerSaveManager : MonoBehaviour
         );
 
         Debug.Log(
-            $"[PlayerSaveManager] '{entry.playerName}' restaurado en {pos}");
+            $"[PlayerSaveManager] '{entry.playerName}' restaurado en {pos}"
+        );
     }
 
     private IEnumerator RestorePositionNextFrame(
-        NetworkObject playerObject,
-        Vector3 pos)
+       NetworkObject playerObject,
+       Vector3 pos)
     {
-        // Esperar 1 frame para que NGO termine
+        // Esperar a que:
+        // - NGO termine sincronización
+        // - CharacterController inicialice
+        // - NetworkTransform aplique estado inicial
         yield return null;
+        yield return null;
+        yield return null;
+        yield return new WaitForEndOfFrame();
 
         if (playerObject == null)
             yield break;
 
-        playerObject.transform.position = pos;
+        Transform t = playerObject.transform;
 
-        // Reset velocity
-        var rb = playerObject.GetComponent<Rigidbody>();
+        // ─────────────────────────────────────────────
+        // COMPONENTES
+        // ─────────────────────────────────────────────
+
+        var controller =
+            playerObject.GetComponent<CharacterController>();
+
+        var rb =
+            playerObject.GetComponent<Rigidbody>();
+
+        var networkTransform =
+            playerObject.GetComponent<Unity.Netcode.Components.NetworkTransform>();
+
+        // ─────────────────────────────────────────────
+        // DESACTIVAR TEMPORALMENTE
+        // ─────────────────────────────────────────────
+
+        if (controller != null)
+            controller.enabled = false;
+
+        if (networkTransform != null)
+            networkTransform.enabled = false;
+
+        // ─────────────────────────────────────────────
+        // TELEPORT REAL
+        // ─────────────────────────────────────────────
+
+        t.position = pos;
+
+        Physics.SyncTransforms();
+
+        // ─────────────────────────────────────────────
+        // RESET FÍSICAS
+        // ─────────────────────────────────────────────
 
         if (rb != null)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
+
+            rb.position = pos;
         }
 
+        yield return new WaitForEndOfFrame();
+
+        // ─────────────────────────────────────────────
+        // REACTIVAR
+        // ─────────────────────────────────────────────
+
+        if (networkTransform != null)
+            networkTransform.enabled = true;
+
+        if (controller != null)
+            controller.enabled = true;
+
         Debug.Log(
-            $"[PlayerSaveManager] Posición restaurada en {pos}");
+            $"[PlayerSaveManager] Posición restaurada FINAL en {t.position}"
+        );
     }
 
     private void RestoreStats(
         PlayerStats stats,
         PlayerStatsSnapshot snapshot)
     {
-        // ── Restaurar puntos invertidos ──────────────────────────
+        if (stats == null || snapshot == null)
+            return;
 
-        RestorePoints(stats, "health", snapshot.healthPoints);
-        RestorePoints(stats, "mana", snapshot.manaPoints);
-        RestorePoints(stats, "stamina", snapshot.staminaPoints);
+        stats.ResetAllStatsForLoad();
+
+        RestorePoints(
+            stats,
+            "health",
+            snapshot.healthPoints
+        );
+
+        RestorePoints(
+            stats,
+            "mana",
+            snapshot.manaPoints
+        );
+
+        RestorePoints(
+            stats,
+            "stamina",
+            snapshot.staminaPoints
+        );
 
         RestorePoints(
             stats,
             "physicalDamage",
-            snapshot.physicalDamagePoints);
+            snapshot.physicalDamagePoints
+        );
 
         RestorePoints(
             stats,
             "magicalDamage",
-            snapshot.magicalDamagePoints);
+            snapshot.magicalDamagePoints
+        );
 
         RestorePoints(
             stats,
             "healthRegen",
-            snapshot.healthRegenPoints);
+            snapshot.healthRegenPoints
+        );
 
         RestorePoints(
             stats,
             "manaRegen",
-            snapshot.manaRegenPoints);
+            snapshot.manaRegenPoints
+        );
 
         RestorePoints(
             stats,
             "staminaRegen",
-            snapshot.staminaRegenPoints);
-
-        // ── Restaurar puntos disponibles ─────────────────────────
+            snapshot.staminaRegenPoints
+        );
 
         stats.RestoreUpgradePoints(
             snapshot.upgradePoints,
-            snapshot.upgradePoints);
-
-        // ── Restaurar valores actuales ───────────────────────────
+            snapshot.totalPointsEarned
+        );
 
         stats.SetCurrentValue(
             "health",
-            snapshot.currentHealth);
+            snapshot.currentHealth
+        );
 
         stats.SetCurrentValue(
             "mana",
-            snapshot.currentMana);
+            snapshot.currentMana
+        );
 
         stats.SetCurrentValue(
             "stamina",
-            snapshot.currentStamina);
+            snapshot.currentStamina
+        );
+
+        Debug.Log(
+            $"[PlayerSaveManager] Stats restauradas."
+        );
     }
 
     private void RestorePoints(
@@ -298,7 +425,6 @@ public class PlayerSaveManager : MonoBehaviour
             stats.RestorePointToStat(statId);
         }
     }
-
     // ══════════════════════════════════════════════════════════════════
     // CONSULTAS
     // ══════════════════════════════════════════════════════════════════
@@ -308,7 +434,9 @@ public class PlayerSaveManager : MonoBehaviour
         if (!SaveSlotManager.Instance.HasActiveSlot)
             return false;
 
-        return SaveSlotManager.Instance.ActiveSlot.players
+        return SaveSlotManager.Instance
+            .ActiveSlot
+            .players
             .Any(p => p.playerId == playerId);
     }
 
@@ -318,7 +446,9 @@ public class PlayerSaveManager : MonoBehaviour
         if (!SaveSlotManager.Instance.HasActiveSlot)
             return null;
 
-        return SaveSlotManager.Instance.ActiveSlot.players
+        return SaveSlotManager.Instance
+            .ActiveSlot
+            .players
             .FirstOrDefault(p => p.playerId == playerId);
     }
 
@@ -335,15 +465,20 @@ public class PlayerSaveManager : MonoBehaviour
         if (!SaveSlotManager.Instance.HasActiveSlot)
             return;
 
-        var entry = CapturePlayerState(playerObject);
+        var entry =
+            CapturePlayerState(playerObject);
 
         if (entry == null)
             return;
 
-        var slot = SaveSlotManager.Instance.ActiveSlot;
+        var slot =
+            SaveSlotManager.Instance.ActiveSlot;
 
-        var existing = slot.players
-            .FirstOrDefault(p => p.playerId == entry.playerId);
+        var existing =
+            slot.players
+                .FirstOrDefault(
+                    p => p.playerId == entry.playerId
+                );
 
         if (existing != null)
         {
@@ -353,7 +488,8 @@ public class PlayerSaveManager : MonoBehaviour
         slot.players.Add(entry);
 
         Debug.Log(
-            $"[PlayerSaveManager] Jugador '{entry.playerName}' actualizado.");
+            $"[PlayerSaveManager] Jugador '{entry.playerName}' actualizado."
+        );
     }
 
     public void CaptureAllPlayersInActiveSlot()
@@ -364,17 +500,22 @@ public class PlayerSaveManager : MonoBehaviour
         if (!SaveSlotManager.Instance.HasActiveSlot)
             return;
 
-        foreach (var clientPair in NetworkManager.Singleton.ConnectedClients)
+        foreach (var clientPair
+                 in NetworkManager.Singleton.ConnectedClients)
         {
-            var playerObject = clientPair.Value.PlayerObject;
+            var playerObject =
+                clientPair.Value.PlayerObject;
 
             if (playerObject == null)
                 continue;
 
-            CaptureAndUpdatePlayerInActiveSlot(playerObject);
+            CaptureAndUpdatePlayerInActiveSlot(
+                playerObject
+            );
         }
 
         Debug.Log(
-            "[PlayerSaveManager] Todos los jugadores fueron capturados.");
+            "[PlayerSaveManager] Todos los jugadores fueron capturados."
+        );
     }
 }

@@ -14,6 +14,39 @@ using UnityEngine;
 [RequireComponent(typeof(NetworkObject))]
 public class PlayerStats : NetworkBehaviour
 {
+    /// <summary>
+    /// Limpia todas las stats antes de restaurar un save.
+    /// SOLO SERVIDOR.
+    /// </summary>
+    public void ResetAllStatsForLoad()
+    {
+        if (!IsServer)
+            return;
+
+        for (int i = 0; i < _currentValues.Count; i++)
+        {
+            var cfg = data.stats[i];
+
+            _currentValues[i] = cfg.baseValue;
+            _maxValues[i] = cfg.baseValue;
+            _pointsAssigned[i] = 0;
+        }
+
+        _upgradePoints.Value = 0;
+        _totalPointsEarned.Value = 0;
+    }
+
+    /// <summary>
+    /// SOLO SERVIDOR.
+    /// </summary>
+    public void SetTotalPointsEarned(int amount)
+    {
+        if (!IsServer)
+            return;
+
+        _totalPointsEarned.Value = amount;
+    }
+
     [Header("Config")]
     [SerializeField] private PlayerStatsData data;
 

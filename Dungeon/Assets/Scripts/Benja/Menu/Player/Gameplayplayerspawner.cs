@@ -133,6 +133,36 @@ public class GameplayPlayerSpawner : MonoBehaviour
         Quaternion spawnRot =
             GetInitialSpawnRotation(clientId);
 
+        // ─────────────────────────────────────────────
+        // SI EL JUGADOR TIENE SAVE,
+        // SPAWNEAR DIRECTAMENTE EN SU POSICIÓN
+        // ─────────────────────────────────────────────
+
+        var sessionManager =
+            SessionManager.Instance;
+
+        if (sessionManager != null &&
+            PlayerSaveManager.Instance != null)
+        {
+            string playerId =
+                sessionManager.GetPlayerId();
+
+            var saveData =
+                PlayerSaveManager.Instance
+                    .GetPlayerDataFromActiveSlot(playerId);
+
+            if (saveData != null)
+            {
+                spawnPos =
+                    saveData.position.ToVector3();
+
+                Debug.Log(
+                    $"[GameplayPlayerSpawner] " +
+                    $"Usando posición guardada para {playerId}: {spawnPos}"
+                );
+            }
+        }
+
         GameObject playerInstance =
             Instantiate(
                 playerPrefab,
@@ -154,13 +184,27 @@ public class GameplayPlayerSpawner : MonoBehaviour
 
             yield break;
         }
-
         netObj.SpawnAsPlayerObject(clientId, true);
 
         Debug.Log(
             $"[GameplayPlayerSpawner] " +
             $"Player spawneado para cliente {clientId}"
         );
+
+        // 🔥 RESTAURAR SAVE DEL JUGADOR
+        var sessionData =
+            playerInstance.GetComponent<PlayerSessionData>();
+
+        if (sessionData != null &&
+            SaveGameIntegration.Instance != null)
+        {
+            SaveGameIntegration.Instance.OnPlayerSpawned(
+                netObj,
+                sessionData.PlayerId.Value.ToString()
+            );
+            StartCoroutine(DebugPlayerPosition(playerInstance));
+        }
+
 
         // 🔥 IMPORTANTE:
         // NO mover al checkpoint aquí.
@@ -173,61 +217,72 @@ public class GameplayPlayerSpawner : MonoBehaviour
         // - Jugador nuevo -> spawn inicial
         // - Jugador existente -> última posición guardada
 
-        // Sincronizar puntos mundiales
-        StartCoroutine(
-            AlignPointsAfterSpawn(playerInstance)
-        );
+        //// Sincronizar puntos mundiales
+        //StartCoroutine(
+        //    AlignPointsAfterSpawn(playerInstance)
+        //);
     }
-
-    // ════════════════════════════════════════════════════════════════
-    // ALIGN WORLD POINTS
-    // ════════════════════════════════════════════════════════════════
-
-    private IEnumerator AlignPointsAfterSpawn(
-        GameObject playerInstance
-    )
+    private IEnumerator DebugPlayerPosition(GameObject player)
     {
-        if (playerInstance == null)
-            yield break;
-
-        yield return null;
-
-        var stats =
-            playerInstance.GetComponent<PlayerStats>();
-
-        if (stats == null)
-            yield break;
-
-        if (WorldCheckpointState.Instance == null)
+        for (int i = 0; i < 10; i++)
         {
-            Debug.LogWarning(
-                "[GameplayPlayerSpawner] " +
-                "No hay WorldCheckpointState."
-            );
-
-            yield break;
-        }
-
-        int playerEarned =
-            stats.TotalPointsEarned;
-
-        int worldGenerated =
-            WorldCheckpointState.Instance
-                .WorldPointsGenerated.Value;
-
-        int delta =
-            worldGenerated - playerEarned;
-
-        if (delta > 0)
-        {
-            stats.AddUpgradePoints(delta);
-
             Debug.Log(
-                $"[GameplayPlayerSpawner] " +
-                $"Sumando {delta} puntos al jugador."
+                $"[DEBUG POSITION] Frame {i} -> {player.transform.position}"
             );
+
+            yield return null;
         }
     }
+
+    //// ════════════════════════════════════════════════════════════════
+    //// ALIGN WORLD POINTS
+    //// ════════════════════════════════════════════════════════════════
+
+    //private IEnumerator AlignPointsAfterSpawn(
+    //    GameObject playerInstance
+    //)
+    //{
+    //    if (playerInstance == null)
+    //        yield break;
+
+    //    yield return null;
+
+    //    var stats =
+    //        playerInstance.GetComponent<PlayerStats>();
+
+    //    if (stats == null)
+    //        yield break;
+
+    //    if (WorldCheckpointState.Instance == null)
+    //    {
+    //        Debug.LogWarning(
+    //            "[GameplayPlayerSpawner] " +
+    //            "No hay WorldCheckpointState."
+    //        );
+
+    //        yield break;
+    //    }
+
+    //    int playerEarned =
+    //        stats.TotalPointsEarned;
+
+    //    int worldGenerated =
+    //        WorldCheckpointState.Instance
+    //            .WorldPointsGenerated.Value;
+
+    //    int delta =
+    //        worldGenerated - playerEarned;
+
+    //    if (delta > 0)
+    //    {
+    //        stats.AddUpgradePoints(delta);
+
+    //        Debug.Log(
+    //            $"[GameplayPlayerSpawner] " +
+    //            $"Sumando {delta} puntos al jugador."
+    //        );
+    //    }
+    //}
 
     // ════════════════════════════════════════════════════════════════
     // SPAWN HELPERS

@@ -3,83 +3,113 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Estructuras de datos para el sistema de guardado persistente.
-/// Todas son [Serializable] para poder guardarse en JSON.
+/// Estructuras serializables para Save System multiplayer.
 /// </summary>
 
 // ══════════════════════════════════════════════════════════════════════
-// SLOT DE GUARDADO (archivo principal)
+// SAVE SLOT
 // ══════════════════════════════════════════════════════════════════════
 
 [Serializable]
 public class SaveSlotData
 {
-    public string saveId;               // GUID único de esta partida
-    public string saveName;             // "Partida 1", nombre personalizado
-    public long createdTimestamp;       // Unix timestamp de creación
-    public long lastPlayedTimestamp;    // última vez que se jugó
-    public float totalPlayTimeSeconds;  // tiempo total jugado
+    public string saveId;
+    public string saveName;
 
-    public WorldSaveData worldData;     // estado del mundo compartido
-    public List<PlayerSaveEntry> players = new(); // datos de cada jugador que participó
+    public long createdTimestamp;
+    public long lastPlayedTimestamp;
+
+    public float totalPlayTimeSeconds;
+
+    public WorldSaveData worldData = new();
+
+    public List<PlayerSaveEntry> players = new();
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// MUNDO (estado global)
+// WORLD
 // ══════════════════════════════════════════════════════════════════════
 
 [Serializable]
 public class WorldSaveData
 {
+    // Checkpoints desbloqueados globalmente
     public List<string> discoveredCheckpoints = new();
-    public int globalUpgradePointsGenerated;
-    public List<string> defeatedBosses = new();
-    public List<PuzzleStateEntry> puzzleStates = new();
 
-    // Aquí puedes añadir más adelante:
-    // - puertas abiertas
-    // - cofres abiertos
-    // - NPCs muertos permanentemente
+    // Puntos generados globalmente
+    public int globalUpgradePointsGenerated;
+
+    // Bosses derrotados
+    public List<string> defeatedBosses = new();
+
+    // Estados de puzzles
+    public List<PuzzleStateEntry> puzzleStates = new();
 }
 
 [Serializable]
 public class PuzzleStateEntry
 {
     public string puzzleId;
+
     public bool isSolved;
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// JUGADOR (datos individuales)
+// PLAYER
 // ══════════════════════════════════════════════════════════════════════
 
 [Serializable]
 public class PlayerSaveEntry
 {
-    public string playerId;             // Unity Authentication PlayerId
+    // Unity Authentication PlayerId
+    public string playerId;
+
     public string playerName;
 
-    public PlayerStatsSnapshot stats;
+    // Stats
+    public PlayerStatsSnapshot stats = new();
+
+    // Skills desbloqueadas
     public List<string> unlockedSkills = new();
 
+    // Posición exacta de logout/reconexión
     public Vector3Serializable position;
-    public string currentScene;         // "04_Gameplay"
 
-    public string activeCheckpoint;     // checkpoint marcado como respawn
-    public List<string> personalCheckpoints = new(); // checkpoints descubiertos personalmente
+    // Escena actual
+    public string currentScene;
+
+    // Checkpoint activo para respawn
+    public string activeCheckpoint;
+
+    // Checkpoints descubiertos personalmente
+    public List<string> personalCheckpoints = new();
 }
+
 [Serializable]
 public class PlayerStatsSnapshot
 {
-    // ── Valores actuales ─────────────────────────────
+    // ════════════════════════════════════════════════════
+    // CURRENT VALUES
+    // ════════════════════════════════════════════════════
+
     public float currentHealth;
     public float currentMana;
     public float currentStamina;
 
-    // ── Puntos disponibles ──────────────────────────
+    // ════════════════════════════════════════════════════
+    // AVAILABLE POINTS
+    // ════════════════════════════════════════════════════
+
     public int upgradePoints;
 
-    // ── Puntos invertidos por stat ──────────────────
+    // Total histórico ganado
+    // IMPORTANTE para evitar duplicaciones
+    public int totalPointsEarned;
+
+    // ════════════════════════════════════════════════════
+    // ASSIGNED POINTS
+    // ════════════════════════════════════════════════════
+
     public int healthPoints;
     public int manaPoints;
     public int staminaPoints;
@@ -93,22 +123,35 @@ public class PlayerStatsSnapshot
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// UTILIDADES
+// VECTOR3 SERIALIZABLE
 // ══════════════════════════════════════════════════════════════════════
 
-/// <summary>Vector3 serializable para JSON (Unity's Vector3 no es serializable por defecto).</summary>
 [Serializable]
 public struct Vector3Serializable
 {
-    public float x, y, z;
+    public float x;
+    public float y;
+    public float z;
 
     public Vector3Serializable(Vector3 v)
     {
-        x = v.x; y = v.y; z = v.z;
+        x = v.x;
+        y = v.y;
+        z = v.z;
     }
 
-    public Vector3 ToVector3() => new Vector3(x, y, z);
+    public Vector3 ToVector3()
+    {
+        return new Vector3(x, y, z);
+    }
 
-    public static implicit operator Vector3(Vector3Serializable v) => v.ToVector3();
-    public static implicit operator Vector3Serializable(Vector3 v) => new Vector3Serializable(v);
+    public static implicit operator Vector3(Vector3Serializable v)
+    {
+        return v.ToVector3();
+    }
+
+    public static implicit operator Vector3Serializable(Vector3 v)
+    {
+        return new Vector3Serializable(v);
+    }
 }
