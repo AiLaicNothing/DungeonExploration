@@ -4,18 +4,29 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Controlador principal del Main Menu.
+/// Main Menu completo.
 /// 
-/// Unifica:
-/// - Sistema de saves
-/// - Multiplayer / sesiones
-/// - Perfil jugador
-/// - Rejoin
-/// - Opciones
-/// - Loading / errores
-/// - Navegación de pantallas
+/// Flujo UX:
+/// 
+/// CONTINUE
+///     -> Carga último save
+///     -> Abre PlayModeScreen
 ///
-/// ESTE reemplaza completamente al MainMenuController anterior.
+/// NEW GAME
+///     -> Crear save
+///     -> Abre PlayModeScreen
+///
+/// LOAD GAME
+///     -> Seleccionar save
+///     -> Abre PlayModeScreen
+///
+/// MULTIPLAYER
+///     -> Abre directamente navegador multiplayer
+///
+/// Luego PlayModeScreen:
+///     -> Host Game
+///     -> Join By Code
+///     -> Browse Lobbies
 /// </summary>
 public class MainMenuUI : MonoBehaviour
 {
@@ -27,6 +38,10 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private GameObject mainScreen;
     [SerializeField] private GameObject newGameScreen;
     [SerializeField] private GameObject loadGameScreen;
+
+    // NUEVA
+    [SerializeField] private GameObject playModeScreen;
+
     [SerializeField] private GameObject multiplayerScreen;
     [SerializeField] private GameObject createSessionScreen;
     [SerializeField] private GameObject browserScreen;
@@ -52,7 +67,7 @@ public class MainMenuUI : MonoBehaviour
     // MAIN SCREEN
     // ════════════════════════════════════════════════════════════════
 
-    [Header("Botones Main Screen")]
+    [Header("Main Screen")]
     [SerializeField] private Button continueButton;
     [SerializeField] private Button newGameButton;
     [SerializeField] private Button loadGameButton;
@@ -79,13 +94,23 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private Button backFromLoadButton;
 
     // ════════════════════════════════════════════════════════════════
-    // MULTIPLAYER
+    // PLAY MODE SCREEN (NUEVO)
+    // ════════════════════════════════════════════════════════════════
+
+    [Header("Play Mode Screen")]
+    [SerializeField] private Button hostGameButton;
+    [SerializeField] private Button browseGamesButton;
+    [SerializeField] private Button joinCodeButton;
+    [SerializeField] private Button backFromPlayModeButton;
+
+    // ════════════════════════════════════════════════════════════════
+    // MULTIPLAYER SCREEN
     // ════════════════════════════════════════════════════════════════
 
     [Header("Multiplayer")]
     [SerializeField] private Button createLobbyButton;
     [SerializeField] private Button browseLobbyButton;
-    [SerializeField] private Button joinByCodeButton;
+    [SerializeField] private Button joinByCodeLobbyButton;
     [SerializeField] private Button rejoinButton;
     [SerializeField] private Button backFromMultiplayerButton;
 
@@ -100,7 +125,7 @@ public class MainMenuUI : MonoBehaviour
     [SerializeField] private Button createSessionCancelButton;
 
     // ════════════════════════════════════════════════════════════════
-    // JOIN BY CODE
+    // JOIN CODE
     // ════════════════════════════════════════════════════════════════
 
     [Header("Join By Code")]
@@ -155,12 +180,12 @@ public class MainMenuUI : MonoBehaviour
     }
 
     // ════════════════════════════════════════════════════════════════
-    // REGISTRO DE BOTONES
+    // BUTTONS
     // ════════════════════════════════════════════════════════════════
 
     private void RegisterButtons()
     {
-        // Main
+        // MAIN
         if (continueButton != null)
             continueButton.onClick.AddListener(OnContinueClicked);
 
@@ -179,26 +204,39 @@ public class MainMenuUI : MonoBehaviour
         if (quitButton != null)
             quitButton.onClick.AddListener(QuitGame);
 
-        // New Game
+        // NEW GAME
         if (createNewGameButton != null)
             createNewGameButton.onClick.AddListener(OnCreateNewGameConfirmed);
 
         if (cancelNewGameButton != null)
             cancelNewGameButton.onClick.AddListener(() => ShowScreen(mainScreen));
 
-        // Load Game
+        // LOAD
         if (backFromLoadButton != null)
             backFromLoadButton.onClick.AddListener(() => ShowScreen(mainScreen));
 
-        // Multiplayer
+        // PLAY MODE
+        if (hostGameButton != null)
+            hostGameButton.onClick.AddListener(() => ShowScreen(createSessionScreen));
+
+        if (browseGamesButton != null)
+            browseGamesButton.onClick.AddListener(() => ShowScreen(browserScreen));
+
+        if (joinCodeButton != null)
+            joinCodeButton.onClick.AddListener(() => ShowScreen(joinByCodeScreen));
+
+        if (backFromPlayModeButton != null)
+            backFromPlayModeButton.onClick.AddListener(() => ShowScreen(mainScreen));
+
+        // MULTIPLAYER
         if (createLobbyButton != null)
             createLobbyButton.onClick.AddListener(() => ShowScreen(createSessionScreen));
 
         if (browseLobbyButton != null)
             browseLobbyButton.onClick.AddListener(() => ShowScreen(browserScreen));
 
-        if (joinByCodeButton != null)
-            joinByCodeButton.onClick.AddListener(() => ShowScreen(joinByCodeScreen));
+        if (joinByCodeLobbyButton != null)
+            joinByCodeLobbyButton.onClick.AddListener(() => ShowScreen(joinByCodeScreen));
 
         if (backFromMultiplayerButton != null)
             backFromMultiplayerButton.onClick.AddListener(() => ShowScreen(mainScreen));
@@ -206,25 +244,25 @@ public class MainMenuUI : MonoBehaviour
         if (rejoinButton != null)
             rejoinButton.onClick.AddListener(OnRejoinClicked);
 
-        // Create Session
+        // CREATE SESSION
         if (createSessionConfirmButton != null)
             createSessionConfirmButton.onClick.AddListener(OnCreateSessionConfirm);
 
         if (createSessionCancelButton != null)
-            createSessionCancelButton.onClick.AddListener(() => ShowScreen(multiplayerScreen));
+            createSessionCancelButton.onClick.AddListener(() => ShowScreen(playModeScreen));
 
-        // Join Code
+        // JOIN CODE
         if (joinCodeConfirmButton != null)
             joinCodeConfirmButton.onClick.AddListener(OnJoinByCodeConfirm);
 
         if (joinCodeCancelButton != null)
-            joinCodeCancelButton.onClick.AddListener(() => ShowScreen(multiplayerScreen));
+            joinCodeCancelButton.onClick.AddListener(() => ShowScreen(playModeScreen));
 
-        // Options
+        // OPTIONS
         if (backFromOptionsButton != null)
             backFromOptionsButton.onClick.AddListener(() => ShowScreen(mainScreen));
 
-        // Change Name
+        // CHANGE NAME
         if (changeNameButton != null)
             changeNameButton.onClick.AddListener(OpenChangeName);
 
@@ -236,7 +274,7 @@ public class MainMenuUI : MonoBehaviour
     }
 
     // ════════════════════════════════════════════════════════════════
-    // NAVEGACIÓN
+    // NAVIGATION
     // ════════════════════════════════════════════════════════════════
 
     private void ShowScreen(GameObject target)
@@ -244,17 +282,28 @@ public class MainMenuUI : MonoBehaviour
         if (mainScreen != null) mainScreen.SetActive(target == mainScreen);
         if (newGameScreen != null) newGameScreen.SetActive(target == newGameScreen);
         if (loadGameScreen != null) loadGameScreen.SetActive(target == loadGameScreen);
-        if (multiplayerScreen != null) multiplayerScreen.SetActive(target == multiplayerScreen);
-        if (createSessionScreen != null) createSessionScreen.SetActive(target == createSessionScreen);
-        if (browserScreen != null) browserScreen.SetActive(target == browserScreen);
-        if (joinByCodeScreen != null) joinByCodeScreen.SetActive(target == joinByCodeScreen);
-        if (optionsScreen != null) optionsScreen.SetActive(target == optionsScreen);
+        if (playModeScreen != null) playModeScreen.SetActive(target == playModeScreen);
+
+        if (multiplayerScreen != null)
+            multiplayerScreen.SetActive(target == multiplayerScreen);
+
+        if (createSessionScreen != null)
+            createSessionScreen.SetActive(target == createSessionScreen);
+
+        if (browserScreen != null)
+            browserScreen.SetActive(target == browserScreen);
+
+        if (joinByCodeScreen != null)
+            joinByCodeScreen.SetActive(target == joinByCodeScreen);
+
+        if (optionsScreen != null)
+            optionsScreen.SetActive(target == optionsScreen);
 
         ShowError("");
     }
 
     // ════════════════════════════════════════════════════════════════
-    // PERFIL
+    // PROFILE
     // ════════════════════════════════════════════════════════════════
 
     private void RefreshProfileHeader()
@@ -297,7 +346,7 @@ public class MainMenuUI : MonoBehaviour
     }
 
     // ════════════════════════════════════════════════════════════════
-    // NUEVA PARTIDA
+    // NEW GAME
     // ════════════════════════════════════════════════════════════════
 
     private void OnNewGameClicked()
@@ -322,7 +371,7 @@ public class MainMenuUI : MonoBehaviour
 
         SaveSlotManager.Instance.CreateNewSlot(saveName);
 
-        ShowScreen(multiplayerScreen);
+        ShowScreen(playModeScreen);
     }
 
     // ════════════════════════════════════════════════════════════════
@@ -365,12 +414,6 @@ public class MainMenuUI : MonoBehaviour
 
         var slots = SaveSlotManager.Instance.GetAllSlotsMetadata();
 
-        if (slots.Count == 0)
-        {
-            Debug.Log("[MainMenu] No hay saves.");
-            return;
-        }
-
         foreach (var slot in slots)
         {
             GameObject entry = Instantiate(saveSlotEntryPrefab, loadGameContainer);
@@ -403,37 +446,16 @@ public class MainMenuUI : MonoBehaviour
             return;
         }
 
-        ShowScreen(multiplayerScreen);
+        ShowScreen(playModeScreen);
     }
 
     private void OnSlotDeleteClicked(string saveId)
     {
-        if (ConfirmDialogUI.Instance != null)
-        {
-            ConfirmDialogUI.Instance.Show(
-                title: "Eliminar partida",
-                message: "¿Seguro que quieres eliminar esta partida?",
-                onYes: () =>
-                {
-                    SaveSlotManager.Instance.DeleteSlot(saveId);
+        SaveSlotManager.Instance.DeleteSlot(saveId);
 
-                    RefreshLoadGameList();
+        RefreshLoadGameList();
 
-                    RefreshContinueButton();
-                },
-                onNo: null,
-                yesLabel: "Eliminar",
-                noLabel: "Cancelar"
-            );
-        }
-        else
-        {
-            SaveSlotManager.Instance.DeleteSlot(saveId);
-
-            RefreshLoadGameList();
-
-            RefreshContinueButton();
-        }
+        RefreshContinueButton();
     }
 
     // ════════════════════════════════════════════════════════════════
