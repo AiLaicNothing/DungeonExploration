@@ -53,8 +53,22 @@ public class PlayerSaveManager : MonoBehaviour
             return null;
         }
 
-        var sessionData =
-            playerObject.GetComponent<PlayerSessionData>();
+        PlayerSessionData sessionData = null;
+
+        foreach (var session in FindObjectsByType<PlayerSessionData>(FindObjectsSortMode.None))
+        {
+            if (session.CurrentCharacterNetId.Value ==
+                playerObject.NetworkObjectId)
+            {
+                sessionData = session;
+                break;
+            }
+        }
+
+        Debug.Log(
+    $"[PlayerSaveManager] Looking for session of character " +
+    $"NetId={playerObject.NetworkObjectId}"
+);
 
         var stats =
             playerObject.GetComponent<PlayerStats>();
@@ -64,6 +78,7 @@ public class PlayerSaveManager : MonoBehaviour
 
         if (sessionData == null || stats == null)
         {
+            //ALSO THIS ERROR DEBUG WHEN YOU CREATE THE WORLD FOR THE FIRST TIME WHEN SELECTING CHARACTER
             Debug.LogError(
                 "[PlayerSaveManager] Faltan componentes requeridos."
             );
@@ -78,6 +93,8 @@ public class PlayerSaveManager : MonoBehaviour
 
             playerName =
                 sessionData.PlayerName.Value.ToString(),
+
+            selectedCharacter = sessionData.SelectedCharacter.Value,
 
             stats =
                 CaptureStats(stats),
@@ -99,6 +116,12 @@ public class PlayerSaveManager : MonoBehaviour
             personalCheckpoints =
                 new List<string>()
         };
+
+        Debug.Log(
+    $"[PlayerSaveManager] Saving character selection " +
+    $"Player={entry.playerName} " +
+    $"CharacterIndex={entry.selectedCharacter}"
+);
 
         // ─────────────────────────────────────────────
         // CHECKPOINTS PERSONALES
@@ -500,22 +523,48 @@ public class PlayerSaveManager : MonoBehaviour
         if (!SaveSlotManager.Instance.HasActiveSlot)
             return;
 
-        foreach (var clientPair
-                 in NetworkManager.Singleton.ConnectedClients)
-        {
-            var playerObject =
-                clientPair.Value.PlayerObject;
-
-            if (playerObject == null)
-                continue;
-
-            CaptureAndUpdatePlayerInActiveSlot(
-                playerObject
+        PlayerSessionData[] sessions =
+            FindObjectsByType<PlayerSessionData>(
+                FindObjectsSortMode.None
             );
+
+        foreach (var session in sessions)
+        {
+            ulong netId =
+                session.CurrentCharacterNetId.Value;
+
+            Debug.Log(
+                $"[PlayerSaveManager] Processing session " +
+                $"Client={session.OwnerClientId} " +
+                $"CharacterNetId={netId}"
+            );
+
+            if (netId == 0)
+            {
+                Debug.LogWarning(
+                    $"[PlayerSaveManager] No character assigned " +
+                    $"Client={session.OwnerClientId}"
+                );
+
+                continue;
+            }
+
+            if (!NetworkManager.Singleton.SpawnManager
+                .SpawnedObjects.TryGetValue(netId, out NetworkObject character))
+            {
+                Debug.LogWarning(
+                    $"[PlayerSaveManager] Character object missing " +
+                    $"NetId={netId}"
+                );
+
+                continue;
+            }
+
+            CaptureAndUpdatePlayerInActiveSlot(character);
         }
 
         Debug.Log(
-            "[PlayerSaveManager] Todos los jugadores fueron capturados."
+            "[PlayerSaveManager] All players captured successfully."
         );
     }
 }

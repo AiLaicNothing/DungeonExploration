@@ -188,6 +188,12 @@ public class SaveGameIntegration : NetworkBehaviour
         if (_isShuttingDown)
             return;
 
+        Debug.Log(
+            $"[SaveGameIntegration] OnCharacterSpawned " +
+            $"PlayerId={playerId} " +
+            $"NetId={playerObject.NetworkObjectId}"
+        );
+
         if (PlayerSaveManager.Instance == null)
         {
             Debug.LogError(
@@ -202,7 +208,7 @@ public class SaveGameIntegration : NetworkBehaviour
         {
             Debug.Log(
                 $"[SaveGameIntegration] " +
-                $"No hay slot activo. '{playerId}' empieza desde cero."
+                $"No active slot. '{playerId}' starts fresh."
             );
 
             return;
@@ -212,23 +218,32 @@ public class SaveGameIntegration : NetworkBehaviour
             PlayerSaveManager.Instance
                 .GetPlayerDataFromActiveSlot(playerId);
 
-        if (playerData != null)
+        if (playerData == null)
         {
-            PlayerSaveManager.Instance
-                .RestorePlayerState(playerObject, playerData);
+            Debug.Log(
+                $"[SaveGameIntegration] " +
+                $"No save data found for '{playerId}'"
+            );
 
-            Debug.Log(
-                $"[SaveGameIntegration] " +
-                $"Jugador '{playerId}' restaurado."
-            );
+            return;
         }
-        else
-        {
-            Debug.Log(
-                $"[SaveGameIntegration] " +
-                $"Jugador '{playerId}' nuevo en la partida."
+
+        Debug.Log(
+            $"[SaveGameIntegration] Restoring player state " +
+            $"Player={playerId} " +
+            $"SavedPosition={playerData.position.ToVector3()}"
+        );
+
+        PlayerSaveManager.Instance
+            .RestorePlayerState(
+                playerObject,
+                playerData
             );
-        }
+
+        Debug.Log(
+            $"[SaveGameIntegration] Player restored successfully " +
+            $"Player={playerId}"
+        );
     }
 
     // ════════════════════════════════════════════════════════════════

@@ -421,6 +421,7 @@ GameObject:
   - component: {fileID: 5195984443101771771}
   - component: {fileID: 71265052130629953}
   - component: {fileID: 4412126337141054394}
+  - component: {fileID: 8686427854404401409}
   - component: {fileID: 7187626322008412461}
   - component: {fileID: 7648726316778184223}
   - component: {fileID: 2229039772079444906}
@@ -494,6 +495,31 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInputHandler
   attackBufferTime: 0.2
+--- !u!114 &8686427854404401409
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2075475488835863185}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
+  GlobalObjectIdHash: 2996649933
+  InScenePlacedSourceGlobalObjectIdHash: 0
+  DeferredDespawnTick: 0
+  Ownership: 1
+  AlwaysReplicateAsRoot: 0
+  SynchronizeTransform: 1
+  ActiveSceneSynchronization: 0
+  SceneMigrationSynchronization: 1
+  SpawnWithObservers: 1
+  DontDestroyWithOwner: 0
+  AutoObjectParentSync: 1
+  SyncOwnerTransformWhenParented: 1
+  AllowOwnerToParent: 0
 --- !u!114 &7187626322008412461
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -506,10 +532,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: aa46c6b2449e8534f853ac3be58670bd, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
+  ShowTopMostFoldoutHeaderGroup: 1
   moveSpeed: 10
   jumpForce: 12
   rotSpeed: 60
   moveMultiplier: 1
+  whatIsGround:
+    serializedVersion: 2
+    m_Bits: 0
   dashDistance: 5
   dashDuration: 0.3
   dashCost: 20
@@ -535,7 +565,9 @@ MonoBehaviour:
   input: {fileID: 4412126337141054394}
   playerModel: {fileID: 459833000716062552}
   lockOnTarget: {fileID: 2229039772079444906}
+  thirdCam: {fileID: 0}
   platformRider: {fileID: 2847600396805864418}
+  stats: {fileID: 0}
   hitboxPrefab: {fileID: 65547742025389114, guid: e1a6382669a4d2d49901cfb4464b71df, type: 3}
 --- !u!114 &7648726316778184223
 MonoBehaviour:
@@ -836,6 +868,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 26073f37062df8e43a51b67aa1a08fb3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInteraction
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &2847600396805864418
 MonoBehaviour:
   m_ObjectHideFlags: 0

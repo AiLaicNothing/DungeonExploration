@@ -92,6 +92,12 @@ public class CharacterSelectionManager : NetworkBehaviour
         selectedCharacters[clientId] = characterIndex;
 
         SpawnCharacter(clientId);
+
+        Debug.Log(
+    $"[CharacterSelectionManager] ServerReceiveSelection " +
+    $"Client={clientId} " +
+    $"Character={characterIndex}"
+);
     }
 
     //==================================================
@@ -100,6 +106,11 @@ public class CharacterSelectionManager : NetworkBehaviour
 
     private void SpawnCharacter(ulong clientId)
     {
+
+        Debug.Log(
+    $"[CharacterSelectionManager] SpawnCharacter " +
+    $"Client={clientId}"
+);
         CharacterData data = characters[selectedCharacters[clientId]];
 
         if (data == null || data.playerPrefab == null)
@@ -108,6 +119,10 @@ public class CharacterSelectionManager : NetworkBehaviour
             return;
         }
 
+        Debug.Log(
+    $"[CharacterSelectionManager] Removing previous character " +
+    $"Client={clientId}"
+);
         // REMOVE OLD CHARACTER
         if (spawnedCharacters.ContainsKey(clientId))
         {
@@ -119,6 +134,7 @@ public class CharacterSelectionManager : NetworkBehaviour
 
         Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
 
+        //FOR A FEW SECOND WHEN JOINING A WORLD WITH A SAVE OF YOU WITH A CHARACTER MissingReferenceException: The object of type 'UnityEngine.Transform' has been destroyed but you are still trying to access it.
         GameObject obj = Instantiate(data.playerPrefab, spawnPoint.position, spawnPoint.rotation);
 
         NetworkObject netObj = obj.GetComponent<NetworkObject>();
@@ -126,11 +142,65 @@ public class CharacterSelectionManager : NetworkBehaviour
         // replace current player object
         netObj.SpawnWithOwnership(clientId);
 
+        Debug.Log(
+    $"[CharacterSelectionManager] Spawned prefab " +
+    $"Character={data.characterName} " +
+    $"Client={clientId} " +
+    $"NetId={netObj.NetworkObjectId}"
+);
+        PlayerSessionData session = FindSession(clientId);
+
+        if (session != null)
+        {
+            session.CurrentCharacterNetId.Value =
+                netObj.NetworkObjectId;
+
+            Debug.Log(
+                $"[CharacterSelectionManager] Linked session -> character " +
+                $"Client={clientId} " +
+                $"CharacterNetId={netObj.NetworkObjectId}"
+            );
+        }
+
         spawnedCharacters[clientId] = netObj;
+
+        PlayerSessionData restoreSession =
+    FindSession(clientId);
+
+        if (restoreSession != null)
+        {
+            string playerId =
+                restoreSession.PlayerId.Value.ToString();
+
+            Debug.Log(
+                $"[CharacterSelectionManager] Trying restore state " +
+                $"Player={playerId} " +
+                $"CharacterNetId={netObj.NetworkObjectId}"
+            );
+
+            if (SaveGameIntegration.Instance != null)
+            {
+                SaveGameIntegration.Instance
+                    .OnPlayerSpawned(
+                        netObj,
+                        playerId
+                    );
+            }
+        }
 
         Debug.Log($"Spawned {data.characterName} for Client {clientId}");
     }
 
+    private PlayerSessionData FindSession(ulong clientId)
+    {
+        foreach (var session in FindObjectsByType<PlayerSessionData>(FindObjectsSortMode.None))
+        {
+            if (session.OwnerClientId == clientId)
+                return session;
+        }
+
+        return null;
+    }
     //==================================================
     // RESPAWN
     //==================================================

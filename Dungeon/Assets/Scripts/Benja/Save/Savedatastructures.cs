@@ -66,6 +66,8 @@ public class PlayerSaveEntry
 
     public string playerName;
 
+    public int selectedCharacter = -1;
+
     // Stats
     public PlayerStatsSnapshot stats = new();
 

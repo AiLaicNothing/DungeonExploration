@@ -1,3 +1,4 @@
+using System.Collections;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -22,18 +23,46 @@ public class CharacterSelectionUI : MonoBehaviour
 
     private void Start()
     {
+      StartCoroutine(StartSelection());
+    }
+
+    private IEnumerator StartSelection()
+    {
         SetupButtons();
 
-        if (PlayerSessionData.local == null) return;
+        while (PlayerSessionData.local == null)
+        {
+            Debug.Log(
+                "[CharacterSelectionUI] Waiting PlayerSessionData.local..."
+            );
 
-        int selected = PlayerSessionData.local.SelectedCharacter.Value;
+            yield return null;
+        }
+
+        // wait NGO sync
+        yield return new WaitForSeconds(0.5f);
+
+        int selected =
+            PlayerSessionData.local.SelectedCharacter.Value;
+
+        Debug.Log(
+            $"[CharacterSelectionUI] SelectedCharacter={selected}"
+        );
 
         // already selected before
         if (selected >= 0)
         {
+            Debug.Log(
+                "[CharacterSelectionUI] Character already selected. Hiding UI."
+            );
+
             gameObject.SetActive(false);
-            return;
+            yield break;
         }
+
+        Debug.Log(
+            "[CharacterSelectionUI] No character selected yet."
+        );
 
         SelectCharacter(0);
 
