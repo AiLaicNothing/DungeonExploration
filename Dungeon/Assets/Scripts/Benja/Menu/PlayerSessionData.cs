@@ -8,12 +8,15 @@ using UnityEngine;
 /// </summary>
 public class PlayerSessionData : NetworkBehaviour
 {
+    public static PlayerSessionData local;
+
     public NetworkVariable<FixedString64Bytes> PlayerId =
         new(writePerm: NetworkVariableWritePermission.Server);
 
     public NetworkVariable<FixedString64Bytes> PlayerName =
         new(writePerm: NetworkVariableWritePermission.Server);
 
+    public NetworkVariable<int> SelectedCharacter = new(-1, writePerm: NetworkVariableWritePermission.Server);
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
@@ -21,6 +24,8 @@ public class PlayerSessionData : NetworkBehaviour
         // SOLO el dueño envía sus datos
         if (IsOwner)
         {
+            local = this;
+
             SubmitIdentityServerRpc(    
                 PlayerProfile.PlayerId,
                 PlayerProfile.Name
@@ -41,5 +46,13 @@ public class PlayerSessionData : NetworkBehaviour
         {
             SaveGameIntegration.Instance.OnPlayerSpawned(NetworkObject, playerId);
         }
+    }
+
+    [Rpc(SendTo.Server)]
+    public void SubmitCharacterSelectionRpc(int characterIndex)
+    {
+        SelectedCharacter.Value = characterIndex;
+
+        CharacterSelectionManager.Instance.ServerReceiveSelection( OwnerClientId, characterIndex);
     }
 }

@@ -24,6 +24,9 @@ public class MagicBullet : Skill
 
     public HitData hitData;
 
+    [Header("Sfx")]
+    [SerializeField] private GameObject sfx;
+
     public override void LocalExecute(PlayerController player, Vector3 targetPoint)
     {
     }

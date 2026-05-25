@@ -13,6 +13,10 @@ public class PlayerProyectile : MonoBehaviour
     [SerializeField] float maxTargetRange = 20f;
     [SerializeField] private float homingRange = 15f;
     [SerializeField] private float retargetInterval = 0.2f;
+
+    [Header("Sfx")]
+    [SerializeField] private GameObject sfx;
+
     private float retargetTimer;
 
     private Transform target;

@@ -1,16 +1,10 @@
-using System.Collections;
 using UnityEngine;
-using static UnityEngine.Rendering.DebugUI.Table;
 
-[CreateAssetMenu(menuName = "Skills/Spin Attack Skill")]
-public class SpinAttack : Skill
+[CreateAssetMenu(menuName = "Skills/Freeze")]
+public class Freeze : Skill
 {
     [Header("Spin Size")]
     [SerializeField] private Vector3 hitBoxSize;
-
-    [Header("Time")]
-    [SerializeField] private float duration = 2f;
-    [SerializeField] private float tickRate;
 
     [Header("Offset")]
     [SerializeField] private Vector3 startOffset;
@@ -31,29 +25,8 @@ public class SpinAttack : Skill
 
     public override void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
-        player.StartCoroutine(SpinRoutine(player));
-    }
-
-    private IEnumerator SpinRoutine(PlayerController player)
-    {
         player.blockVelocity = true;
-
-        float timer = 0;
-
-        while (timer < duration)
-        {
-            DealDamage(player);
-
-            yield return new WaitForSeconds(tickRate);
-
-            timer += tickRate;
-        }
-
-        if (debugBox != null)
-        {
-            GameObject.Destroy(debugBox);
-            debugBox = null;
-        }
+        DealDamage(player);
     }
 
     private void DealDamage(PlayerController player)
