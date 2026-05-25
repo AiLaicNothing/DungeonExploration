@@ -6,6 +6,9 @@ public class EnemyProyectile : MonoBehaviour
     private float damage;
     private Vector3 dir;
 
+    [Header("Sfx")]
+    [SerializeField] private GameObject sfx;
+
     private Rigidbody rb;
 
 

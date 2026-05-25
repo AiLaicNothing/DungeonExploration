@@ -1955,6 +1955,11 @@ MonoBehaviour:
         byte0059: 0
         byte0060: 0
         byte0061: 0
+  SelectedCharacter:
+    UpdateTraits:
+      MinSecondsBetweenUpdates: 0
+      MaxSecondsBetweenUpdates: 0
+    m_InternalValue: -1
 --- !u!114 &5818889905068986199
 MonoBehaviour:
   m_ObjectHideFlags: 0

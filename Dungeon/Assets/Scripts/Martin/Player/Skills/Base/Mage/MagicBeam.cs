@@ -24,6 +24,9 @@ public class MagicBeam : Skill
     [SerializeField] private LayerMask enemyLayer;
     private GameObject debugBox;
 
+    [Header("Sfx")]
+    [SerializeField] private GameObject sfx;
+
     public override void LocalExecute(PlayerController player, Vector3 targetPoint)
     {
     }

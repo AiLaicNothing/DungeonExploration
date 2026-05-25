@@ -11,6 +11,8 @@ public class BloodMoon : Skill
     public Vector3 offset;
     public HitData hitData;
 
+    [Header("Sfx")]
+    [SerializeField] private GameObject sfx;
     public override void LocalExecute(PlayerController player, Vector3 targetPoint)
     {
     }

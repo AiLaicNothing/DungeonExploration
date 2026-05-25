@@ -13,6 +13,8 @@ public class NovaOrbita : Skill
     public float angularSpeed = 180f; // degrees per second
     public float duration = 5f;
 
+    [Header("Sfx")]
+    [SerializeField] private GameObject sfx;
     public override void LocalExecute(PlayerController player, Vector3 targetPoint)
     {
     }
