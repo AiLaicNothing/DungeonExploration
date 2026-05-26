@@ -309,13 +309,9 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
     private void ApplyGravity()
     {
-        if (rb == null)
-            return;
+        if (rb == null) return;
 
-        rb.AddForce(
-            Vector3.up * baseGravity * currentGravityMultiplier,
-            ForceMode.Acceleration
-        );
+        rb.AddForce(Vector3.up * baseGravity * currentGravityMultiplier, ForceMode.Acceleration);
     }
 
     public void SetGravityMultiplier(float value)
@@ -333,8 +329,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
         var cam = MainCam;
 
-        if (cam == null)
-            return;
+        if (cam == null) return;
 
         Vector3 camForward = cam.transform.forward;
         camForward.y = 0f;
@@ -344,17 +339,13 @@ public class PlayerController : NetworkBehaviour, IDamageable
         camRight.y = 0f;
         camRight.Normalize();
 
-        Vector3 moveDir =
-            camForward * inputDir.y +
-            camRight * inputDir.x;
+        Vector3 moveDir = camForward * inputDir.y + camRight * inputDir.x;
 
-        Vector3 velocity =
-            moveDir * moveSpeed * moveMultiplier;
+        Vector3 velocity = moveDir * moveSpeed * moveMultiplier;
 
         velocity.y = rb.linearVelocity.y;
 
-        if (platformRider != null &&
-            platformRider.IsOnPlatform)
+        if (platformRider != null && platformRider.IsOnPlatform)
         {
             velocity += platformRider.CurrentPlatformVelocity;
         }
@@ -366,38 +357,23 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
     public void Jump()
     {
-        if (!isGrounded)
-            return;
+        if (!isGrounded) return;
 
-        rb.linearVelocity =
-            new Vector3(
-                rb.linearVelocity.x,
-                0f,
-                rb.linearVelocity.z
-            );
+        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0f, rb.linearVelocity.z);
 
-        rb.AddForce(
-            Vector3.up * jumpForce,
-            ForceMode.Impulse
-        );
+        rb.AddForce( Vector3.up * jumpForce, ForceMode.Impulse);
     }
 
     private void HandleRotation(Vector3 moveDir)
     {
         Vector3 lookDir;
 
-        if (
-            input.isAiming ||
-            (
-                lockOnTarget != null &&
-                lockOnTarget.isTargeting
-            )
+        if ( input.isAiming ||(lockOnTarget != null && lockOnTarget.isTargeting)
         )
         {
             var cam = MainCam;
 
-            if (cam == null)
-                return;
+            if (cam == null) return;
 
             lookDir = cam.transform.forward;
             lookDir.y = 0f;
@@ -405,34 +381,21 @@ public class PlayerController : NetworkBehaviour, IDamageable
         }
         else
         {
-            if (moveDir.magnitude < 0.1f)
-                return;
+            if (moveDir.magnitude < 0.1f) return;
 
             lookDir = moveDir;
         }
 
-        Quaternion targetRotation =
-            Quaternion.LookRotation(lookDir);
+        Quaternion targetRotation = Quaternion.LookRotation(lookDir);
 
-        playerModel.rotation =
-            Quaternion.Slerp(
-                playerModel.rotation,
-                targetRotation,
-                rotSpeed * Time.deltaTime
-            );
+        playerModel.rotation = Quaternion.Slerp( playerModel.rotation, targetRotation, rotSpeed * Time.deltaTime);
     }
 
     private void CheckGround()
     {
         bool previousGrounded = isGrounded;
 
-        isGrounded =
-            Physics.Raycast(
-                groundCheck.position,
-                Vector3.down,
-                1.1f,
-                whatIsGround
-            );
+        isGrounded = Physics.Raycast(groundCheck.position, Vector3.down,1.1f, whatIsGround);
 
         if (!previousGrounded && isGrounded)
         {
@@ -449,16 +412,9 @@ public class PlayerController : NetworkBehaviour, IDamageable
     {
         var cam = MainCam;
 
-        if (cam == null)
-            return transform.position;
+        if (cam == null)  return transform.position;
 
-        Ray ray =
-            cam.ScreenPointToRay(
-                new Vector3(
-                    Screen.width / 2f,
-                    Screen.height / 2f
-                )
-            );
+        Ray ray = cam.ScreenPointToRay( new Vector3(  Screen.width / 2f, Screen.height / 2f));
 
         if (Physics.Raycast(ray, out RaycastHit hit, 100f))
         {
@@ -468,32 +424,15 @@ public class PlayerController : NetworkBehaviour, IDamageable
         return ray.origin + ray.direction * 100f;
     }
 
-    public Vector3 GetAimPoint(
-        float maxRange,
-        LayerMask groundLayer
-    )
+    public Vector3 GetAimPoint(float maxRange, LayerMask groundLayer)
     {
         var cam = MainCam;
 
-        if (cam == null)
-            return transform.position;
+        if (cam == null) return transform.position;
 
-        Ray ray =
-            cam.ScreenPointToRay(
-                new Vector3(
-                    Screen.width / 2f,
-                    Screen.height / 2f
-                )
-            );
+        Ray ray =  cam.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f));
 
-        if (
-            Physics.Raycast(
-                ray,
-                out RaycastHit hit,
-                maxRange,
-                groundLayer
-            )
-        )
+        if (Physics.Raycast( ray, out RaycastHit hit, maxRange, groundLayer))
         {
             return hit.point;
         }
@@ -552,90 +491,78 @@ public class PlayerController : NetworkBehaviour, IDamageable
     // MELEE ATTACK
     // ─────────────────────────────────────────
 
-    public void RequestMeleeAttack(
-        int comboIndex,
-        bool isAirAttack
-    )
+    public void RequestMeleeAttack(int comboIndex, bool isAirAttack )
     {
-        RequestAttackVfx(comboIndex, isAirAttack);
+        MeleeAttackServerRpc(comboIndex, isAirAttack);
     }
 
+    [ServerRpc]
+    private void MeleeAttackServerRpc(int comboIndex, bool isGrounded)
+    {
+        AttackSteps attack = isGrounded ? ComboData.attackSteps[comboIndex] : airComboData.attackSteps[comboIndex];
+
+        Vector3 center = PlayerModel.transform.position + PlayerModel.transform.forward * attack.hitBoxOffSet.z + Vector3.up * attack.hitBoxOffSet.y;
+
+        Collider[] hits = Physics.OverlapBox(center, attack.hitBoxSize * 0.5f, PlayerModel.transform.rotation);
+
+        foreach (var hit in hits)
+        {
+            if (hit.CompareTag("Enemy"))
+            {
+                IDamageable damageable = hit.GetComponent<IDamageable>();
+                if (damageable != null)
+                {
+                    Vector3 hitDir = PlayerModel.transform.forward;
+                    damageable.TakeDamage((Stats.PhysicalDamage.CurrentValue * attack.hitData.physicalScale) + (Stats.MagicalDamage.CurrentValue * attack.hitData.magicalScale), attack.hitData.throwType, hitDir, attack.hitData.stunDuration, attack.hitData.keepInAir, attack.hitData.airLiftForce, attack.hitData.staggerCharge);
+                }
+                Debug.Log($"[Server] Player {OwnerClientId} hit {hit.name}");
+            }
+        }
+        if (showHitBox)
+        {
+            ShowHitboxClientRpc(center, attack.hitBoxSize, PlayerModel.rotation);
+        }
+    }
     // ─────────────────────────────────────────
     // SHOOT
     // ─────────────────────────────────────────
 
-    public void RequestShoot(
-        Vector3 spawnPosition,
-        Vector3 direction
-    )
+    public void RequestShoot(Vector3 spawnPosition, Vector3 direction)
     {
-        if (!IsOwner)
-            return;
+        if (!IsOwner) return;
 
-        RequestShootServerRpc(
-            spawnPosition,
-            direction
-        );
+        RequestShootServerRpc( spawnPosition, direction);
     }
 
     [ServerRpc]
-    private void RequestShootServerRpc(
-        Vector3 spawnPosition,
-        Vector3 direction
-    )
+    private void RequestShootServerRpc(Vector3 spawnPosition, Vector3 direction)
     {
-        SpawnProjectile(
-            spawnPosition,
-            direction
-        );
+        SpawnProjectile( spawnPosition, direction);
 
-        ShootClientRpc(
-            spawnPosition,
-            direction
-        );
+        ShootClientRpc( spawnPosition, direction);
     }
 
     [ClientRpc]
-    private void ShootClientRpc(
-        Vector3 spawnPosition,
-        Vector3 direction
-    )
+    private void ShootClientRpc( Vector3 spawnPosition, Vector3 direction)
     {
-        if (IsOwner)
-            return;
+        if (IsOwner) return;
 
-        SpawnProjectile(
-            spawnPosition,
-            direction
-        );
+        SpawnProjectile(spawnPosition, direction);
     }
 
-    private void SpawnProjectile(
-        Vector3 spawnPosition,
-        Vector3 direction
-    )
+    private void SpawnProjectile( Vector3 spawnPosition, Vector3 direction)
     {
-        if (shootData == null)
-            return;
+        if (shootData == null) return;
 
-        if (shootData.proyectilePrefab == null)
-            return;
+        if (shootData.proyectilePrefab == null) return;
 
-        GameObject projectile =
-            Instantiate(
-                shootData.proyectilePrefab,
-                spawnPosition,
-                Quaternion.LookRotation(direction)
-            );
+        GameObject projectile =Instantiate(shootData.proyectilePrefab, spawnPosition, Quaternion.LookRotation(direction));
 
-        Rigidbody projectileRb =
-            projectile.GetComponent<Rigidbody>();
+        Rigidbody projectileRb =  projectile.GetComponent<Rigidbody>();
 
         if (projectileRb != null)
         {
-            projectileRb.linearVelocity =
-                direction.normalized *
-                shootData.proyectileSpeed;
+            projectileRb.linearVelocity = direction.normalized * shootData.proyectileSpeed;
         }
     }
 
@@ -643,117 +570,80 @@ public class PlayerController : NetworkBehaviour, IDamageable
     // ATTACK VFX
     // ─────────────────────────────────────────
 
-    public void PlayAttackVfxLocal(
-        int comboIndex,
-        bool isAirAttack
-    )
+    public void RequestAttackVfx(int comboIndex, bool isGrounded)
     {
-        GameObject[] array =
-            isAirAttack
-            ? airAttackVfx
-            : meleeAttackVfx;
-
-        if (array == null)
-            return;
-
-        if (comboIndex < 0 || comboIndex >= array.Length)
-            return;
-
-        GameObject prefab = array[comboIndex];
-
-        if (prefab == null)
-            return;
-
-        Instantiate(
-            prefab,
-            transform.position,
-            playerModel.rotation
-        );
-    }
-
-    public void RequestAttackVfx(
-        int comboIndex,
-        bool isAirAttack
-    )
-    {
-        if (!IsOwner)
-            return;
-
-        AttackVfxServerRpc(
-            comboIndex,
-            isAirAttack
-        );
+        RequestAttackVfxServerRpc(comboIndex, isGrounded);
     }
 
     [ServerRpc]
-    private void AttackVfxServerRpc(
-        int comboIndex,
-        bool isAirAttack
-    )
+    private void RequestAttackVfxServerRpc(int comboIndex, bool isGrounded)
     {
-        AttackVfxClientRpc(
-            comboIndex,
-            isAirAttack
-        );
+        // Server tells all clients to play the VFX
+        PlayAttackVfxClientRpc(comboIndex, isGrounded);
     }
 
     [ClientRpc]
-    private void AttackVfxClientRpc(
-        int comboIndex,
-        bool isAirAttack
-    )
+    public void PlayAttackVfxClientRpc(int comboIndex, bool isGrounded)
     {
-        if (IsOwner)
-            return;
+        if (IsOwner) return;
 
-        PlayAttackVfxLocal(
-            comboIndex,
-            isAirAttack
-        );
+        SpawnAttackVfx(comboIndex, isGrounded);
+    }
+
+    // local-only VFX spawn, used by the owner instantly
+    public void PlayAttackVfxLocal(int comboIndex, bool isGrounded)
+    {
+        SpawnAttackVfx(comboIndex, isGrounded);
+    }
+
+    // shared VFX spawn logic
+    private void SpawnAttackVfx(int comboIndex, bool isGrounded)
+    {
+        AttackSteps attack = isGrounded ? ComboData.attackSteps[comboIndex]: AirComboData.attackSteps[comboIndex];
+
+        if (attack == null || attack.attackVfx == null) return;
+
+        StartCoroutine(SpawnAttackVfxRoutine(attack));
+    }
+
+    // handles delay + lifetime per attack step
+    private IEnumerator SpawnAttackVfxRoutine(AttackSteps attack)
+    {
+        if (attack.vfxSpawnTime > 0f) yield return new WaitForSeconds(attack.vfxSpawnTime);
+
+        Transform root = PlayerModel != null ? PlayerModel : transform;
+
+        Vector3 spawnPos = root.TransformPoint(attack.vfxOffset);
+
+        Quaternion spawnRot = root.rotation * Quaternion.Euler(attack.vfxRotOffset);
+
+        GameObject vfx = Instantiate(attack.attackVfx, spawnPos, spawnRot);
+
+        if (attack.vfxDuration > 0f) Destroy(vfx, attack.vfxDuration);
     }
 
     // ─────────────────────────────────────────
     // SKILLS
     // ─────────────────────────────────────────
 
-    public void RequestSkill(
-        int skillIndex,
-        Vector3 targetPoint
-    )
+    public void RequestSkill( int skillIndex, Vector3 targetPoint)
     {
-        if (!IsOwner)
-            return;
+        if (!IsOwner) return;
 
         Vector3 lockTargetPos = Vector3.zero;
 
-        if (
-            lockOnTarget != null &&
-            lockOnTarget.isTargeting &&
-            lockOnTarget.CurrentTarget != null
-        )
+        if (lockOnTarget != null && lockOnTarget.isTargeting && lockOnTarget.CurrentTarget != null)
         {
-            lockTargetPos =
-                lockOnTarget.CurrentTarget.position;
+            lockTargetPos = lockOnTarget.CurrentTarget.position;
         }
 
-        UseSkillServerRpc(
-            skillIndex,
-            targetPoint,
-            lockTargetPos
-        );
+        UseSkillServerRpc( skillIndex, targetPoint, lockTargetPos);
     }
 
     [ServerRpc]
-    private void UseSkillServerRpc(
-        int skillIndex,
-        Vector3 targetPoint,
-        Vector3 lockTargetPos
-    )
+    private void UseSkillServerRpc(int skillIndex, Vector3 targetPoint, Vector3 lockTargetPos)
     {
-        if (
-            skillIndex < 0 ||
-            skillIndex >= skills.Length
-        )
+        if (skillIndex < 0 || skillIndex >= skills.Length)
         {
             return;
         }
@@ -762,50 +652,35 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
         if (skill == null)
         {
-            Debug.LogWarning(
-                $"[PlayerController] Skill NULL in slot {skillIndex}"
-            );
+            Debug.LogWarning($"[PlayerController] Skill NULL in slot {skillIndex}");
 
             return;
         }
 
         if (!IsSkillReady(skillIndex))
         {
-            Debug.Log(
-                $"[PlayerController] Skill cooldown active."
-            );
+            Debug.Log($"[PlayerController] Skill cooldown active.");
 
             return;
         }
 
         if (!HasResource(skill.resourceType, skill.cost))
         {
-            Debug.Log(
-                $"[PlayerController] Not enough resource."
-            );
+            Debug.Log($"[PlayerController] Not enough resource.");
 
             return;
         }
 
-        ConsumeResource(
-            skill.resourceType,
-            skill.cost
-        );
+        ConsumeResource(skill.resourceType,skill.cost);
 
         TriggerCooldown(skillIndex);
 
-        skill.ServerExecute(
-            this,
-            targetPoint,
-            lockTargetPos
-        );
+        skill.ServerExecute(this, targetPoint, lockTargetPos);
     }
 
     public Skill GetSkill(int index)
     {
-        if (
-            index < 0 ||
-            index >= skills.Length
+        if (index < 0 || index >= skills.Length
         )
         {
             return null;
@@ -816,10 +691,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
     public bool IsSkillReady(int index)
     {
-        if (
-            index < 0 ||
-            index >= skillsCooldown.Length
-        )
+        if (index < 0 || index >= skillsCooldown.Length)
         {
             return false;
         }
@@ -829,10 +701,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
     public void TriggerCooldown(int index)
     {
-        if (
-            index < 0 ||
-            index >= skills.Length
-        )
+        if (index < 0 ||  index >= skills.Length)
         {
             return;
         }
@@ -840,18 +709,14 @@ public class PlayerController : NetworkBehaviour, IDamageable
         if (skills[index] == null)
             return;
 
-        skillsCooldown[index] =
-            skills[index].cooldown;
+        skillsCooldown[index] = skills[index].cooldown;
     }
 
     // ─────────────────────────────────────────
     // RESOURCES
     // ─────────────────────────────────────────
 
-    public bool HasResource(
-        ResourceType type,
-        float cost
-    )
+    public bool HasResource(ResourceType type,float cost)
     {
         return stats.HasResource(type, cost);
     }
@@ -939,18 +804,9 @@ public class PlayerController : NetworkBehaviour, IDamageable
     // DAMAGE
     // ─────────────────────────────────────────
 
-    public void TakeDamage(
-        float damage,
-        ThrowType throwType,
-        Vector3 hitDir,
-        float stunDuration,
-        bool keepOnAir,
-        float airLift,
-        float staggerBuild
-    )
+    public void TakeDamage( float damage, ThrowType throwType, Vector3 hitDir, float stunDuration, bool keepOnAir, float airLift, float staggerBuild)
     {
-        if (isDead)
-            return;
+        if (isDead)  return;
 
         if (IsServer)
         {
