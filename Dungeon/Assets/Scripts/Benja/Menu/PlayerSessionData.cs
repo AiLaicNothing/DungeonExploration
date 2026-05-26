@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -16,35 +17,36 @@ public class PlayerSessionData : NetworkBehaviour
     public NetworkVariable<FixedString64Bytes> PlayerName =
         new(writePerm: NetworkVariableWritePermission.Server);
 
-    public NetworkVariable<int> SelectedCharacter = new(-1, writePerm: NetworkVariableWritePermission.Server);
+    public NetworkVariable<int> SelectedCharacter =
+        new(-1, writePerm: NetworkVariableWritePermission.Server);
 
     public NetworkVariable<ulong> CurrentCharacterNetId =
-    new(0, writePerm: NetworkVariableWritePermission.Server);
+        new(0, writePerm: NetworkVariableWritePermission.Server);
+
+    public NetworkVariable<bool> CharacterSelectionResolved =
+        new(false, writePerm: NetworkVariableWritePermission.Server);
+
+    // CHANGE:
+    // Live sync loop keeps the save slot updated while the player is online.
+    private Coroutine liveSyncRoutine;
+
+    [SerializeField]
+    private float liveSyncIntervalSeconds = 1.0f;
+
     public override void OnNetworkSpawn()
     {
         base.OnNetworkSpawn();
 
-        Debug.Log(
-           $"[PlayerSessionData] OnNetworkSpawn " +
-           $"Owner={OwnerClientId} " +
-           $"IsOwner={IsOwner} " +
-           $"IsServer={IsServer}"
-       );
+        Debug.Log($"[PlayerSessionData] OnNetworkSpawn " +
+            $"Owner={OwnerClientId} IsOwner={IsOwner} IsServer={IsServer}");
 
-        // SOLO el dueño envía sus datos
         if (IsOwner)
         {
             local = this;
 
-            Debug.Log(
-                $"[PlayerSessionData] Local session assigned " +
-                $"Client={OwnerClientId}"
-            );
+            Debug.Log($"[PlayerSessionData] Local session assigned Client={OwnerClientId}");
 
-            SubmitIdentityServerRpc(    
-                PlayerProfile.PlayerId,
-                PlayerProfile.Name
-            );
+            SubmitIdentityServerRpc(PlayerProfile.PlayerId,PlayerProfile.Name);
         }
 
         SelectedCharacter.OnValueChanged += OnSelectedCharacterChanged;
@@ -55,154 +57,163 @@ public class PlayerSessionData : NetworkBehaviour
         base.OnNetworkDespawn();
 
         SelectedCharacter.OnValueChanged -= OnSelectedCharacterChanged;
+
+        if (liveSyncRoutine != null)
+        {
+            StopCoroutine(liveSyncRoutine);
+            liveSyncRoutine = null;
+        }
     }
 
     private void OnSelectedCharacterChanged(int previous, int current)
     {
-        Debug.Log(
-            $"[PlayerSessionData] SelectedCharacter changed " +
-            $"Client={OwnerClientId} " +
-            $"{previous} -> {current}"
-        );
+        Debug.Log($"[PlayerSessionData] SelectedCharacter changed " +
+            $"Client={OwnerClientId} {previous} -> {current}");
     }
 
     [ServerRpc]
     private void SubmitIdentityServerRpc(string playerId, string playerName)
     {
-
-        Debug.Log(
-           $"[PlayerSessionData] SubmitIdentityServerRpc " +
-           $"Player={playerName} ({playerId}) " +
-           $"Client={OwnerClientId}"
-       );
+        Debug.Log($"[PlayerSessionData] SubmitIdentityServerRpc " +
+            $"Player={playerName} ({playerId}) Client={OwnerClientId}");
 
         PlayerId.Value = new FixedString64Bytes(playerId);
         PlayerName.Value = new FixedString64Bytes(playerName);
 
-        RestoreCharacterSelection(playerId);
-
-        // 🔥 Integración con Save System
-        //if (SaveGameIntegration.Instance != null)
-        //{
-        //    SaveGameIntegration.Instance.OnPlayerSpawned(NetworkObject, playerId);
-        //}
+        RestoreCharacterSelection(playerId, playerName);
     }
 
-    private void RestoreCharacterSelection(string playerId)
+    private void RestoreCharacterSelection(string playerId, string playerName)
     {
         Debug.Log(
-            $"[PlayerSessionData] Trying restore character " +
-            $"PlayerId={playerId}"
+            $"[PlayerSessionData] Trying restore character PlayerId={playerId}"
         );
 
         if (SaveSlotManager.Instance == null)
         {
-            Debug.LogWarning(
-                "[PlayerSessionData] SaveSlotManager missing"
-            );
-
+            Debug.LogWarning("[PlayerSessionData] SaveSlotManager missing");
+            CharacterSelectionResolved.Value = true;
             return;
         }
 
         if (!SaveSlotManager.Instance.HasActiveSlot)
         {
-            Debug.LogWarning(
-                "[PlayerSessionData] No active slot"
-            );
-
+            Debug.LogWarning("[PlayerSessionData] No active slot");
+            CharacterSelectionResolved.Value = true;
             return;
         }
 
-        PlayerSaveEntry entry =
-            SaveSlotManager.Instance
-                .ActiveSlot
-                .players
-                .Find(p => p.playerId == playerId);
+        SaveSlotManager.Instance.DebugDumpActiveSlot($"RestoreCharacterSelection playerId={playerId}");
 
-        if (entry == null)
+        if (!SaveSlotManager.Instance.TryGetActivePlayerEntry(playerId, out PlayerSaveEntry entry))
         {
-            Debug.Log(
-                $"[PlayerSessionData] No save entry for player {playerId}"
-            );
+            Debug.LogWarning($"[PlayerSessionData] No save entry found for player {playerId}");
 
+            CharacterSelectionResolved.Value = true;
             return;
         }
 
-        Debug.Log(
-            $"[PlayerSessionData] Save entry found " +
-            $"Character={entry.selectedCharacter}"
-        );
+        Debug.Log($"[PlayerSessionData] Save entry found Character={entry.selectedCharacter}");
 
         if (entry.selectedCharacter < 0)
         {
-            Debug.Log(
-                "[PlayerSessionData] Character not selected yet"
-            );
-
+            Debug.Log("[PlayerSessionData] Character not selected yet");
+            CharacterSelectionResolved.Value = true;
             return;
         }
 
-        // IMPORTANT
-        // restore network variable
-        SelectedCharacter.Value =
-            entry.selectedCharacter;
+        SelectedCharacter.Value = entry.selectedCharacter;
 
-        Debug.Log(
-            $"[PlayerSessionData] Character restored " +
-            $"Client={OwnerClientId} " +
-            $"Character={entry.selectedCharacter}"
-        );
+        Debug.Log($"[PlayerSessionData] Character restored " +
+            $"Client={OwnerClientId} Character={entry.selectedCharacter}");
 
-        // IMPORTANT
-        // tell manager to spawn correct prefab
-        CharacterSelectionManager.Instance
-            .ServerReceiveSelection(
-                OwnerClientId,
-                entry.selectedCharacter
-            );
+        if (CharacterSelectionManager.Instance != null)
+        {
+            CharacterSelectionManager.Instance.ServerReceiveSelection(OwnerClientId, entry.selectedCharacter);
+        }
+
+        // CHANGE:
+        // Start live sync only after the player has an avatar.
+        BeginLiveSyncServer();
+
+        CharacterSelectionResolved.Value = true;
     }
-
 
     [Rpc(SendTo.Server)]
     public void SubmitCharacterSelectionRpc(int characterIndex)
     {
-        Debug.Log(
-            $"[PlayerSessionData] SubmitCharacterSelectionRpc " +
-            $"Client={OwnerClientId} " +
-            $"Character={characterIndex}"
+        Debug.Log($"[PlayerSessionData] SubmitCharacterSelectionRpc " +
+            $"Client={OwnerClientId} Character={characterIndex}"
         );
 
-        SelectedCharacter.Value =
-            characterIndex;
+        SelectedCharacter.Value = characterIndex;
+        CharacterSelectionResolved.Value = true;
 
-        CharacterSelectionManager.Instance
-            .ServerReceiveSelection(
-                OwnerClientId,
-                characterIndex
-            );
-
-        // FORCE SAVE UPDATE
+        // CHANGE:
+        // Save selection immediately so the player entry exists even before the next save.
         if (PlayerSaveManager.Instance != null)
         {
-            PlayerSaveManager.Instance
-                .CaptureAndUpdatePlayerInActiveSlot(
-                    NetworkObject
-                );
-
-            Debug.Log(
-                "[PlayerSessionData] Character saved into slot"
+            PlayerSaveManager.Instance.CaptureOrUpdateSelectionOnly(
+                PlayerId.Value.ToString(),
+                PlayerName.Value.ToString(),
+                characterIndex
             );
         }
 
-        // OPTIONAL:
-        // immediately save to disk
-        if (SaveSlotManager.Instance != null)
+        if (CharacterSelectionManager.Instance != null)
         {
-            SaveSlotManager.Instance.SaveActiveSlot();
+            CharacterSelectionManager.Instance.ServerReceiveSelection( OwnerClientId,characterIndex);
+        }
 
-            Debug.Log(
-                "[PlayerSessionData] Active slot written to disk"
-            );
+        Debug.Log(
+            $"[PlayerSessionData] Selection submitted and saved " +
+            $"Client={OwnerClientId} Character={characterIndex}");
+    }
+
+    // CHANGE:
+    // Called by the CharacterSelectionManager after the avatar is spawned.
+    public void NotifyCharacterSpawned(ulong netId)
+    {
+        if (!IsServer) return;
+
+        CurrentCharacterNetId.Value = netId;
+        BeginLiveSyncServer();
+
+        if (PlayerSaveManager.Instance != null &&
+            SaveSlotManager.Instance != null &&
+            SaveSlotManager.Instance.HasActiveSlot)
+        {
+            SaveSlotManager.Instance.DebugDumpActiveSlot($"NotifyCharacterSpawned client={OwnerClientId} netId={netId}");
+        }
+    }
+
+    private void BeginLiveSyncServer()
+    {
+        if (!IsServer)
+            return;
+
+        if (liveSyncRoutine != null)
+            StopCoroutine(liveSyncRoutine);
+
+        liveSyncRoutine = StartCoroutine(LiveSyncLoop());
+    }
+
+    private IEnumerator LiveSyncLoop()
+    {
+        while (IsServer)
+        {
+            yield return new WaitForSeconds(liveSyncIntervalSeconds);
+
+            if (PlayerSaveManager.Instance == null)
+                continue;
+
+            if (CurrentCharacterNetId.Value == 0)
+                continue;
+
+            if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue( CurrentCharacterNetId.Value, out NetworkObject character))
+            {
+                PlayerSaveManager.Instance.UpdateLiveSnapshotFromCharacter(character);
+            }
         }
     }
 }

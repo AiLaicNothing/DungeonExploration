@@ -34,20 +34,11 @@ public class SaveGameIntegration : NetworkBehaviour
     [Header("Autosave")]
     [SerializeField] private bool enableAutosave = true;
 
-    [SerializeField]
-    private float autosaveIntervalSeconds = 300f;
+    [SerializeField] private float autosaveIntervalSeconds = 300f;
 
     private float _timeSinceLastAutosave;
-
-    // Protección contra saves simultáneos
     private bool _isSaving;
-
-    // Protección durante shutdown
     private bool _isShuttingDown;
-
-    // ════════════════════════════════════════════════════════════════
-    // UNITY
-    // ════════════════════════════════════════════════════════════════
 
     private void Awake()
     {
@@ -66,10 +57,6 @@ public class SaveGameIntegration : NetworkBehaviour
             Instance = null;
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // NGO
-    // ════════════════════════════════════════════════════════════════
-
     public override void OnNetworkSpawn()
     {
         if (!IsServer)
@@ -77,39 +64,67 @@ public class SaveGameIntegration : NetworkBehaviour
 
         Debug.Log("[SaveGameIntegration] OnNetworkSpawn");
 
-        // Restaurar mundo al entrar a Gameplay
+        NetworkManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectServer;
+
         if (SaveSlotManager.Instance != null &&
             SaveSlotManager.Instance.HasActiveSlot)
         {
+            SaveSlotManager.Instance.DebugDumpActiveSlot("SaveGameIntegration.OnNetworkSpawn");
             RestoreWorldFromActiveSlot();
+        }
+        else
+        {
+            Debug.LogWarning("[SaveGameIntegration] No active slot when network spawned.");
         }
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // UPDATE
-    // ════════════════════════════════════════════════════════════════
+    public override void OnNetworkDespawn()
+    {
+        if (NetworkManager.Singleton != null)
+        {
+            NetworkManager.Singleton.OnClientDisconnectCallback -= OnClientDisconnectServer;
+        }
+
+        base.OnNetworkDespawn();
+    }
+
+    private void OnClientDisconnectServer(ulong clientId)
+    {
+        if (!IsServer || _isShuttingDown)
+            return;
+
+        Debug.Log($"[SaveGameIntegration] OnClientDisconnectServer ClientId={clientId}");
+
+        if (PlayerSaveManager.Instance == null)
+        {
+            Debug.LogWarning("[SaveGameIntegration] PlayerSaveManager missing during disconnect save.");
+            return;
+        }
+
+        if (SaveSlotManager.Instance == null || !SaveSlotManager.Instance.HasActiveSlot)
+        {
+            Debug.LogWarning("[SaveGameIntegration] No active slot during disconnect save.");
+            return;
+        }
+
+        // CHANGE:
+        // Final chance to capture this player's state before their avatar or session disappears.
+        PlayerSaveManager.Instance.CapturePlayerByClientId(clientId);
+
+        SaveSlotManager.Instance.DebugDumpActiveSlot($"OnClientDisconnectServer clientId={clientId}");
+    }
 
     private void Update()
     {
         if (!IsServer)
             return;
 
-        if (_isShuttingDown)
+        if (_isShuttingDown || _isSaving || !enableAutosave)
             return;
 
-        if (_isSaving)
+        if (SaveSlotManager.Instance == null || !SaveSlotManager.Instance.HasActiveSlot)
             return;
 
-        if (!enableAutosave)
-            return;
-
-        if (SaveSlotManager.Instance == null)
-            return;
-
-        if (!SaveSlotManager.Instance.HasActiveSlot)
-            return;
-
-        // Seguridad extra
         if (SceneManager.GetActiveScene().name != "04_Gameplay")
             return;
 
@@ -122,138 +137,83 @@ public class SaveGameIntegration : NetworkBehaviour
         }
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // RESTORE WORLD
-    // ════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// SOLO SERVIDOR.
-    /// Restaura el estado global del mundo.
-    /// </summary>
     private void RestoreWorldFromActiveSlot()
     {
         if (WorldSaveManager.Instance == null)
         {
-            Debug.LogError(
-                "[SaveGameIntegration] WorldSaveManager no encontrado."
-            );
-
+            Debug.LogError("[SaveGameIntegration] WorldSaveManager not found.");
             return;
         }
 
         if (SaveSlotManager.Instance.ActiveSlot == null)
         {
-            Debug.LogWarning(
-                "[SaveGameIntegration] ActiveSlot null."
-            );
-
+            Debug.LogWarning("[SaveGameIntegration] ActiveSlot null.");
             return;
         }
 
-        var worldData =
-            SaveSlotManager.Instance.ActiveSlot.worldData;
-
+        var worldData = SaveSlotManager.Instance.ActiveSlot.worldData;
         if (worldData == null)
         {
-            Debug.LogWarning(
-                "[SaveGameIntegration] WorldData null."
-            );
-
+            Debug.LogWarning("[SaveGameIntegration] WorldData null.");
             return;
         }
 
         WorldSaveManager.Instance.RestoreWorldState(worldData);
 
-        Debug.Log(
-            "[SaveGameIntegration] Mundo restaurado."
-        );
+        Debug.Log("[SaveGameIntegration] World restored.");
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // PLAYER RESTORE
-    // ════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// SOLO SERVIDOR.
-    /// Restaurar estado de jugador cuando spawnea.
-    /// </summary>
-    public void OnPlayerSpawned(
-        NetworkObject playerObject,
-        string playerId
-    )
+    public void OnPlayerSpawned(NetworkObject playerObject, string playerId)
     {
-        if (!IsServer)
-            return;
-
-        if (_isShuttingDown)
+        if (!IsServer || _isShuttingDown)
             return;
 
         Debug.Log(
-            $"[SaveGameIntegration] OnCharacterSpawned " +
-            $"PlayerId={playerId} " +
-            $"NetId={playerObject.NetworkObjectId}"
+            $"[SaveGameIntegration] OnPlayerSpawned PlayerId={playerId} NetId={playerObject.NetworkObjectId}"
         );
 
         if (PlayerSaveManager.Instance == null)
         {
-            Debug.LogError(
-                "[SaveGameIntegration] PlayerSaveManager no encontrado."
-            );
-
+            Debug.LogError("[SaveGameIntegration] PlayerSaveManager not found.");
             return;
         }
 
-        if (SaveSlotManager.Instance == null ||
-            !SaveSlotManager.Instance.HasActiveSlot)
+        if (SaveSlotManager.Instance == null || !SaveSlotManager.Instance.HasActiveSlot)
         {
             Debug.Log(
-                $"[SaveGameIntegration] " +
-                $"No active slot. '{playerId}' starts fresh."
+                $"[SaveGameIntegration] No active slot. '{playerId}' starts fresh."
             );
-
             return;
         }
 
-        var playerData =
-            PlayerSaveManager.Instance
-                .GetPlayerDataFromActiveSlot(playerId);
-
-        if (playerData == null)
+        if (SaveSlotManager.Instance.TryGetActivePlayerEntry(playerId, out PlayerSaveEntry playerData))
         {
             Debug.Log(
-                $"[SaveGameIntegration] " +
-                $"No save data found for '{playerId}'"
+                $"[SaveGameIntegration] Restoring player state " +
+                $"Player={playerId} SavedPosition={playerData.position.ToVector3()} LastPos={playerData.lastKnownPosition.ToVector3()}"
             );
 
-            return;
-        }
-
-        Debug.Log(
-            $"[SaveGameIntegration] Restoring player state " +
-            $"Player={playerId} " +
-            $"SavedPosition={playerData.position.ToVector3()}"
-        );
-
-        PlayerSaveManager.Instance
-            .RestorePlayerState(
+            // Position is already applied by spawn, so we only restore gameplay data.
+            PlayerSaveManager.Instance.RestorePlayerState(
                 playerObject,
-                playerData
+                playerData,
+                restorePosition: false
             );
 
-        Debug.Log(
-            $"[SaveGameIntegration] Player restored successfully " +
-            $"Player={playerId}"
-        );
+            Debug.Log(
+                $"[SaveGameIntegration] Player restored successfully Player={playerId}"
+            );
+        }
+        else
+        {
+            Debug.LogWarning(
+                $"[SaveGameIntegration] No save data found for '{playerId}'. This means the player has no persistent entry yet."
+            );
+
+            SaveSlotManager.Instance.DebugDumpActiveSlot($"OnPlayerSpawned miss {playerId}");
+        }
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // AUTOSAVE
-    // ════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// SOLO SERVIDOR.
-    /// Guardado completo automático.
-    /// </summary>
     public void PerformAutosave()
     {
         if (!IsServer)
@@ -262,23 +222,15 @@ public class SaveGameIntegration : NetworkBehaviour
         InternalSave("AUTOSAVE");
     }
 
-    /// <summary>
-    /// SOLO SERVIDOR.
-    /// Guardado manual desde menú.
-    /// </summary>
     public void PerformManualSave()
     {
         if (!IsServer)
         {
-            Debug.LogWarning(
-                "[SaveGameIntegration] Solo el host puede guardar."
-            );
-
+            Debug.LogWarning("[SaveGameIntegration] Only host can save.");
             return;
         }
 
         InternalSave("MANUAL SAVE");
-
         _timeSinceLastAutosave = 0f;
 
         if (ToastNotificationUI.Instance != null)
@@ -288,85 +240,46 @@ public class SaveGameIntegration : NetworkBehaviour
                 "Progreso guardado exitosamente."
             );
         }
-        Debug.Log(
-    $"[SaveGameIntegration] " +
-    $"IsServer={IsServer} | " +
-    $"IsHost={NetworkManager.Singleton.IsHost} | " +
-    $"IsClient={NetworkManager.Singleton.IsClient}"
-);
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // CHECKPOINT SAVE
-    // ════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// SOLO SERVIDOR.
-    /// Guardado automático al activar checkpoint.
-    /// </summary>
     public void OnCheckpointActivated()
     {
-        if (!IsServer)
+        if (!IsServer || _isShuttingDown)
             return;
 
-        if (_isShuttingDown)
-            return;
-
-        Debug.Log(
-            "[SaveGameIntegration] Autosave por checkpoint."
-        );
-
+        Debug.Log("[SaveGameIntegration] Autosave by checkpoint.");
         InternalSave("CHECKPOINT SAVE");
     }
-
-    // ════════════════════════════════════════════════════════════════
-    // INTERNAL SAVE
-    // ════════════════════════════════════════════════════════════════
 
     private void InternalSave(string reason)
     {
         if (_isSaving)
         {
-            Debug.LogWarning(
-                "[SaveGameIntegration] Ya hay un save en progreso."
-            );
-
+            Debug.LogWarning("[SaveGameIntegration] Save already in progress.");
             return;
         }
 
         if (_isShuttingDown)
         {
-            Debug.LogWarning(
-                "[SaveGameIntegration] Shutdown activo. Save cancelado."
-            );
-
+            Debug.LogWarning("[SaveGameIntegration] Shutdown active. Save canceled.");
             return;
         }
 
         if (SaveSlotManager.Instance == null)
         {
-            Debug.LogError(
-                "[SaveGameIntegration] SaveSlotManager null."
-            );
-
+            Debug.LogError("[SaveGameIntegration] SaveSlotManager null.");
             return;
         }
 
         if (!SaveSlotManager.Instance.HasActiveSlot)
         {
-            Debug.LogWarning(
-                "[SaveGameIntegration] No hay ActiveSlot."
-            );
-
+            Debug.LogWarning("[SaveGameIntegration] No ActiveSlot.");
             return;
         }
 
         if (SceneManager.GetActiveScene().name != "04_Gameplay")
         {
-            Debug.LogWarning(
-                "[SaveGameIntegration] Save ignorado fuera de Gameplay."
-            );
-
+            Debug.LogWarning("[SaveGameIntegration] Save ignored outside Gameplay.");
             return;
         }
 
@@ -374,39 +287,23 @@ public class SaveGameIntegration : NetworkBehaviour
 
         try
         {
-            Debug.Log(
-                $"[SaveGameIntegration] Ejecutando save ({reason})..."
-            );
-
-            // ─────────────────────────────────────────────
-            // GUARDAR MUNDO
-            // ─────────────────────────────────────────────
+            Debug.Log($"[SaveGameIntegration] Executing save ({reason})...");
+            SaveSlotManager.Instance.DebugDumpActiveSlot($"Before {reason}");
 
             if (WorldSaveManager.Instance != null)
             {
-                WorldSaveManager.Instance
-                    .CaptureAndUpdateActiveSlot();
+                WorldSaveManager.Instance.CaptureAndUpdateActiveSlot();
             }
-
-            // ─────────────────────────────────────────────
-            // GUARDAR JUGADORES
-            // ─────────────────────────────────────────────
 
             if (PlayerSaveManager.Instance != null)
             {
-                PlayerSaveManager.Instance
-                    .CaptureAllPlayersInActiveSlot();
+                PlayerSaveManager.Instance.CaptureAllPlayersInActiveSlot();
             }
-
-            // ─────────────────────────────────────────────
-            // ESCRIBIR A DISCO
-            // ─────────────────────────────────────────────
 
             SaveSlotManager.Instance.SaveActiveSlot();
 
-            Debug.Log(
-                $"[SaveGameIntegration] Save completado ({reason})."
-            );
+            Debug.Log($"[SaveGameIntegration] Save completed ({reason}).");
+            SaveSlotManager.Instance.DebugDumpActiveSlot($"After {reason}");
         }
         finally
         {
@@ -414,20 +311,32 @@ public class SaveGameIntegration : NetworkBehaviour
         }
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // SHUTDOWN
-    // ════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Bloquea nuevos autosaves durante shutdown.
-    /// Llamar antes de salir de sesión o cambiar escena.
-    /// </summary>
     public void PrepareForShutdown()
     {
         _isShuttingDown = true;
 
-        Debug.Log(
-            "[SaveGameIntegration] Shutdown preparado."
-        );
+        // CHANGE:
+        // Final save before returning to menu or closing the host.
+        if (IsServer &&
+            SaveSlotManager.Instance != null &&
+            SaveSlotManager.Instance.HasActiveSlot)
+        {
+            Debug.Log("[SaveGameIntegration] PrepareForShutdown -> final save");
+
+            if (PlayerSaveManager.Instance != null)
+            {
+                PlayerSaveManager.Instance.CaptureAllPlayersInActiveSlot();
+            }
+
+            if (WorldSaveManager.Instance != null)
+            {
+                WorldSaveManager.Instance.CaptureAndUpdateActiveSlot();
+            }
+
+            SaveSlotManager.Instance.SaveActiveSlot();
+            SaveSlotManager.Instance.DebugDumpActiveSlot("PrepareForShutdown");
+        }
+
+        Debug.Log("[SaveGameIntegration] Shutdown prepared.");
     }
 }

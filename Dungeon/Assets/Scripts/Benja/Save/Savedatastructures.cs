@@ -23,6 +23,9 @@ public class SaveSlotData
 
     public WorldSaveData worldData = new();
 
+    // Persistent player records.
+    // IMPORTANT:
+    // This list must keep entries even if players disconnect.
     public List<PlayerSaveEntry> players = new();
 }
 
@@ -33,16 +36,9 @@ public class SaveSlotData
 [Serializable]
 public class WorldSaveData
 {
-    // Checkpoints desbloqueados globalmente
     public List<string> discoveredCheckpoints = new();
-
-    // Puntos generados globalmente
     public int globalUpgradePointsGenerated;
-
-    // Bosses derrotados
     public List<string> defeatedBosses = new();
-
-    // Estados de puzzles
     public List<PuzzleStateEntry> puzzleStates = new();
 }
 
@@ -50,7 +46,6 @@ public class WorldSaveData
 public class PuzzleStateEntry
 {
     public string puzzleId;
-
     public bool isSolved;
 }
 
@@ -61,56 +56,47 @@ public class PuzzleStateEntry
 [Serializable]
 public class PlayerSaveEntry
 {
-    // Unity Authentication PlayerId
     public string playerId;
-
     public string playerName;
 
     public int selectedCharacter = -1;
 
-    // Stats
-    public PlayerStatsSnapshot stats = new();
+    // CHANGE:
+    // These fields let the save remember the player even when offline.
+    // Why:
+    // The game must not depend on the player being connected at the exact
+    // moment the host saves.
+    public bool hasSpawnedAvatar;
+    public bool isConnected;
 
-    // Skills desbloqueadas
-    public List<string> unlockedSkills = new();
+    // CHANGE:
+    // This is the last known gameplay position, updated while the player is online.
+    public Vector3Serializable lastKnownPosition;
 
-    // Posición exacta de logout/reconexión
+    // Kept for compatibility with your existing code.
+    // Position used when restoring/spawning.
     public Vector3Serializable position;
 
-    // Escena actual
+    public string lastKnownScene;
+    public long lastUpdatedTimestamp;
+
+    public PlayerStatsSnapshot stats = new();
+    public List<string> unlockedSkills = new();
+
     public string currentScene;
-
-    // Checkpoint activo para respawn
     public string activeCheckpoint;
-
-    // Checkpoints descubiertos personalmente
     public List<string> personalCheckpoints = new();
 }
 
 [Serializable]
 public class PlayerStatsSnapshot
 {
-    // ════════════════════════════════════════════════════
-    // CURRENT VALUES
-    // ════════════════════════════════════════════════════
-
     public float currentHealth;
     public float currentMana;
     public float currentStamina;
 
-    // ════════════════════════════════════════════════════
-    // AVAILABLE POINTS
-    // ════════════════════════════════════════════════════
-
     public int upgradePoints;
-
-    // Total histórico ganado
-    // IMPORTANTE para evitar duplicaciones
     public int totalPointsEarned;
-
-    // ════════════════════════════════════════════════════
-    // ASSIGNED POINTS
-    // ════════════════════════════════════════════════════
 
     public int healthPoints;
     public int manaPoints;

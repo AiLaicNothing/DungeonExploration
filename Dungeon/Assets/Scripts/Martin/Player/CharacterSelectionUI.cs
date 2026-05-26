@@ -6,11 +6,11 @@ using UnityEngine.UI;
 
 public class CharacterSelectionUI : MonoBehaviour
 {
+    [SerializeField] private GameObject panel;
+
     [Header("Preview")]
     [SerializeField] private Image characterImage;
-
     [SerializeField] private TMP_Text characterNameText;
-
     [SerializeField] private TMP_Text descriptionText;
 
     [Header("Buttons")]
@@ -21,9 +21,15 @@ public class CharacterSelectionUI : MonoBehaviour
 
     private int currentIndex;
 
+    private void Awake()
+    {
+        if (panel != null)
+            panel.SetActive(false);
+    }
+
     private void Start()
     {
-      StartCoroutine(StartSelection());
+        StartCoroutine(StartSelection());
     }
 
     private IEnumerator StartSelection()
@@ -32,79 +38,56 @@ public class CharacterSelectionUI : MonoBehaviour
 
         while (PlayerSessionData.local == null)
         {
-            Debug.Log(
-                "[CharacterSelectionUI] Waiting PlayerSessionData.local..."
-            );
-
+            Debug.Log("[CharacterSelectionUI] Waiting PlayerSessionData.local...");
             yield return null;
         }
 
-        // wait NGO sync
-        yield return new WaitForSeconds(0.5f);
+        while (!PlayerSessionData.local.CharacterSelectionResolved.Value)
+        {
+            yield return null;
+        }
 
-        int selected =
-            PlayerSessionData.local.SelectedCharacter.Value;
+        int selected = PlayerSessionData.local.SelectedCharacter.Value;
 
-        Debug.Log(
-            $"[CharacterSelectionUI] SelectedCharacter={selected}"
-        );
+        Debug.Log($"[CharacterSelectionUI] SelectedCharacter={selected}");
 
-        // already selected before
         if (selected >= 0)
         {
-            Debug.Log(
-                "[CharacterSelectionUI] Character already selected. Hiding UI."
-            );
-
+            Debug.Log("[CharacterSelectionUI] Character already selected. Hiding UI.");
             gameObject.SetActive(false);
             yield break;
         }
 
-        Debug.Log(
-            "[CharacterSelectionUI] No character selected yet."
-        );
+        Debug.Log("[CharacterSelectionUI] No character selected yet.");
+
+        if (panel != null)  panel.SetActive(true);
 
         SelectCharacter(0);
 
+        startButton.onClick.RemoveAllListeners();
         startButton.onClick.AddListener(StartGame);
     }
-
-    //==================================================
-    // BUTTONS
-    //==================================================
 
     private void SetupButtons()
     {
         for (int i = 0; i < characterButtons.Length; i++)
         {
             int index = i;
-
-            characterButtons[i].onClick.AddListener(() =>{SelectCharacter(index);});
+            characterButtons[i].onClick.RemoveAllListeners();
+            characterButtons[i].onClick.AddListener(() => SelectCharacter(index));
         }
     }
-
-    //==================================================
-    // SELECT
-    //==================================================
 
     public void SelectCharacter(int index)
     {
         CharacterData data = CharacterSelectionManager.Instance.GetCharacter(index);
-
         if (data == null) return;
 
         currentIndex = index;
-
         characterImage.sprite = data.portrait;
-
         characterNameText.text = data.characterName;
-
         descriptionText.text = data.description;
     }
-
-    //==================================================
-    // START
-    //==================================================
 
     private void StartGame()
     {
@@ -116,6 +99,7 @@ public class CharacterSelectionUI : MonoBehaviour
 
         PlayerSessionData.local.SubmitCharacterSelectionRpc(currentIndex);
 
-        gameObject.SetActive(false);
+        if (panel != null)
+            panel.SetActive(false);
     }
 }

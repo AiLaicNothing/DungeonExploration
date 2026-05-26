@@ -25,19 +25,18 @@ public class SaveSlotManager : MonoBehaviour
 
     private string SaveDirectory => Path.Combine(Application.persistentDataPath, "Saves");
 
-    /// <summary>El slot de guardado activo actualmente (la partida que se está jugando).</summary>
     public SaveSlotData ActiveSlot { get; private set; }
 
-    /// <summary>True si hay un slot activo cargado.</summary>
     public bool HasActiveSlot => ActiveSlot != null;
 
-    void Awake()
+    private void Awake()
     {
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
             return;
         }
+
         Instance = this;
         DontDestroyOnLoad(gameObject);
 
@@ -45,19 +44,11 @@ public class SaveSlotManager : MonoBehaviour
         Debug.Log($"[SaveSlotManager] Inicializado. Directorio: {SaveDirectory}");
     }
 
-    void OnDestroy()
+    private void OnDestroy()
     {
         if (Instance == this) Instance = null;
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // CREAR NUEVO SLOT
-    // ══════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Crea un nuevo slot de guardado vacío y lo marca como activo.
-    /// Llamar desde el menú "Nueva Partida".
-    /// </summary>
     public SaveSlotData CreateNewSlot(string saveName = null)
     {
         string saveId = Guid.NewGuid().ToString();
@@ -78,17 +69,10 @@ public class SaveSlotManager : MonoBehaviour
         SaveSlotToDisk(slot);
 
         Debug.Log($"[SaveSlotManager] Nueva partida creada: '{slot.saveName}' (ID: {saveId})");
+        DebugDumpActiveSlot("CreateNewSlot");
         return slot;
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // CARGAR SLOT EXISTENTE
-    // ══════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Carga un slot existente desde disco y lo marca como activo.
-    /// Llamar desde el menú "Cargar Partida".
-    /// </summary>
     public bool LoadSlot(string saveId)
     {
         var slot = LoadSlotFromDisk(saveId);
@@ -102,16 +86,10 @@ public class SaveSlotManager : MonoBehaviour
         ActiveSlot.lastPlayedTimestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
         Debug.Log($"[SaveSlotManager] Partida cargada: '{slot.saveName}' (ID: {saveId})");
+        DebugDumpActiveSlot("LoadSlot");
         return true;
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // GUARDAR SLOT ACTIVO
-    // ══════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Guarda el slot activo en disco. Llamar periódicamente (autosave) o manualmente.
-    /// </summary>
     public void SaveActiveSlot()
     {
         if (ActiveSlot == null)
@@ -124,16 +102,9 @@ public class SaveSlotManager : MonoBehaviour
         SaveSlotToDisk(ActiveSlot);
 
         Debug.Log($"[SaveSlotManager] Partida guardada: '{ActiveSlot.saveName}'");
+        DebugDumpActiveSlot("SaveActiveSlot");
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // LISTAR SLOTS
-    // ══════════════════════════════════════════════════════════════════
-
-    /// <summary>
-    /// Devuelve lista de todos los slots guardados (solo metadatos ligeros).
-    /// Usado para mostrar el menú de "Cargar Partida".
-    /// </summary>
     public List<SaveSlotMetadata> GetAllSlotsMetadata()
     {
         var slots = GetAllSlots();
@@ -171,11 +142,6 @@ public class SaveSlotManager : MonoBehaviour
         return slots;
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // BORRAR SLOT
-    // ══════════════════════════════════════════════════════════════════
-
-    /// <summary>Elimina un slot de guardado del disco.</summary>
     public bool DeleteSlot(string saveId)
     {
         string path = GetSlotPath(saveId);
@@ -202,20 +168,102 @@ public class SaveSlotManager : MonoBehaviour
         }
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // LIMPIEZA
-    // ══════════════════════════════════════════════════════════════════
-
-    /// <summary>Limpia el slot activo (usado al volver al menú principal).</summary>
     public void ClearActiveSlot()
     {
         ActiveSlot = null;
         Debug.Log("[SaveSlotManager] Slot activo limpiado.");
     }
 
-    // ══════════════════════════════════════════════════════════════════
-    // DISCO (I/O)
-    // ══════════════════════════════════════════════════════════════════
+    // CHANGE:
+    // This helper prints the current slot content.
+    // Why:
+    // It proves whether player 2 exists in memory when the server tries to restore them.
+    public void DebugDumpActiveSlot(string context)
+    {
+        if (ActiveSlot == null)
+        {
+            Debug.LogWarning($"[SaveSlotManager] DebugDumpActiveSlot({context}) -> ActiveSlot is NULL");
+            return;
+        }
+
+        string path = GetSlotPath(ActiveSlot.saveId);
+        bool fileExists = File.Exists(path);
+        long fileSize = fileExists ? new FileInfo(path).Length : -1;
+
+        Debug.Log($"[SaveSlotManager] DebugDumpActiveSlot({context}) -> " +
+            $"SaveId={ActiveSlot.saveId} SaveName={ActiveSlot.saveName} " +
+            $"Players={ActiveSlot.players.Count} FileExists={fileExists} FileSize={fileSize}");
+
+        for (int i = 0; i < ActiveSlot.players.Count; i++)
+        {
+            PlayerSaveEntry p = ActiveSlot.players[i];
+            Debug.Log( $"[SaveSlotManager]   Player[{i}] id={p.playerId} name={p.playerName} " + $"char={p.selectedCharacter} pos={p.position.ToVector3()} " +
+                $"lastPos={p.lastKnownPosition.ToVector3()} scene={p.currentScene} " +
+                $"lastScene={p.lastKnownScene} connected={p.isConnected} spawned={p.hasSpawnedAvatar}");
+        }
+    }
+
+    // CHANGE:
+    // Safe lookup for a player entry.
+    // Why:
+    // Restoring/spawning should fail loudly if the save does not contain that player.
+    public bool TryGetActivePlayerEntry(string playerId, out PlayerSaveEntry entry)
+    {
+        entry = null;
+
+        if (ActiveSlot == null)
+        {
+            Debug.LogWarning($"[SaveSlotManager] TryGetActivePlayerEntry failed. ActiveSlot null. PlayerId={playerId}");
+            return false;
+        }
+
+        entry = ActiveSlot.players.FirstOrDefault(p => p.playerId == playerId);
+
+        if (entry == null)
+        {
+            Debug.LogWarning($"[SaveSlotManager] No player entry in active slot. PlayerId={playerId}. PlayersInSlot={ActiveSlot.players.Count}");
+            return false;
+        }
+
+        Debug.Log(
+            $"[SaveSlotManager] Player entry found. PlayerId={playerId} " + $"SelectedCharacter={entry.selectedCharacter} Pos={entry.position.ToVector3()} LastPos={entry.lastKnownPosition.ToVector3()} Scene={entry.currentScene}");
+
+        return true;
+    }
+
+    // CHANGE:
+    // Upsert means the player stays in the save even if they later disconnect.
+    public void UpsertPlayerEntry(PlayerSaveEntry entry, bool saveToDisk = true)
+    {
+        if (entry == null)
+        {
+            Debug.LogWarning("[SaveSlotManager] UpsertPlayerEntry called with null entry.");
+            return;
+        }
+
+        if (ActiveSlot == null)
+        {
+            Debug.LogWarning("[SaveSlotManager] UpsertPlayerEntry failed. ActiveSlot null.");
+            return;
+        }
+
+        var existing = ActiveSlot.players.FirstOrDefault(p => p.playerId == entry.playerId);
+
+        if (existing != null)
+        {
+            ActiveSlot.players.Remove(existing);
+        }
+
+        ActiveSlot.players.Add(entry);
+
+        Debug.Log($"[SaveSlotManager] Player upserted. PlayerId={entry.playerId} " + $"SelectedCharacter={entry.selectedCharacter} SaveToDisk={saveToDisk}"
+        );
+
+        DebugDumpActiveSlot("UpsertPlayerEntry");
+
+        if (saveToDisk)
+            SaveActiveSlot();
+    }
 
     private void SaveSlotToDisk(SaveSlotData slot)
     {
@@ -258,10 +306,6 @@ public class SaveSlotManager : MonoBehaviour
             Directory.CreateDirectory(SaveDirectory);
     }
 }
-
-// ══════════════════════════════════════════════════════════════════════
-// METADATA (para UI de listado de partidas)
-// ══════════════════════════════════════════════════════════════════════
 
 [Serializable]
 public class SaveSlotMetadata
