@@ -129,6 +129,7 @@ public class PlayerStats : NetworkBehaviour
     {
         if (callback == null) return;
         OnStatsReady += callback;
+
         if (IsStatsReady) callback();
     }
 

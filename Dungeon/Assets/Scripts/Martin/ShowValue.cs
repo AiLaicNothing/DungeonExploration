@@ -67,6 +67,7 @@ public class ShowValue : MonoBehaviour
         if (_player == null || _player.Stats == null) return;
         if (!_player.Stats.IsStatsReady) return;
 
+
         if (hpText != null)
             hpText.text = $"HP: {_player.CurrentHealth:F0} / {_player.MaxHealth:F0}";
 

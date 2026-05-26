@@ -1,3 +1,4 @@
+using System.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using static UnityEngine.Analytics.IAnalytic;
@@ -55,6 +56,8 @@ public class PlayerController : NetworkBehaviour, IDamageable
     [SerializeField] private PlayerStats stats; // ← stats locales por jugador (NetworkBehaviour)
     public GameObject hitboxPrefab;
 
+    private bool startingHealthInitialized = false;
+
     public Rigidbody Rb => rb;
     public Transform PlayerModel => playerModel;
     public LockOnTarget LockTarget => lockOnTarget;
@@ -66,6 +69,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
     public ShootData ShootData => shootData;
     public float FallGravityMultiplier => fallGravityMultiplier;
     public PlayerStats Stats => stats;
+    public bool InitializedHealth => startingHealthInitialized;
 
     //--> ESTADISTICAS (todas leen del componente local)
     public float MaxHealth => stats.Health.Max;
@@ -113,6 +117,11 @@ public class PlayerController : NetworkBehaviour, IDamageable
         {
             if (thirdCam != null) thirdCam.SetActive(false);
         }
+
+        if (stats != null)
+        {
+            StartCoroutine(InitializeStartingHealthWhenReady());
+        }
     }
 
     public override void OnNetworkDespawn()
@@ -153,6 +162,8 @@ public class PlayerController : NetworkBehaviour, IDamageable
     {
         if (!IsOwner) return;
 
+        if (!startingHealthInitialized) return;
+
         // Chequeo de muerte: solo se dispara una vez gracias al flag isDead
         if (!isDead && CurrentHealth <= 0)
         {
@@ -183,6 +194,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
     private void FixedUpdate()
     {
         if (!IsOwner) return;
+        if (!startingHealthInitialized) return;
         if (isDead) return;
 
         // Si hay UI abierta, no procesar movimiento ni state machines
@@ -320,7 +332,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
         if (!previous && isGrounded) hasUsedAirAttack = false;
 
-        Debug.DrawRay( groundCheck.position, Vector3.down * 1.1f,Color.red);
+        Debug.DrawRay( groundCheck.position, Vector3.down * 0.2f,Color.red);
     }
 
     public Vector3 GetViewPoint()
@@ -465,6 +477,33 @@ public class PlayerController : NetworkBehaviour, IDamageable
     }
 
     public void SetGravityMultiplier(float value) => currentGravityMultiplier = value;
+
+    private IEnumerator InitializeStartingHealthWhenReady()
+    {
+        if (startingHealthInitialized)
+            yield break;
+
+        // Wait until PlayerStats is fully synchronized and has a valid max health.
+        // This prevents the first spawned player from being treated as dead because
+        // CurrentHealth / MaxHealth are still 0 during initialization.
+        while (stats == null || !stats.IsStatsReady || stats.Health.Max <= 0f)
+        {
+            yield return null;
+        }
+
+        // Only bootstrap if there is no restored health yet.
+        if (stats.Health.CurrentValue <= 0f)
+        {
+            stats.Health.SetCurrentValue(stats.Health.Max);
+
+            Debug.Log(
+                $"[PlayerController] Starting health initialized to full " +
+                $"HP={stats.Health.CurrentValue}/{stats.Health.Max}"
+            );
+        }
+
+        startingHealthInitialized = true;
+    }
 
     // ── Daño y muerte ───────────────────────────────────────────────
     /// <summary>
