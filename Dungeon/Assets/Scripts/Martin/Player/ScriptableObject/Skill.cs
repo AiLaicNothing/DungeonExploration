@@ -1,9 +1,19 @@
 using UnityEngine;
 
+public enum CharacterType
+{
+    Solis = 0,
+    Lune = 1
+}
+
 public abstract class Skill : ScriptableObject
 {
     [Header("Info")]
+    public string skillId;
+
     public string skillName;
+
+    public CharacterType ownerCharacter;
 
     [Header("Cost")]
     public ResourceType resourceType;
@@ -14,10 +24,15 @@ public abstract class Skill : ScriptableObject
     public float cooldown;
     public float actionTime;
 
-    [Header("Animtion")]
+    [Header("Animation")]
     public string castAnimation;
     public string actionAnimation;
 
     public abstract void LocalExecute(PlayerController player, Vector3 targetPoint);
-    public abstract void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos);
+
+    public abstract void ServerExecute(
+        PlayerController player,
+        Vector3 targetPoint,
+        Vector3 lockTargetPos
+    );
 }

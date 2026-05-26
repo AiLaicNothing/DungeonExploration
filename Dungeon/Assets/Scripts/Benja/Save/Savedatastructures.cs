@@ -56,6 +56,9 @@ public class PuzzleStateEntry
 [Serializable]
 public class PlayerSaveEntry
 {
+
+    public string[] equippedSkillIds;
+
     public string playerId;
     public string playerName;
 

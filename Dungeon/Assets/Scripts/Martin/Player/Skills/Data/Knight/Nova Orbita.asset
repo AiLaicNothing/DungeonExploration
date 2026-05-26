@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d73c7eef9f560974fbed523e68c16e2c, type: 3}
   m_Name: Nova Orbita
   m_EditorClassIdentifier: Assembly-CSharp::NovaOrbita
+  skillId: 5
   skillName: Nova Orbita
+  ownerCharacter: 0
   resourceType: 2
   cost: 15
   castTime: 0.2
@@ -33,3 +35,4 @@ MonoBehaviour:
   radius: 3
   angularSpeed: 180
   duration: 5
+  sfx: {fileID: 0}

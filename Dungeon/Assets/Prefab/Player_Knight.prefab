@@ -983,6 +983,7 @@ GameObject:
   - component: {fileID: 2357301547682423680}
   - component: {fileID: 3273879667671522}
   - component: {fileID: 6564548089403354366}
+  - component: {fileID: 5601345459851488760}
   m_Layer: 11
   m_Name: Player_Knight
   m_TagString: Player
@@ -1141,26 +1142,26 @@ MonoBehaviour:
   whatIsGround:
     serializedVersion: 2
     m_Bits: 128
+  baseGravity: -9.81
+  fallGravityMultiplier: 2.5
   dashDistance: 5
   dashDuration: 0.3
   dashCost: 20
-  baseGravity: -9.81
-  fallGravityMultiplier: 2.5
   isRange: 0
   basicComboData: {fileID: 11400000, guid: 6b9667d3b4e69a7499fc08b57c6d41c5, type: 2}
   airComboData: {fileID: 11400000, guid: 7a8e1b5267f86bf46ad3b01c2ac82ba3, type: 2}
   firePoint: {fileID: 8450744529129440767}
   shootData: {fileID: 0}
-  isPerformingAction: 0
-  blockVelocity: 0
-  hasUsedDash: 0
-  hasUsedAirAttack: 0
   maxSkillSlots: 4
   skills:
   - {fileID: 11400000, guid: e44cbdc44a1a45a4c858140296414556, type: 2}
   - {fileID: 11400000, guid: a9efe79e2cc66d44bbf9feb7b1c94465, type: 2}
   - {fileID: 11400000, guid: 712478e1ad92c6a45a5ce13356bb453c, type: 2}
   - {fileID: 11400000, guid: a1e92e11682f9444389eddce3431bb6e, type: 2}
+  isPerformingAction: 0
+  blockVelocity: 0
+  hasUsedDash: 0
+  hasUsedAirAttack: 0
   rb: {fileID: 1161937379728199457}
   groundCheck: {fileID: 2740845921135864463}
   input: {fileID: 7822185270060810045}
@@ -1169,6 +1170,9 @@ MonoBehaviour:
   thirdCam: {fileID: 638606761920322837}
   platformRider: {fileID: 2656101319054880454}
   stats: {fileID: 2796060496083993113}
+  meleeAttackVfx: []
+  airAttackVfx: []
+  showHitBox: 0
   hitboxPrefab: {fileID: 65547742025389114, guid: e1a6382669a4d2d49901cfb4464b71df, type: 3}
 --- !u!114 &3691745361167157781
 MonoBehaviour:
@@ -1688,6 +1692,29 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0.1, z: 0}
+--- !u!114 &5601345459851488760
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8846076826872646024}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4fe4427a32116b244a06016c5d8baa5f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerSkillInventory
+  ShowTopMostFoldoutHeaderGroup: 1
+  allSkills:
+  - {fileID: 11400000, guid: e44cbdc44a1a45a4c858140296414556, type: 2}
+  - {fileID: 11400000, guid: 1dde6130d741b72439e215d49dcfcf8d, type: 2}
+  - {fileID: 11400000, guid: a9efe79e2cc66d44bbf9feb7b1c94465, type: 2}
+  - {fileID: 11400000, guid: a1e92e11682f9444389eddce3431bb6e, type: 2}
+  - {fileID: 11400000, guid: ba873f30e18262b4b8a7a4180efc3925, type: 2}
+  - {fileID: 11400000, guid: 712478e1ad92c6a45a5ce13356bb453c, type: 2}
+  - {fileID: 11400000, guid: 748a178645e35664087547db3eb028b9, type: 2}
+  - {fileID: 11400000, guid: 7d602a4b0a746c247bb6342e1da2592f, type: 2}
+  maxSkillSlots: 4
 --- !u!1001 &2973559207840989850
 PrefabInstance:
   m_ObjectHideFlags: 0

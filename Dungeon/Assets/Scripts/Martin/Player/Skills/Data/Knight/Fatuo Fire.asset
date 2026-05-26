@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c1fc30492c3e50478ac258af914d5ec, type: 3}
   m_Name: Fatuo Fire
   m_EditorClassIdentifier: Assembly-CSharp::FatuoFire
-  skillName: 
+  skillId: 1
+  skillName: FatuoFire
+  ownerCharacter: 0
   resourceType: 0
   cost: 0
   castTime: 0

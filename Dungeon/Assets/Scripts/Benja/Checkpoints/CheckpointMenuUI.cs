@@ -3,16 +3,11 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Panel intermedio que aparece al interactuar con un checkpoint.
-/// Da al jugador la opción de elegir entre Teletransporte o Mejorar Estadísticas.
-///
-/// Flow:
-///   - Open() abre este menú
-///   - El usuario pulsa "Teletransporte" → cierra este, abre TeleporterPanelUI
-///   - El usuario pulsa "Mejorar" → cierra este, abre CheckpointUpgradeUI
-///   - El usuario pulsa "Cerrar" → todo se cierra
-///
-/// Va en el HUD Canvas como un panel oculto al inicio.
+/// Panel principal del checkpoint.
+/// Desde aquí puedes:
+/// - Teletransportarte
+/// - Mejorar stats
+/// - Cambiar skills
 /// </summary>
 public class CheckpointMenuUI : MonoBehaviour
 {
@@ -25,59 +20,80 @@ public class CheckpointMenuUI : MonoBehaviour
     [Header("Botones")]
     [SerializeField] private Button teleportButton;
     [SerializeField] private Button upgradeButton;
+    [SerializeField] private Button skillsButton;
     [SerializeField] private Button closeButton;
 
-    [Header("Paneles asociados")]
-    [Tooltip("Panel de teletransporte (con script TeleporterPanelUI).")]
+    [Header("Panels")]
     [SerializeField] private TeleporterPanelUI teleporterPanel;
 
-    [Tooltip("Panel de mejora de stats (con script CheckpointUpgradeUI).")]
     [SerializeField] private CheckpointUpgradeUI upgradePanel;
 
-    private string _currentCheckpointName;
+    [SerializeField] private CheckpointSkillUI skillPanel;
 
-    // ── Estado del cursor antes de abrir (para restaurar al cerrar) ──
-    private CursorLockMode _previousCursorLock;
-    private bool _previousCursorVisible;
-    private bool _cursorStateSaved;
+    private string currentCheckpointName;
 
-    void Awake()
+    public bool IsOpen =>
+        panelRoot != null &&
+        panelRoot.activeSelf;
+
+    private void Awake()
     {
         Instance = this;
-        if (panelRoot != null) panelRoot.SetActive(false);
+
+        if (panelRoot != null)
+            panelRoot.SetActive(false);
     }
 
-    void OnEnable()
+    private void OnDestroy()
     {
-        if (teleportButton != null) teleportButton.onClick.AddListener(OnTeleportClicked);
-        if (upgradeButton != null) upgradeButton.onClick.AddListener(OnUpgradeClicked);
-        if (closeButton != null) closeButton.onClick.AddListener(Close);
+        if (Instance == this)
+            Instance = null;
     }
 
-    void OnDisable()
+    private void OnEnable()
     {
-        if (teleportButton != null) teleportButton.onClick.RemoveListener(OnTeleportClicked);
-        if (upgradeButton != null) upgradeButton.onClick.RemoveListener(OnUpgradeClicked);
-        if (closeButton != null) closeButton.onClick.RemoveListener(Close);
+        if (teleportButton != null)
+            teleportButton.onClick.AddListener(OnTeleportClicked);
+
+        if (upgradeButton != null)
+            upgradeButton.onClick.AddListener(OnUpgradeClicked);
+
+        if (skillsButton != null)
+            skillsButton.onClick.AddListener(OnSkillsClicked);
+
+        if (closeButton != null)
+            closeButton.onClick.AddListener(Close);
     }
 
-    void OnDestroy()
+    private void OnDisable()
     {
-        if (Instance == this) Instance = null;
+        if (teleportButton != null)
+            teleportButton.onClick.RemoveListener(OnTeleportClicked);
+
+        if (upgradeButton != null)
+            upgradeButton.onClick.RemoveListener(OnUpgradeClicked);
+
+        if (skillsButton != null)
+            skillsButton.onClick.RemoveListener(OnSkillsClicked);
+
+        if (closeButton != null)
+            closeButton.onClick.RemoveListener(Close);
     }
 
-    /// <summary>
-    /// Abre el menú con el nombre del checkpoint en cuestión.
-    /// Libera el cursor para que el jugador pueda clicar los botones.
-    /// </summary>
     public void Open(string checkpointName)
     {
-        _currentCheckpointName = checkpointName;
+        currentCheckpointName = checkpointName;
 
         if (checkpointNameText != null)
-            checkpointNameText.text = string.IsNullOrEmpty(checkpointName) ? "Checkpoint" : checkpointName;
+        {
+            checkpointNameText.text =
+                string.IsNullOrEmpty(checkpointName)
+                ? "Checkpoint"
+                : checkpointName;
+        }
 
-        if (panelRoot != null) panelRoot.SetActive(true);
+        if (panelRoot != null)
+            panelRoot.SetActive(true);
 
         if (UIBlockingManager.Instance != null)
             UIBlockingManager.Instance.Register(this);
@@ -85,39 +101,46 @@ public class CheckpointMenuUI : MonoBehaviour
 
     public void Close()
     {
-        if (panelRoot != null) panelRoot.SetActive(false);
-        _currentCheckpointName = null;
+        if (panelRoot != null)
+            panelRoot.SetActive(false);
+
+        currentCheckpointName = string.Empty;
 
         if (UIBlockingManager.Instance != null)
             UIBlockingManager.Instance.Unregister(this);
     }
 
-    public bool IsOpen => panelRoot != null && panelRoot.activeSelf;
+    // =========================================================
+    // BUTTONS
+    // =========================================================
 
-    // ── Cursor handling (deprecated, ahora lo hace UIBlockingManager) ────
-    private void SaveCursorStateAndUnlock() { /* manejado por UIBlockingManager */ }
-    private void RestoreCursorState() { /* manejado por UIBlockingManager */ }
-
-    // ── Acciones ─────────────────────────────────────────────────────
     private void OnTeleportClicked()
     {
-        // Cerramos este panel correctamente (incluye Unregister)
         Close();
 
         if (teleporterPanel != null)
             teleporterPanel.Open();
         else
-            Debug.LogWarning("[CheckpointMenuUI] No hay teleporterPanel asignado.");
+            Debug.LogWarning("[CheckpointMenuUI] Missing TeleporterPanel.");
     }
 
     private void OnUpgradeClicked()
     {
-        // Cerramos este panel correctamente (incluye Unregister)
         Close();
 
         if (upgradePanel != null)
             upgradePanel.Open();
         else
-            Debug.LogWarning("[CheckpointMenuUI] No hay upgradePanel asignado.");
+            Debug.LogWarning("[CheckpointMenuUI] Missing UpgradePanel.");
+    }
+
+    private void OnSkillsClicked()
+    {
+        Close(); // 👈 FIX IMPORTANTE
+
+        if (skillPanel != null)
+            skillPanel.Open();
+        else
+            Debug.LogWarning("[CheckpointMenuUI] Missing SkillPanel.");
     }
 }

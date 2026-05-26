@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a903d71be4a903499fc3119417a2499, type: 3}
   m_Name: Spin Attack
   m_EditorClassIdentifier: Assembly-CSharp::SpinAttack
+  skillId: 6
   skillName: Spin Attack
+  ownerCharacter: 0
   resourceType: 1
   cost: 20
   castTime: 0.2
@@ -36,3 +38,4 @@ MonoBehaviour:
   enemyLayer:
     serializedVersion: 2
     m_Bits: 4096
+  sfx: {fileID: 0}

@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23b19d4998c74564eb795cdc417e733c, type: 3}
   m_Name: Fire Slash
   m_EditorClassIdentifier: Assembly-CSharp::FireSlashSkill
+  skillId: 2
   skillName: Fire slash
+  ownerCharacter: 0
   resourceType: 2
   cost: 10
   castTime: 0

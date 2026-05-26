@@ -1,11 +1,14 @@
 using System.Collections;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEngine;
-using static UnityEngine.Analytics.IAnalytic;
 
 public class PlayerController : NetworkBehaviour, IDamageable
 {
-    //--> Variables
+    // ─────────────────────────────────────────
+    // MOVEMENT
+    // ─────────────────────────────────────────
+
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 10f;
     [SerializeField] private float jumpForce = 8f;
@@ -13,39 +16,60 @@ public class PlayerController : NetworkBehaviour, IDamageable
     [SerializeField] private float moveMultiplier = 1f;
     [SerializeField] private LayerMask whatIsGround;
 
+    [Header("Gravity")]
+    [SerializeField] private float baseGravity = -9.81f;
+    [SerializeField] private float fallGravityMultiplier = 2.5f;
+
     [Header("Dash")]
     [SerializeField] private float dashDistance = 5f;
     [SerializeField] private float dashDuration = 0.3f;
     [SerializeField] private float dashCost = 20f;
 
-    [SerializeField] private float baseGravity = -9.81f;
-    [SerializeField] private float fallGravityMultiplier = 2.5f;
-    private float currentGravityMultiplier;
+    private float currentGravityMultiplier = 1f;
 
-    //-->Combat variables
+    // ─────────────────────────────────────────
+    // COMBAT
+    // ─────────────────────────────────────────
+
     [Header("Combat")]
     [SerializeField] private bool isRange;
     [SerializeField] private BasicComboData basicComboData;
     [SerializeField] private BasicComboData airComboData;
 
-    [Header("Variables for range")]
+    [Header("Range")]
     [SerializeField] private Transform firePoint;
     [SerializeField] private ShootData shootData;
+
+    // ─────────────────────────────────────────
+    // SKILLS
+    // ─────────────────────────────────────────
+
+    [Header("Skills")]
+    [SerializeField] private int maxSkillSlots = 4;
+
+    [SerializeField]
+    private Skill[] skills = new Skill[4];
+
+    private float[] skillsCooldown;
+
+    // ─────────────────────────────────────────
+    // FLAGS
+    // ─────────────────────────────────────────
 
     public bool isGrounded { get; private set; }
     public bool isPerformingAction = false;
     public bool blockVelocity = false;
     public bool hasUsedDash = false;
     public bool hasUsedAirAttack = false;
-    public bool isDead { get; private set; } = false;
+    public bool isDead { get; private set; }
 
-    [Header("Skills")]
-    [SerializeField] private int maxSkillSlots = 4;
-    [SerializeField] private Skill[] skills;
-    private float[] skillsCooldown;
+    private bool startingHealthInitialized = false;
 
-    //--> References
-    [Header("Component References")]
+    // ─────────────────────────────────────────
+    // REFERENCES
+    // ─────────────────────────────────────────
+
+    [Header("References")]
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Transform groundCheck;
     [SerializeField] private PlayerInputHandler input;
@@ -53,11 +77,19 @@ public class PlayerController : NetworkBehaviour, IDamageable
     [SerializeField] private LockOnTarget lockOnTarget;
     [SerializeField] private GameObject thirdCam;
     [SerializeField] private PlatformRider platformRider;
-    [SerializeField] private PlayerStats stats; // ← stats locales por jugador (NetworkBehaviour)
+    [SerializeField] private PlayerStats stats;
+
+    [Header("Attack VFX")]
+    [SerializeField] private GameObject[] meleeAttackVfx;
+    [SerializeField] private GameObject[] airAttackVfx;
+
+    [Header("Debug")]
     public bool showHitBox;
     public GameObject hitboxPrefab;
 
-    private bool startingHealthInitialized = false;
+    // ─────────────────────────────────────────
+    // PROPERTIES
+    // ─────────────────────────────────────────
 
     public Rigidbody Rb => rb;
     public Transform PlayerModel => playerModel;
@@ -68,31 +100,33 @@ public class PlayerController : NetworkBehaviour, IDamageable
     public BasicComboData ComboData => basicComboData;
     public BasicComboData AirComboData => airComboData;
     public ShootData ShootData => shootData;
-    public float FallGravityMultiplier => fallGravityMultiplier;
     public PlayerStats Stats => stats;
-    public bool InitializedHealth => startingHealthInitialized;
-
-    //--> ESTADISTICAS (todas leen del componente local)
-    public float MaxHealth => stats.Health.Max;
-    public float CurrentHealth => stats.Health.CurrentValue;
-    public float CurrentStamina => stats.Stamina.CurrentValue;
-    public float MaxStamina => stats.Stamina.Max;
-    public float MaxMana => stats.Mana.Max;
-    public float CurrentMana => stats.Mana.CurrentValue;
-
+    public float FallGravityMultiplier => fallGravityMultiplier;
     public float DashDistance => dashDistance;
     public float DashDuration => dashDuration;
     public float DashCost => dashCost;
 
-    //-->States for movements
-    PlayerStateMachine movementSM;
+    public float MaxHealth => stats.Health.Max;
+    public float CurrentHealth => stats.Health.CurrentValue;
+
+    public float MaxMana => stats.Mana.Max;
+    public float CurrentMana => stats.Mana.CurrentValue;
+
+    public float MaxStamina => stats.Stamina.Max;
+    public float CurrentStamina => stats.Stamina.CurrentValue;
+
+    // ─────────────────────────────────────────
+    // STATE MACHINE
+    // ─────────────────────────────────────────
+
+    private PlayerStateMachine movementSM;
+    private PlayerStateMachine actionSM;
+
     public PlayerIddle_State iddle_State;
     public PlayerMove_State move_State;
     public PlayerJump_State jump_State;
     public PlayerFall_State fall_State;
 
-    //-->States for actions
-    PlayerStateMachine actionSM;
     public PlayerIddleAction iddeAction_State;
     public PlayerBasicAttack basicAttack_State;
     public PlayerAirAttack airAttack_State;
@@ -100,36 +134,26 @@ public class PlayerController : NetworkBehaviour, IDamageable
     public PlayerDash dash_State;
     public PlayerSkill skill_State;
 
-    public override void OnNetworkSpawn()
+    // ─────────────────────────────────────────
+    // CAMERA
+    // ─────────────────────────────────────────
+
+    private Camera _cachedCam;
+
+    private Camera MainCam
     {
-        if (rb == null) rb = GetComponent<Rigidbody>();
-        if (input == null) input = GetComponent<PlayerInputHandler>();
-        if (lockOnTarget == null) lockOnTarget = GetComponent<LockOnTarget>();
-        if (platformRider == null) platformRider = GetComponent<PlatformRider>();
-        if (stats == null) stats = GetComponent<PlayerStats>();
+        get
+        {
+            if (_cachedCam == null)
+                _cachedCam = Camera.main;
 
-        // Cámara y registro de player local: solo para el dueño del cliente
-        if (IsOwner)
-        {
-            if (thirdCam != null) thirdCam.SetActive(true);
-            LocalPlayer.RegisterLocalPlayer(this);
-        }
-        else
-        {
-            if (thirdCam != null) thirdCam.SetActive(false);
-        }
-
-        if (stats != null)
-        {
-            StartCoroutine(InitializeStartingHealthWhenReady());
+            return _cachedCam;
         }
     }
 
-    public override void OnNetworkDespawn()
-    {
-        if (IsOwner)
-            LocalPlayer.UnregisterLocalPlayer();
-    }
+    // ─────────────────────────────────────────
+    // UNITY
+    // ─────────────────────────────────────────
 
     private void Awake()
     {
@@ -148,12 +172,63 @@ public class PlayerController : NetworkBehaviour, IDamageable
         dash_State = new PlayerDash(this);
         skill_State = new PlayerSkill(this);
 
-        skillsCooldown = new float[skills.Length];
+        skillsCooldown = new float[maxSkillSlots];
+    }
+
+    public override void OnNetworkSpawn()
+    {
+        var inventory = GetComponent<PlayerSkillInventory>();
+
+        if (inventory != null)
+        {
+            inventory.OnSkillsChanged += RefreshSkillsFromInventory;
+        }
+        if (rb == null)
+            rb = GetComponent<Rigidbody>();
+
+        if (input == null)
+            input = GetComponent<PlayerInputHandler>();
+
+        if (lockOnTarget == null)
+            lockOnTarget = GetComponent<LockOnTarget>();
+
+        if (platformRider == null)
+            platformRider = GetComponent<PlatformRider>();
+
+        if (stats == null)
+            stats = GetComponent<PlayerStats>();
+
+        LoadEquippedSkillsFromInventory();
+
+        if (IsOwner)
+        {
+            if (thirdCam != null)
+                thirdCam.SetActive(true);
+
+            LocalPlayer.RegisterLocalPlayer(this);
+        }
+        else
+        {
+            if (thirdCam != null)
+                thirdCam.SetActive(false);
+        }
+
+        if (stats != null)
+        {
+            StartCoroutine(InitializeStartingHealthWhenReady());
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (IsOwner)
+            LocalPlayer.UnregisterLocalPlayer();
     }
 
     private void Start()
     {
-        if (!IsOwner) return;
+        if (!IsOwner)
+            return;
 
         movementSM.Initialize(iddle_State);
         actionSM.Initialize(iddeAction_State);
@@ -161,11 +236,12 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
     private void Update()
     {
-        if (!IsOwner) return;
+        if (!IsOwner)
+            return;
 
-        if (!startingHealthInitialized) return;
+        if (!startingHealthInitialized)
+            return;
 
-        // Chequeo de muerte: solo se dispara una vez gracias al flag isDead
         if (!isDead && CurrentHealth <= 0)
         {
             Die();
@@ -174,10 +250,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
         if (!isDead)
         {
             CheckGround();
-            GetViewPoint();
 
-            // Bloquear input de gameplay si hay paneles UI abiertos
-            // (las State Machines no se actualizan → no se procesan ataques, skills, etc.)
             if (!UIBlockingManager.IsAnyUIOpen)
             {
                 movementSM.Update();
@@ -185,394 +258,703 @@ public class PlayerController : NetworkBehaviour, IDamageable
             }
         }
 
-        for (int i = 0; i < skillsCooldown.Length; i++)
-        {
-            if (skillsCooldown[i] > 0)
-                skillsCooldown[i] -= Time.deltaTime;
-        }
+        UpdateCooldowns();
     }
 
     private void FixedUpdate()
     {
-        if (!IsOwner) return;
-        if (!startingHealthInitialized) return;
-        if (isDead) return;
-
-        // Si hay UI abierta, no procesar movimiento ni state machines
-        // (pero sí gravedad para que no se quede flotando si saltó)
-        if (UIBlockingManager.IsAnyUIOpen)
-        {
-            rb.AddForce(Vector3.up * baseGravity * currentGravityMultiplier, ForceMode.Acceleration);
-            // Detener movimiento horizontal para que no siga deslizándose
-            Vector3 v = rb.linearVelocity;
-            v.x = 0;
-            v.z = 0;
-            rb.linearVelocity = v;
+        if (!IsOwner)
             return;
-        }
+
+        if (!startingHealthInitialized)
+            return;
+
+        if (isDead)
+            return;
+
+        ApplyGravity();
 
         if (!isPerformingAction)
         {
-            rb.AddForce(Vector3.up * baseGravity * currentGravityMultiplier, ForceMode.Acceleration);
             Movement();
         }
 
         if (blockVelocity)
+        {
             rb.linearVelocity = Vector3.zero;
+        }
 
         movementSM.FixedUpdate();
         actionSM.FixedUpdate();
     }
 
-    // ── State Machine ──────────────────────────────────────────────────────
-    public void ChangeState(PlayerStates nextState) => movementSM.ChangeState(nextState);
-    public void ChangeActionState(PlayerStates nextState) => actionSM.ChangeState(nextState);
+    // ─────────────────────────────────────────
+    // COOLDOWNS
+    // ─────────────────────────────────────────
 
-    // ── Movement ──────────────────────────────────────────────────────
-    private Camera _cachedCam;
-
-    /// <summary>
-    /// Acceso a Camera.main con cache. Si se pierde (cambio de escena), la rebuscamos.
-    /// Esto evita NullReferenceException cuando hay un frame entre destrucción y creación.
-    /// </summary>
-    private Camera MainCam
+    private void UpdateCooldowns()
     {
-        get
+        for (int i = 0; i < skillsCooldown.Length; i++)
         {
-            if (_cachedCam == null) _cachedCam = Camera.main;
-            return _cachedCam;
+            if (skillsCooldown[i] > 0f)
+            {
+                skillsCooldown[i] -= Time.deltaTime;
+            }
         }
     }
+
+    // ─────────────────────────────────────────
+    // GRAVITY
+    // ─────────────────────────────────────────
+
+    private void ApplyGravity()
+    {
+        if (rb == null)
+            return;
+
+        rb.AddForce(
+            Vector3.up * baseGravity * currentGravityMultiplier,
+            ForceMode.Acceleration
+        );
+    }
+
+    public void SetGravityMultiplier(float value)
+    {
+        currentGravityMultiplier = value;
+    }
+
+    // ─────────────────────────────────────────
+    // MOVEMENT
+    // ─────────────────────────────────────────
 
     private void Movement()
     {
         Vector2 inputDir = input.moveInput.normalized;
 
         var cam = MainCam;
-        if (cam == null) return; // no hay cámara aún, saltamos este frame
+
+        if (cam == null)
+            return;
 
         Vector3 camForward = cam.transform.forward;
-        camForward.y = 0;
+        camForward.y = 0f;
         camForward.Normalize();
 
         Vector3 camRight = cam.transform.right;
-        camRight.y = 0;
+        camRight.y = 0f;
         camRight.Normalize();
 
-        Vector3 moveDir = camForward * inputDir.y + camRight * inputDir.x;
-        Vector3 velocity = moveDir * moveSpeed * moveMultiplier;
+        Vector3 moveDir =
+            camForward * inputDir.y +
+            camRight * inputDir.x;
+
+        Vector3 velocity =
+            moveDir * moveSpeed * moveMultiplier;
+
         velocity.y = rb.linearVelocity.y;
 
-        if (platformRider != null && platformRider.IsOnPlatform)
+        if (platformRider != null &&
+            platformRider.IsOnPlatform)
         {
-            velocity.x += platformRider.CurrentPlatformVelocity.x;
-            velocity.z += platformRider.CurrentPlatformVelocity.z;
-            // velocity.y += platformRider.CurrentPlatformVelocity.y; // ascensor
+            velocity += platformRider.CurrentPlatformVelocity;
         }
 
         rb.linearVelocity = velocity;
+
         HandleRotation(moveDir);
     }
 
     public void Jump()
     {
         if (!isGrounded)
-        {
-            Debug.Log("Is not grounded cant jump");
             return;
-        }
 
-        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.y);
-        rb.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+        rb.linearVelocity =
+            new Vector3(
+                rb.linearVelocity.x,
+                0f,
+                rb.linearVelocity.z
+            );
+
+        rb.AddForce(
+            Vector3.up * jumpForce,
+            ForceMode.Impulse
+        );
     }
 
-    // ── Stamina ──────────────────────────────────────────────────────
-    public bool HasStamina(float cost) => stats.Stamina.CurrentValue >= cost;
-    public void ConsumeStamina(float cost) => stats.Stamina.Modify(-cost);
-
-    // ── Mana ─────────────────────────────────────────────────────────
-    public bool HasMana(float cost) => stats.Mana.CurrentValue >= cost;
-    public void ConsumeMana(float cost) => stats.Mana.Modify(-cost);
-
-    // ── Health ───────────────────────────────────────────────────────
-    public bool IsAlive => CurrentHealth > 0;
-
-    /// <summary>Cura al jugador (clamp al max automático).</summary>
-    public void Heal(float amount)
-    {
-        if (isDead) return;
-        stats.Health.Modify(amount);
-    }
-
-    void HandleRotation(Vector3 moveDir)
+    private void HandleRotation(Vector3 moveDir)
     {
         Vector3 lookDir;
 
-        if (input.isAiming || (lockOnTarget != null && lockOnTarget.isTargeting))
+        if (
+            input.isAiming ||
+            (
+                lockOnTarget != null &&
+                lockOnTarget.isTargeting
+            )
+        )
         {
             var cam = MainCam;
-            if (cam == null) return;
+
+            if (cam == null)
+                return;
+
             lookDir = cam.transform.forward;
-            lookDir.y = 0;
+            lookDir.y = 0f;
             lookDir.Normalize();
         }
         else
         {
-            if (moveDir.magnitude < 0.1f) return;
+            if (moveDir.magnitude < 0.1f)
+                return;
+
             lookDir = moveDir;
         }
 
-        Quaternion targetRotation = Quaternion.LookRotation(lookDir);
-        playerModel.rotation = Quaternion.Slerp(playerModel.rotation, targetRotation, rotSpeed * Time.deltaTime);
+        Quaternion targetRotation =
+            Quaternion.LookRotation(lookDir);
+
+        playerModel.rotation =
+            Quaternion.Slerp(
+                playerModel.rotation,
+                targetRotation,
+                rotSpeed * Time.deltaTime
+            );
     }
 
     private void CheckGround()
     {
-        bool previous = isGrounded;
-        isGrounded = Physics.Raycast(groundCheck.position, Vector3.down, 1.1f, whatIsGround);
+        bool previousGrounded = isGrounded;
 
-        if (!previous && isGrounded) hasUsedAirAttack = false;
+        isGrounded =
+            Physics.Raycast(
+                groundCheck.position,
+                Vector3.down,
+                1.1f,
+                whatIsGround
+            );
 
-        Debug.DrawRay( groundCheck.position, Vector3.down * 0.2f,Color.red);
+        if (!previousGrounded && isGrounded)
+        {
+            hasUsedAirAttack = false;
+            hasUsedDash = false;
+        }
     }
+
+    // ─────────────────────────────────────────
+    // CAMERA
+    // ─────────────────────────────────────────
 
     public Vector3 GetViewPoint()
     {
         var cam = MainCam;
-        if (cam == null) return transform.position;
 
-        Ray ray = cam.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
+        if (cam == null)
+            return transform.position;
+
+        Ray ray =
+            cam.ScreenPointToRay(
+                new Vector3(
+                    Screen.width / 2f,
+                    Screen.height / 2f
+                )
+            );
 
         if (Physics.Raycast(ray, out RaycastHit hit, 100f))
         {
-            Debug.DrawRay(ray.origin, ray.direction * hit.distance, Color.green);
-            Debug.DrawLine(hit.point, hit.point + Vector3.up * 0.5f, Color.blue);
             return hit.point;
         }
 
-        Debug.DrawRay(ray.origin, ray.direction * 100f, Color.red);
-        return ray.origin + ray.direction * 100;
+        return ray.origin + ray.direction * 100f;
     }
 
-    public Vector3 GetAimPoint(float maxRange, LayerMask groundLayer)
+    public Vector3 GetAimPoint(
+        float maxRange,
+        LayerMask groundLayer
+    )
     {
         var cam = MainCam;
-        if (cam == null) return transform.position;
 
-        Ray ray = cam.ScreenPointToRay(new Vector3(Screen.width / 2f, Screen.height / 2f));
+        if (cam == null)
+            return transform.position;
 
-        if (Physics.Raycast(ray, out RaycastHit hit, maxRange, groundLayer))
+        Ray ray =
+            cam.ScreenPointToRay(
+                new Vector3(
+                    Screen.width / 2f,
+                    Screen.height / 2f
+                )
+            );
+
+        if (
+            Physics.Raycast(
+                ray,
+                out RaycastHit hit,
+                maxRange,
+                groundLayer
+            )
+        )
+        {
             return hit.point;
+        }
 
         return ray.origin + ray.direction * maxRange;
     }
 
-    // ── Melee Request ──────────────────────────────────────────────────────
-    public void RequestMeleeAttack(int comboIndex, bool isGrounded)
+    // ─────────────────────────────────────────
+    // SKILL INVENTORY
+    // ─────────────────────────────────────────
+
+    private void LoadEquippedSkillsFromInventory()
     {
-        MeleeAttackServerRpc(comboIndex, isGrounded);
+        PlayerSkillInventory inventory =
+            GetComponent<PlayerSkillInventory>();
+
+        if (inventory == null)
+        {
+            Debug.LogWarning(
+                "[PlayerController] No PlayerSkillInventory found."
+            );
+
+            return;
+        }
+
+        for (int i = 0; i < maxSkillSlots; i++)
+        {
+            skills[i] = inventory.GetEquippedSkill(i);
+        }
+
+        Debug.Log(
+            "[PlayerController] Equipped skills loaded."
+        );
+    }
+
+    public void RefreshSkillsFromInventory()
+    {
+        LoadEquippedSkillsFromInventory();
+    }
+
+    // ─────────────────────────────────────────
+    // STATE MACHINE
+    // ─────────────────────────────────────────
+
+    public void ChangeState(PlayerStates nextState)
+    {
+        movementSM.ChangeState(nextState);
+    }
+
+    public void ChangeActionState(PlayerStates nextState)
+    {
+        actionSM.ChangeState(nextState);
+    }
+
+    // ─────────────────────────────────────────
+    // MELEE ATTACK
+    // ─────────────────────────────────────────
+
+    public void RequestMeleeAttack(
+        int comboIndex,
+        bool isAirAttack
+    )
+    {
+        RequestAttackVfx(comboIndex, isAirAttack);
+    }
+
+    // ─────────────────────────────────────────
+    // SHOOT
+    // ─────────────────────────────────────────
+
+    public void RequestShoot(
+        Vector3 spawnPosition,
+        Vector3 direction
+    )
+    {
+        if (!IsOwner)
+            return;
+
+        RequestShootServerRpc(
+            spawnPosition,
+            direction
+        );
     }
 
     [ServerRpc]
-    private void MeleeAttackServerRpc(int comboIndex, bool isGrounded)
+    private void RequestShootServerRpc(
+        Vector3 spawnPosition,
+        Vector3 direction
+    )
     {
-        AttackSteps attack = isGrounded ? ComboData.attackSteps[comboIndex] : airComboData.attackSteps[comboIndex];
+        SpawnProjectile(
+            spawnPosition,
+            direction
+        );
 
-        Vector3 center = PlayerModel.transform.position  + PlayerModel.transform.forward * attack.hitBoxOffSet.z + Vector3.up * attack.hitBoxOffSet.y;
-
-        Collider[] hits = Physics.OverlapBox(center, attack.hitBoxSize * 0.5f, PlayerModel.transform.rotation);
-
-        foreach (var hit in hits)
-        {
-            if (hit.CompareTag("Enemy"))
-            {
-                IDamageable damageable = hit.GetComponent<IDamageable>();
-                if (damageable != null)
-                {
-                    Vector3 hitDir = PlayerModel.transform.forward; 
-                    damageable.TakeDamage((Stats.PhysicalDamage.CurrentValue * attack.hitData.physicalScale) + (Stats.MagicalDamage.CurrentValue * attack.hitData.magicalScale), attack.hitData.throwType,  hitDir, attack.hitData.stunDuration, attack.hitData.keepInAir, attack.hitData.airLiftForce, attack.hitData.staggerCharge);
-                }
-                Debug.Log($"[Server] Player {OwnerClientId} hit {hit.name}");
-            }
-        }
-
-        if (showHitBox)
-        {
-            ShowHitboxClientRpc(center, attack.hitBoxSize, PlayerModel.rotation);
-        }
-    }
-
-    // ── VFX ATTACKS REQUEST ──────────────────────────────────────────────────────
-
-    public void RequestAttackVfx(int comboIndex, bool isGrounded)
-    {
-        RequestAttackVfxServerRpc(comboIndex, isGrounded);
-    }
-
-    [ServerRpc]
-    private void RequestAttackVfxServerRpc(int comboIndex, bool isGrounded)
-    {
-        PlayAttackVfxClientRpc(comboIndex, isGrounded);
+        ShootClientRpc(
+            spawnPosition,
+            direction
+        );
     }
 
     [ClientRpc]
-    public void PlayAttackVfxClientRpc(int comboIndex, bool isGrounded)
+    private void ShootClientRpc(
+        Vector3 spawnPosition,
+        Vector3 direction
+    )
     {
+        if (IsOwner)
+            return;
 
-        if (IsOwner) return;
-
-        SpawnAttackVfx(comboIndex, isGrounded);
+        SpawnProjectile(
+            spawnPosition,
+            direction
+        );
     }
 
-    public void PlayAttackVfxLocal(int comboIndex, bool isGrounded)
+    private void SpawnProjectile(
+        Vector3 spawnPosition,
+        Vector3 direction
+    )
     {
-        SpawnAttackVfx(comboIndex, isGrounded);
+        if (shootData == null)
+            return;
+
+        if (shootData.proyectilePrefab == null)
+            return;
+
+        GameObject projectile =
+            Instantiate(
+                shootData.proyectilePrefab,
+                spawnPosition,
+                Quaternion.LookRotation(direction)
+            );
+
+        Rigidbody projectileRb =
+            projectile.GetComponent<Rigidbody>();
+
+        if (projectileRb != null)
+        {
+            projectileRb.linearVelocity =
+                direction.normalized *
+                shootData.proyectileSpeed;
+        }
     }
 
-    private void SpawnAttackVfx(int comboIndex, bool isGrounded)
+    // ─────────────────────────────────────────
+    // ATTACK VFX
+    // ─────────────────────────────────────────
+
+    public void PlayAttackVfxLocal(
+        int comboIndex,
+        bool isAirAttack
+    )
     {
-        AttackSteps attack = isGrounded ? ComboData.attackSteps[comboIndex] : AirComboData.attackSteps[comboIndex];
+        GameObject[] array =
+            isAirAttack
+            ? airAttackVfx
+            : meleeAttackVfx;
 
-        if (attack == null || attack.attackVfx == null) return;
+        if (array == null)
+            return;
 
-        StartCoroutine(SpawnAttackVfxRoutine(attack));
+        if (comboIndex < 0 || comboIndex >= array.Length)
+            return;
+
+        GameObject prefab = array[comboIndex];
+
+        if (prefab == null)
+            return;
+
+        Instantiate(
+            prefab,
+            transform.position,
+            playerModel.rotation
+        );
     }
 
-    private IEnumerator SpawnAttackVfxRoutine(AttackSteps attack)
+    public void RequestAttackVfx(
+        int comboIndex,
+        bool isAirAttack
+    )
     {
-        if (attack.vfxSpawnTime > 0f) yield return new WaitForSeconds(attack.vfxSpawnTime);
+        if (!IsOwner)
+            return;
 
-        Transform root = PlayerModel != null ? PlayerModel : transform;
-
-        Vector3 spawnPos = root.TransformPoint(attack.vfxOffset);
-        Quaternion spawnRot = root.rotation * Quaternion.Euler(attack.vfxRotOffset);
-
-        GameObject vfx = Instantiate(attack.attackVfx, spawnPos, spawnRot);
-
-        if (attack.vfxDuration > 0f) Destroy(vfx, attack.vfxDuration);
-    }
-
-
-    // ── Shoot Request ──────────────────────────────────────────────────────
-    public void RequestShoot(Vector3 shootPos, Vector3 dir)
-    {
-        ShootServerRpc(shootPos, dir);
+        AttackVfxServerRpc(
+            comboIndex,
+            isAirAttack
+        );
     }
 
     [ServerRpc]
-    private void ShootServerRpc(Vector3 shootPos, Vector3 dir)
+    private void AttackVfxServerRpc(
+        int comboIndex,
+        bool isAirAttack
+    )
     {
-        GameObject prefab = GameObject.Instantiate(ShootData.proyectilePrefab, FirePoint.position, Quaternion.LookRotation(dir));
-        prefab.GetComponent<NetworkObject>().Spawn();
-
-        PlayerProyectile proyectile = prefab.GetComponent<PlayerProyectile>();
-        if (proyectile != null)
-            proyectile.Initialize(10, ShootData.hitData, dir, ShootData.proyectileSpeed, Vector3.zero);
+        AttackVfxClientRpc(
+            comboIndex,
+            isAirAttack
+        );
     }
 
-    // ── Skill Request ──────────────────────────────────────────────────────
-    public void RequestSkill(int skillIndex, Vector3 targetPoint)
+    [ClientRpc]
+    private void AttackVfxClientRpc(
+        int comboIndex,
+        bool isAirAttack
+    )
     {
+        if (IsOwner)
+            return;
+
+        PlayAttackVfxLocal(
+            comboIndex,
+            isAirAttack
+        );
+    }
+
+    // ─────────────────────────────────────────
+    // SKILLS
+    // ─────────────────────────────────────────
+
+    public void RequestSkill(
+        int skillIndex,
+        Vector3 targetPoint
+    )
+    {
+        if (!IsOwner)
+            return;
+
         Vector3 lockTargetPos = Vector3.zero;
 
-        if (lockOnTarget != null && lockOnTarget.isTargeting && lockOnTarget.CurrentTarget != null)
-            lockTargetPos = lockOnTarget.CurrentTarget.position;
+        if (
+            lockOnTarget != null &&
+            lockOnTarget.isTargeting &&
+            lockOnTarget.CurrentTarget != null
+        )
+        {
+            lockTargetPos =
+                lockOnTarget.CurrentTarget.position;
+        }
 
-        UseSkillServerRpc(skillIndex, targetPoint, lockTargetPos);
+        UseSkillServerRpc(
+            skillIndex,
+            targetPoint,
+            lockTargetPos
+        );
     }
 
     [ServerRpc]
-    private void UseSkillServerRpc(int skillIndex, Vector3 targetPoint, Vector3 lockTargetPos)
+    private void UseSkillServerRpc(
+        int skillIndex,
+        Vector3 targetPoint,
+        Vector3 lockTargetPos
+    )
     {
-        if (skillIndex < 0 || skillIndex >= skills.Length) return;
+        if (
+            skillIndex < 0 ||
+            skillIndex >= skills.Length
+        )
+        {
+            return;
+        }
 
         Skill skill = skills[skillIndex];
-        if (skill == null) return;
 
-        skill.ServerExecute(this, targetPoint, lockTargetPos);
+        if (skill == null)
+        {
+            Debug.LogWarning(
+                $"[PlayerController] Skill NULL in slot {skillIndex}"
+            );
+
+            return;
+        }
+
+        if (!IsSkillReady(skillIndex))
+        {
+            Debug.Log(
+                $"[PlayerController] Skill cooldown active."
+            );
+
+            return;
+        }
+
+        if (!HasResource(skill.resourceType, skill.cost))
+        {
+            Debug.Log(
+                $"[PlayerController] Not enough resource."
+            );
+
+            return;
+        }
+
+        ConsumeResource(
+            skill.resourceType,
+            skill.cost
+        );
+
+        TriggerCooldown(skillIndex);
+
+        skill.ServerExecute(
+            this,
+            targetPoint,
+            lockTargetPos
+        );
     }
 
-    //---SECTION RELATED TO SKILLS---
     public Skill GetSkill(int index)
     {
-        if (index < 0 || index >= skills.Length) return null;
+        if (
+            index < 0 ||
+            index >= skills.Length
+        )
+        {
+            return null;
+        }
+
         return skills[index];
     }
 
-    public bool HasResource(ResourceType type, float cost) => stats.HasResource(type, cost);
+    public bool IsSkillReady(int index)
+    {
+        if (
+            index < 0 ||
+            index >= skillsCooldown.Length
+        )
+        {
+            return false;
+        }
 
-    public void ConsumeResource(ResourceType type, float cost)
+        return skillsCooldown[index] <= 0f;
+    }
+
+    public void TriggerCooldown(int index)
+    {
+        if (
+            index < 0 ||
+            index >= skills.Length
+        )
+        {
+            return;
+        }
+
+        if (skills[index] == null)
+            return;
+
+        skillsCooldown[index] =
+            skills[index].cooldown;
+    }
+
+    // ─────────────────────────────────────────
+    // RESOURCES
+    // ─────────────────────────────────────────
+
+    public bool HasResource(
+        ResourceType type,
+        float cost
+    )
+    {
+        return stats.HasResource(type, cost);
+    }
+
+    public void ConsumeResource(
+        ResourceType type,
+        float cost
+    )
     {
         switch (type)
         {
-            case ResourceType.Stamina: stats.Stamina.Modify(-cost); break;
-            case ResourceType.Mana: stats.Mana.Modify(-cost); break;
-            case ResourceType.Health: stats.Health.Modify(-cost); break;
+            case ResourceType.Health:
+                stats.Health.Modify(-cost);
+                break;
+
+            case ResourceType.Mana:
+                stats.Mana.Modify(-cost);
+                break;
+
+            case ResourceType.Stamina:
+                stats.Stamina.Modify(-cost);
+                break;
         }
     }
 
-    public bool IsSkillReady(int index) => skillsCooldown[index] <= 0;
-    public void TriggerCooldown(int index) => skillsCooldown[index] = skills[index].cooldown;
-
-    //---TEMPORAL---
-    [ClientRpc]
-    public void ShowHitboxClientRpc(Vector3 center, Vector3 size, Quaternion rot)
+    public bool HasStamina(float cost)
     {
-        GameObject box = GameObject.Instantiate(hitboxPrefab, center, rot);
-        box.transform.localScale = size;
-        Destroy(box, 0.2f);
+        return stats.Stamina.CurrentValue >= cost;
     }
 
-    public GameObject ShowHitboxPersistent(Vector3 center, Vector3 size, Quaternion rot, GameObject debugBox)
+    public void ConsumeStamina(float cost)
     {
-        if (debugBox == null) debugBox = Instantiate(hitboxPrefab);
-        debugBox.transform.SetPositionAndRotation(center, rot);
-        debugBox.transform.localScale = size;
-        return debugBox;
+        stats.Stamina.Modify(-cost);
     }
 
-    public void SetGravityMultiplier(float value) => currentGravityMultiplier = value;
+    public bool HasMana(float cost)
+    {
+        return stats.Mana.CurrentValue >= cost;
+    }
+
+    public void ConsumeMana(float cost)
+    {
+        stats.Mana.Modify(-cost);
+    }
+
+    // ─────────────────────────────────────────
+    // HEALTH
+    // ─────────────────────────────────────────
+
+    public bool IsAlive => CurrentHealth > 0f;
+
+    public void Heal(float amount)
+    {
+        if (isDead)
+            return;
+
+        stats.Health.Modify(amount);
+    }
 
     private IEnumerator InitializeStartingHealthWhenReady()
     {
         if (startingHealthInitialized)
             yield break;
 
-        // Wait until PlayerStats is fully synchronized and has a valid max health.
-        // This prevents the first spawned player from being treated as dead because
-        // CurrentHealth / MaxHealth are still 0 during initialization.
-        while (stats == null || !stats.IsStatsReady || stats.Health.Max <= 0f)
+        while (
+            stats == null ||
+            !stats.IsStatsReady ||
+            stats.Health.Max <= 0f
+        )
         {
             yield return null;
         }
 
-        // Only bootstrap if there is no restored health yet.
         if (stats.Health.CurrentValue <= 0f)
         {
-            stats.Health.SetCurrentValue(stats.Health.Max);
-
-            Debug.Log(
-                $"[PlayerController] Starting health initialized to full " +
-                $"HP={stats.Health.CurrentValue}/{stats.Health.Max}"
+            stats.Health.SetCurrentValue(
+                stats.Health.Max
             );
         }
 
         startingHealthInitialized = true;
     }
 
-    // ── Daño y muerte ───────────────────────────────────────────────
-    /// <summary>
-    /// Aplicar daño al player. Si llega desde un cliente, se redirige al servidor
-    /// para que sea autoritativo. Si lo llama el servidor (enemigo NPC), se aplica directo.
-    /// </summary>
-    public void TakeDamage(float damage, ThrowType throwType, Vector3 hitDir, float stunDuration, bool keepOnAir, float airLift, float staggerBuild)
+    // ─────────────────────────────────────────
+    // DAMAGE
+    // ─────────────────────────────────────────
+
+    public void TakeDamage(
+        float damage,
+        ThrowType throwType,
+        Vector3 hitDir,
+        float stunDuration,
+        bool keepOnAir,
+        float airLift,
+        float staggerBuild
+    )
     {
-        if (isDead) return;
+        if (isDead)
+            return;
 
         if (IsServer)
         {
             stats.Health.Modify(-damage);
-            Debug.Log($"[Server] Player {OwnerClientId} recibió {damage} daño. Vida: {CurrentHealth}/{MaxHealth}");
         }
         else
         {
@@ -583,88 +965,91 @@ public class PlayerController : NetworkBehaviour, IDamageable
     [ServerRpc(RequireOwnership = false)]
     private void TakeDamageServerRpc(float damage)
     {
-        if (isDead) return;
+        if (isDead)
+            return;
+
         stats.Health.Modify(-damage);
-        Debug.Log($"[Server] Player {OwnerClientId} recibió {damage} daño (vía RPC). Vida: {CurrentHealth}/{MaxHealth}");
     }
 
-    /// <summary>Se llama UNA VEZ cuando la vida llega a 0.</summary>
+    // ─────────────────────────────────────────
+    // DEATH
+    // ─────────────────────────────────────────
+
     private void Die()
     {
         isDead = true;
-        Debug.Log($"[Player] {OwnerClientId} ha muerto");
 
-        if (rb != null) rb.linearVelocity = Vector3.zero;
-
-        // Respawn en el último checkpoint que ESTE jugador usó
-        // (puede ser distinto al de otros jugadores en la sala)
-        var data = GetComponent<PlayerCheckpointData>();
-        if (data == null)
+        if (rb != null)
         {
-            Debug.LogWarning("[PlayerController] No hay PlayerCheckpointData, no se puede respawnear.");
-            return;
-        }
-
-        string lastCheckpoint = data.LastUsedCheckpoint.Value.ToString();
-        if (string.IsNullOrEmpty(lastCheckpoint))
-        {
-            Debug.LogWarning("[PlayerController] No hay LastUsedCheckpoint, no se puede respawnear.");
-            // Aquí podrías spawnear en zona inicial: lo dejamos para luego
-            return;
+            rb.linearVelocity = Vector3.zero;
         }
 
         Respawn();
     }
 
-    /// <summary>
-    /// Resetea al jugador a su último checkpoint usado.
-    /// El movimiento es autoritativo del servidor.
-    /// </summary>
     public void Respawn()
     {
-        var data = GetComponent<PlayerCheckpointData>();
-        if (data == null) return;
+        var data =
+            GetComponent<PlayerCheckpointData>();
 
-        string lastCheckpoint = data.LastUsedCheckpoint.Value.ToString();
-        if (string.IsNullOrEmpty(lastCheckpoint))
-        {
-            Debug.LogWarning("[PlayerController] LastUsedCheckpoint vacío.");
+        if (data == null)
             return;
-        }
 
-        // El cliente pide al servidor que lo mueva
+        string lastCheckpoint =
+            data.LastUsedCheckpoint.Value.ToString();
+
+        if (string.IsNullOrEmpty(lastCheckpoint))
+            return;
+
         RequestTeleportToCheckpoint(lastCheckpoint);
     }
 
-    /// <summary>
-    /// Pide al servidor teletransportar al jugador a un checkpoint específico.
-    /// Si soy server, lo aplico directo.
-    /// </summary>
-    public void RequestTeleportToCheckpoint(string checkpointName)
+    public void RequestTeleportToCheckpoint(
+        string checkpointName
+    )
     {
-        if (IsServer) TeleportToCheckpoint_Server(checkpointName);
-        else TeleportToCheckpointServerRpc(checkpointName);
+        if (IsServer)
+        {
+            TeleportToCheckpoint_Server(checkpointName);
+        }
+        else
+        {
+            TeleportToCheckpointServerRpc(
+                checkpointName
+            );
+        }
     }
 
-    [ServerRpc(RequireOwnership = true)]
-    private void TeleportToCheckpointServerRpc(string checkpointName)
+    [ServerRpc]
+    private void TeleportToCheckpointServerRpc(
+        string checkpointName
+    )
     {
         TeleportToCheckpoint_Server(checkpointName);
     }
 
-    private void TeleportToCheckpoint_Server(string checkpointName)
+    private void TeleportToCheckpoint_Server(
+        string checkpointName
+    )
     {
-        if (CheckpointManager.Instance == null) return;
+        if (CheckpointManager.Instance == null)
+            return;
 
-        var cp = CheckpointManager.Instance.GetByName(checkpointName);
+        var cp =
+            CheckpointManager.Instance.GetByName(
+                checkpointName
+            );
 
-        if (cp == null || cp.spawnPoint == null)
+        if (
+            cp == null ||
+            cp.spawnPoint == null
+        )
         {
-            Debug.LogWarning($"[PlayerController] Checkpoint '{checkpointName}' no encontrado.");
             return;
         }
 
-        Vector3 targetPos = cp.spawnPoint.position;
+        Vector3 targetPos =
+            cp.spawnPoint.position;
 
         ApplyTeleport(targetPos);
 
@@ -681,20 +1066,34 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
     private void ApplyTeleport(Vector3 pos)
     {
+        CharacterController cc =
+            GetComponent<CharacterController>();
+
+        NetworkTransform nt =
+            GetComponent<NetworkTransform>();
+
+        if (cc != null)
+            cc.enabled = false;
+
+        if (nt != null)
+            nt.enabled = false;
+
         if (rb != null)
         {
             rb.linearVelocity = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
-
             rb.position = pos;
+        }
 
-            rb.Sleep();
-            rb.WakeUp();
-        }
-        else
-        {
-            transform.position = pos;
-        }
+        transform.position = pos;
+
+        Physics.SyncTransforms();
+
+        if (nt != null)
+            nt.enabled = true;
+
+        if (cc != null)
+            cc.enabled = true;
     }
 
     [ClientRpc]
@@ -706,8 +1105,58 @@ public class PlayerController : NetworkBehaviour, IDamageable
     [ClientRpc]
     private void TeleportFinishedClientRpc()
     {
-        if (!IsOwner) return;
-        // Limpiar flags locales relevantes
         isDead = false;
     }
+
+    // ─────────────────────────────────────────
+    // DEBUG
+    // ─────────────────────────────────────────
+
+    [ClientRpc]
+    public void ShowHitboxClientRpc(
+        Vector3 center,
+        Vector3 size,
+        Quaternion rot
+    )
+    {
+        if (hitboxPrefab == null)
+            return;
+
+        GameObject box =
+            Instantiate(
+                hitboxPrefab,
+                center,
+                rot
+            );
+
+        box.transform.localScale = size;
+
+        Destroy(box, 0.2f);
+    }
+
+    public GameObject ShowHitboxPersistent(
+        Vector3 center,
+        Vector3 size,
+        Quaternion rot,
+        GameObject debugBox
+    )
+    {
+        if (hitboxPrefab == null)
+            return null;
+
+        if (debugBox == null)
+        {
+            debugBox = Instantiate(hitboxPrefab);
+        }
+
+        debugBox.transform.SetPositionAndRotation(
+            center,
+            rot
+        );
+
+        debugBox.transform.localScale = size;
+
+        return debugBox;
+    }
 }
+

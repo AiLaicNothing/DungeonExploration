@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8a66044fd17bb946af849eb9d8c6cf7, type: 3}
   m_Name: SuperNova
   m_EditorClassIdentifier: Assembly-CSharp::SuperNova
+  skillId: 7
   skillName: SuperNova
+  ownerCharacter: 0
   resourceType: 2
   cost: 10
   castTime: 0.3
