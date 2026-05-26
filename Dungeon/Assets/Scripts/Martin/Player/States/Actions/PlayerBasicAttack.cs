@@ -86,42 +86,14 @@ public class PlayerBasicAttack : PlayerStates
         hasHit = false;
 
         player.isPerformingAction = true;
-
         player.blockVelocity = true;
+
+        player.PlayAttackVfxLocal(comboIndex, true);
+        player.RequestAttackVfx(comboIndex, true);
 
         //--> Play animation
         Debug.Log($"Player attacked with {attackSteps.name}");
 
-    }
-
-    private void DoHit(AttackSteps attack)
-    {
-        Vector3 center = player.PlayerModel.transform.position + player.PlayerModel.transform.forward * attack.hitBoxOffSet.z + Vector3.up * attack.hitBoxOffSet.y;
-
-        Collider[] hits = Physics.OverlapBox(center, attack.hitBoxSize * 0.5f, player.PlayerModel.transform.rotation);
-
-        //player.ShowHitbox(center, attack.hitBoxSize, player.PlayerModel.transform.rotation);
-
-        foreach (var hit in hits)
-        {
-            if (hit.CompareTag("Enemy"))
-            {
-                Debug.Log($"Hit Enemy: {hit.name}");
-
-                //Add damage logic
-
-                IDamageable damageable = hit.GetComponent<IDamageable>();
-
-                if (damageable != null)
-                {
-                    Vector3 hitDir = player.PlayerModel.transform.forward;
-
-                    damageable.TakeDamage(10f * attack.hitData.damageMultiplier, attack.hitData.throwType, hitDir, attack.hitData.stunDuration, attack.hitData.keepInAir, attack.hitData.airLiftForce, attack.hitData.staggerCharge);
-                }
-
-                Debug.Log($"HIT {hit.name}");
-            }
-        }
     }
 
     private bool CheckMeleeInput(AttackInputType type)

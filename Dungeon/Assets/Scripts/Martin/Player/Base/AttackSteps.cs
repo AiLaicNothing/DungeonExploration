@@ -3,6 +3,13 @@ using UnityEngine;
 [System.Serializable]
 public class AttackSteps 
 {
+    [Header("VFX")]
+    public GameObject attackVfx;
+    public float vfxSpawnTime;
+    public float vfxDuration;
+    public Vector3 vfxOffset = Vector3.zero;
+    public Vector3 vfxRotOffset = Vector3.zero;
+
     [Header("Animation")]
     public string name;
     public float duration;

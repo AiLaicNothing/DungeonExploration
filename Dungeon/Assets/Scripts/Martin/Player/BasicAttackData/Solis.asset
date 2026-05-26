@@ -13,7 +13,12 @@ MonoBehaviour:
   m_Name: Solis
   m_EditorClassIdentifier: Assembly-CSharp::BasicComboData
   attackSteps:
-  - name: Attack_1
+  - attackVfx: {fileID: 5313456068782518071, guid: 50f1354827c77ef4b99c4dca0ee3411d, type: 3}
+    vfxSpawnTime: 0
+    vfxDuration: 1
+    vfxOffset: {x: 0, y: 0, z: 3}
+    vfxRotOffset: {x: 0, y: 60, z: 0}
+    name: Attack_1
     duration: 0.6
     comboWindowStart: 0.3
     comboWindowEnd: 0.8
@@ -21,12 +26,20 @@ MonoBehaviour:
     hitBoxSize: {x: 2, y: 2.5, z: 2}
     hitBoxOffSet: {x: 0, y: 0, z: 1}
     hitData:
+      physicalScale: 1
+      magicalScale: 1
       damageMultiplier: 1
+      staggerCharge: 10
       throwType: 0
       stunDuration: 0
       keepInAir: 0
       airLiftForce: 0
-  - name: Attack_2
+  - attackVfx: {fileID: 5313456068782518071, guid: 50f1354827c77ef4b99c4dca0ee3411d, type: 3}
+    vfxSpawnTime: 0
+    vfxDuration: 1
+    vfxOffset: {x: 0, y: 0, z: 3}
+    vfxRotOffset: {x: 0, y: 90, z: 0}
+    name: Attack_2
     duration: 0.8
     comboWindowStart: 0.4
     comboWindowEnd: 0.9
@@ -34,12 +47,20 @@ MonoBehaviour:
     hitBoxSize: {x: 2.5, y: 2.5, z: 2}
     hitBoxOffSet: {x: 0, y: 0, z: 1}
     hitData:
+      physicalScale: 1
+      magicalScale: 1
       damageMultiplier: 1
+      staggerCharge: 10
       throwType: 0
       stunDuration: 0.1
       keepInAir: 0
       airLiftForce: 0
-  - name: Attack_3
+  - attackVfx: {fileID: 5313456068782518071, guid: 50f1354827c77ef4b99c4dca0ee3411d, type: 3}
+    vfxSpawnTime: 0
+    vfxDuration: 1
+    vfxOffset: {x: 0, y: 0, z: 4}
+    vfxRotOffset: {x: 60, y: 0, z: -90}
+    name: Attack_3
     duration: 0.7
     comboWindowStart: 0.4
     comboWindowEnd: 0.7
@@ -47,7 +68,10 @@ MonoBehaviour:
     hitBoxSize: {x: 3, y: 3, z: 2.5}
     hitBoxOffSet: {x: 0, y: 0, z: 1.5}
     hitData:
+      physicalScale: 1
+      magicalScale: 1
       damageMultiplier: 1
+      staggerCharge: 10
       throwType: 2
       stunDuration: 0.3
       keepInAir: 0

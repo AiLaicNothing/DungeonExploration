@@ -18,6 +18,11 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
     NetworkVariable<float> currentStaggerBuild = new NetworkVariable<float>();
     protected bool isInStaggerCooldown;
 
+    [Header("Vfx")]
+    [SerializeField] private GameObject vfxHit;
+    [SerializeField] private Vector3 hitVfxOffset = new Vector3(0f, 1.2f, 0f);
+    [SerializeField] private float hitVfxDuration = 1.5f;
+
     [Header("Components")]
     protected Rigidbody rb;
     protected Animator anim;
@@ -85,6 +90,8 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
     {
         if (!IsServer) return;
 
+        PlayHitVfxClientRpc();
+
         currentHp.Value -= isStaggered ? damage * 1.5f : damage;
 
         if (currentHp.Value <= 0) OnDie();
@@ -103,6 +110,21 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
         staggerBar.UpdateStaggerhBar(currentStaggerBuild.Value, stats.staggerTreshold);
 
         enemyBarHolder.Show();
+    }
+
+    [ClientRpc]
+    private void PlayHitVfxClientRpc()
+    {
+        if (vfxHit == null) return;
+
+        Vector3 spawnPos = transform.position + hitVfxOffset;
+
+        GameObject vfx = Instantiate(vfxHit, spawnPos, transform.rotation);
+
+        if (hitVfxDuration > 0f)
+        {
+            Destroy(vfx, hitVfxDuration);
+        }
     }
 
     protected void OnDie()

@@ -54,6 +54,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
     [SerializeField] private GameObject thirdCam;
     [SerializeField] private PlatformRider platformRider;
     [SerializeField] private PlayerStats stats; // ← stats locales por jugador (NetworkBehaviour)
+    public bool showHitBox;
     public GameObject hitboxPrefab;
 
     private bool startingHealthInitialized = false;
@@ -395,8 +396,62 @@ public class PlayerController : NetworkBehaviour, IDamageable
             }
         }
 
-        ShowHitboxClientRpc(center, attack.hitBoxSize, PlayerModel.rotation);
+        if (showHitBox)
+        {
+            ShowHitboxClientRpc(center, attack.hitBoxSize, PlayerModel.rotation);
+        }
     }
+
+    // ── VFX ATTACKS REQUEST ──────────────────────────────────────────────────────
+
+    public void RequestAttackVfx(int comboIndex, bool isGrounded)
+    {
+        RequestAttackVfxServerRpc(comboIndex, isGrounded);
+    }
+
+    [ServerRpc]
+    private void RequestAttackVfxServerRpc(int comboIndex, bool isGrounded)
+    {
+        PlayAttackVfxClientRpc(comboIndex, isGrounded);
+    }
+
+    [ClientRpc]
+    public void PlayAttackVfxClientRpc(int comboIndex, bool isGrounded)
+    {
+
+        if (IsOwner) return;
+
+        SpawnAttackVfx(comboIndex, isGrounded);
+    }
+
+    public void PlayAttackVfxLocal(int comboIndex, bool isGrounded)
+    {
+        SpawnAttackVfx(comboIndex, isGrounded);
+    }
+
+    private void SpawnAttackVfx(int comboIndex, bool isGrounded)
+    {
+        AttackSteps attack = isGrounded ? ComboData.attackSteps[comboIndex] : AirComboData.attackSteps[comboIndex];
+
+        if (attack == null || attack.attackVfx == null) return;
+
+        StartCoroutine(SpawnAttackVfxRoutine(attack));
+    }
+
+    private IEnumerator SpawnAttackVfxRoutine(AttackSteps attack)
+    {
+        if (attack.vfxSpawnTime > 0f) yield return new WaitForSeconds(attack.vfxSpawnTime);
+
+        Transform root = PlayerModel != null ? PlayerModel : transform;
+
+        Vector3 spawnPos = root.TransformPoint(attack.vfxOffset);
+        Quaternion spawnRot = root.rotation * Quaternion.Euler(attack.vfxRotOffset);
+
+        GameObject vfx = Instantiate(attack.attackVfx, spawnPos, spawnRot);
+
+        if (attack.vfxDuration > 0f) Destroy(vfx, attack.vfxDuration);
+    }
+
 
     // ── Shoot Request ──────────────────────────────────────────────────────
     public void RequestShoot(Vector3 shootPos, Vector3 dir)
