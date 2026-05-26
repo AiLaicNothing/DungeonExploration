@@ -15,5 +15,5 @@ MonoBehaviour:
   characterId: 001
   characterName: Solis
   description: Soy solis me llamo solis, soy solis
-  portrait: {fileID: 0}
+  portrait: {fileID: 21300000, guid: 88fb00735b5bd4642b68a66e02ee9268, type: 3}
   playerPrefab: {fileID: 8846076826872646024, guid: 81c3191967367a14e9bbc159d8469b7d, type: 3}

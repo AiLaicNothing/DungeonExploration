@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e80327ac66eec24488c0a8ca659a762a, type: 3}
   m_Name: Goblin
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
-  maxHp: 999
-  damage: 10
+  maxHp: 220
+  damage: 8
   moveSpeed: 10
   hasStagger: 1
   staggerTreshold: 50
-  staggerDuration: 4
+  staggerDuration: 1.5
   timeResetStagger: 5
   canStaggerMultiplesTimes: 1
   pushForce: 5

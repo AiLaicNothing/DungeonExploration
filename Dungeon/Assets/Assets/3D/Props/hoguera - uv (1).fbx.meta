@@ -1,12 +1,5 @@
 fileFormatVersion: 2
-guid: 0f6dbbacfdd641b43ac1e4ef6fa19ead
-AssetOrigin:
-  serializedVersion: 1
-  productId: 316250
-  packageName: Environment Pack - Rocks Stylized
-  packageVersion: 0.0.1
-  assetPath: Assets/PolyOne/Rocks Stylized/Model/SM_Rocks_10.fbx
-  uploadId: 746400
+guid: 492c866cdc20ee64ab9b7394e73c8274
 ModelImporter:
   serializedVersion: 24200
   internalIDToNameTable: []
