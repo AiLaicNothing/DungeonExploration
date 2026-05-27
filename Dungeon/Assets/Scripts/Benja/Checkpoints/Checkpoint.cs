@@ -1,3 +1,4 @@
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -91,8 +92,10 @@ private void RequestActivateServerRpc(ServerRpcParams rpcParams = default)
         if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(activatorClientId, out var client))
             return;
 
-        var playerObj = client.PlayerObject;
-        if (playerObj == null) return;
+        var session = client.PlayerObject.GetComponent<PlayerSessionData>(); 
+        ulong avatarId = session.CurrentCharacterNetId.Value;
+
+        var playerObj = NetworkManager.Singleton.SpawnManager.SpawnedObjects[avatarId]; if (playerObj == null) return;
 
         var checkpointData = playerObj.GetComponent<PlayerCheckpointData>();
         if (checkpointData == null) return;
@@ -184,11 +187,22 @@ private void RequestActivateServerRpc(ServerRpcParams rpcParams = default)
     {
         foreach (var clientPair in NetworkManager.Singleton.ConnectedClients)
         {
-            var po = clientPair.Value.PlayerObject;
-            if (po == null) continue;
+            var session = FindObjectsByType<PlayerSessionData>(FindObjectsSortMode.None)
+                .FirstOrDefault(s => s.OwnerClientId == clientPair.Key);
 
-            var stats = po.GetComponent<PlayerStats>();
-            if (stats != null) stats.AddUpgradePoints(amount);
+            if (session == null) continue;
+
+            ulong avatarId = session.CurrentCharacterNetId.Value;
+
+            if (avatarId == 0) continue;
+
+            if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(avatarId, out var avatar))
+                continue;
+
+            var stats = avatar.GetComponent<PlayerStats>();
+
+            if (stats != null)
+                stats.AddUpgradePoints(amount);
         }
     }
 
