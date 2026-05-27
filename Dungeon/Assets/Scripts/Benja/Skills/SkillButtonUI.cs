@@ -5,23 +5,44 @@ using UnityEngine.UI;
 public class SkillButtonUI : MonoBehaviour
 {
     [Header("UI")]
-    [SerializeField] private TMP_Text skillNameText;
-    [SerializeField] private Image icon;
+    [SerializeField] private Button button;
+    [SerializeField] private Image skillIcon;
+
+    [Header("Selection")]
+    [SerializeField] private Image selectionFrame;
+    [SerializeField] private Color selectedColor = Color.yellow;
+    [SerializeField] private Color normalColor = Color.white;
+
+    [Header("States")]
+    [SerializeField] private GameObject equippedMark;
 
     private Skill skill;
     private CheckpointSkillUI ownerUI;
 
-    public void Setup(Skill targetSkill, CheckpointSkillUI ui)
+    public void Setup(Skill targetSkill, CheckpointSkillUI ui, bool isEquipped = false)
     {
         skill = targetSkill;
         ownerUI = ui;
 
-        if (skillNameText != null)
-            skillNameText.text = skill.skillName;
+        if (skillIcon != null)
+            skillIcon.sprite = skill.skillSprite;
+
+        if (equippedMark != null)
+            equippedMark.SetActive(isEquipped);
+
+        if (button != null)
+        {
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(OnClick);
+        }
+
+        SetSelected(false);
     }
 
     public void OnClick()
     {
+        Debug.Log("CLICKED SKILL");
+
         if (skill == null || ownerUI == null)
             return;
 
@@ -35,7 +56,16 @@ public class SkillButtonUI : MonoBehaviour
 
     public void SetSelected(bool value)
     {
-        if (icon != null)
-            icon.color = value ? Color.yellow : Color.white;
+        if (selectionFrame != null)
+        {
+            selectionFrame.color =
+                value ? selectedColor : normalColor;
+        }
+    }
+
+    public void SetEquipped(bool value)
+    {
+        if (equippedMark != null)
+            equippedMark.SetActive(value);
     }
 }

@@ -10,6 +10,7 @@ public abstract class Skill : ScriptableObject
 {
     [Header("Info")]
     public string skillId;
+    public Sprite skillSprite;
 
     public string skillName;
 

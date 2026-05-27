@@ -6,17 +6,17 @@ public class SkillPickup : MonoBehaviour, IInteractable
 
     public void Interact()
     {
-        if (LocalPlayer.Controller == null)
-            return;
+        if (skill == null) return;
 
-        var inventory =
-            LocalPlayer.Controller.GetComponent<PlayerSkillInventory>();
+        if (LocalPlayer.Controller == null) return;
 
-        if (inventory == null)
-            return;
+        var inventory = LocalPlayer.Controller.GetComponent<PlayerSkillInventory>();
 
-        int currentCharacter =
-            PlayerSessionData.local.SelectedCharacter.Value;
+        if (inventory == null) return;
+
+        if (PlayerSessionData.local == null) return;
+
+        int currentCharacter = PlayerSessionData.local.SelectedCharacter.Value;
 
         if ((int)skill.ownerCharacter != currentCharacter)
         {
@@ -24,8 +24,9 @@ public class SkillPickup : MonoBehaviour, IInteractable
             return;
         }
 
-        inventory.UnlockSkill(skill);
-
-        Destroy(gameObject);
+        if (inventory.UnlockSkill(skill))
+        {
+            Destroy(gameObject);
+        }
     }
 }
