@@ -28,7 +28,6 @@ public class CheckpointSkillUI : MonoBehaviour
     [SerializeField] private Button unequipButton;
 
     private PlayerSkillInventory inventory;
-    
     private Skill selectedSkill;
     private int selectedSlotIndex = -1;
 
@@ -61,12 +60,13 @@ public class CheckpointSkillUI : MonoBehaviour
         if (unequipButton != null)
             unequipButton.onClick.RemoveListener(UnequipSelectedSlot);
 
+        // NEW: unsubscribe from inventory updates
         if (inventory != null)
             inventory.OnSkillsChanged -= Refresh;
     }
 
     // =========================================================
-    //                        SETUP
+    // SETUP
     // =========================================================
 
     private void SetupSlotButtons()
@@ -83,17 +83,20 @@ public class CheckpointSkillUI : MonoBehaviour
     }
 
     // =========================================================
-    //                      OPEN / CLOSE
+    // OPEN / CLOSE
     // =========================================================
 
     public void Open()
     {
-        if (LocalPlayer.Controller == null) return;
+        if (LocalPlayer.Controller == null)
+            return;
 
         inventory = LocalPlayer.Controller.GetComponent<PlayerSkillInventory>();
 
-        if (inventory == null) return;
+        if (inventory == null)
+            return;
 
+        // NEW: subscribe to network-synced inventory changes
         inventory.OnSkillsChanged -= Refresh;
         inventory.OnSkillsChanged += Refresh;
 
@@ -110,13 +113,14 @@ public class CheckpointSkillUI : MonoBehaviour
         selectedSkill = null;
         selectedSlotIndex = -1;
 
-        if (inventory != null) inventory.OnSkillsChanged -= Refresh;
+        if (inventory != null)
+            inventory.OnSkillsChanged -= Refresh;
 
         panelRoot.SetActive(false);
     }
 
     // =========================================================
-    //                        REFRESH
+    // REFRESH
     // =========================================================
 
     private void Refresh()
@@ -149,7 +153,9 @@ public class CheckpointSkillUI : MonoBehaviour
                 }
             }
 
-            if (slotSelectedMarker != null && i < slotSelectedMarker.Length && slotSelectedMarker[i] != null)
+            if (slotSelectedMarker != null &&
+                i < slotSelectedMarker.Length &&
+                slotSelectedMarker[i] != null)
             {
                 slotSelectedMarker[i].SetActive(i == selectedSlotIndex);
             }
@@ -161,26 +167,33 @@ public class CheckpointSkillUI : MonoBehaviour
         if (availableSkillsParent == null || skillButtonPrefab == null)
             return;
 
-        foreach (Transform child in availableSkillsParent) Destroy(child.gameObject);
+        foreach (Transform child in availableSkillsParent)
+            Destroy(child.gameObject);
 
         buttons.Clear();
 
-        int selectedCharacter = PlayerSessionData.local != null? PlayerSessionData.local.SelectedCharacter.Value : -1;
+        int selectedCharacter =
+            PlayerSessionData.local != null
+                ? PlayerSessionData.local.SelectedCharacter.Value
+                : -1;
 
-        var availableSkills = inventory.GetAvailableSkillsForCurrentCharacter(selectedCharacter);
+        var availableSkills =
+            inventory.GetAvailableSkillsForCurrentCharacter(selectedCharacter);
 
         foreach (Skill skill in availableSkills)
         {
             GameObject obj = Instantiate(skillButtonPrefab, availableSkillsParent);
+
+            // NEW: keep prefab scale clean for GridLayoutGroup
+            obj.transform.localScale = Vector3.one;
 
             SkillButtonUI buttonUI = obj.GetComponent<SkillButtonUI>();
             if (buttonUI != null)
             {
                 buttonUI.Setup(skill, this);
                 buttonUI.SetSelected(selectedSkill == skill);
+                buttons.Add(buttonUI);
             }
-
-            buttons.Add(buttonUI);
         }
     }
 
@@ -189,10 +202,9 @@ public class CheckpointSkillUI : MonoBehaviour
         if (inventory == null)
             return;
 
-        //==============================
+        // ==============================
         // SELECTED SKILL
-        //==============================
-
+        // ==============================
         if (selectedSkill != null)
         {
             if (nameText != null)
@@ -209,14 +221,12 @@ public class CheckpointSkillUI : MonoBehaviour
             return;
         }
 
-        //==============================
+        // ==============================
         // SELECTED SLOT
-        //==============================
-
+        // ==============================
         if (selectedSlotIndex >= 0)
         {
-            Skill slotSkill =
-                inventory.GetEquippedSkill(selectedSlotIndex);
+            Skill slotSkill = inventory.GetEquippedSkill(selectedSlotIndex);
 
             if (slotSkill != null)
             {
@@ -247,31 +257,28 @@ public class CheckpointSkillUI : MonoBehaviour
             return;
         }
 
-        //==============================
+        // ==============================
         // NOTHING SELECTED
-        //==============================
-
+        // ==============================
         if (nameText != null)
             nameText.text = "Skills";
 
         if (infoText != null)
-        {
-            infoText.text =
-                "Select a skill or slot.";
-        }
+            infoText.text = "Select a skill or slot.";
     }
 
     // =========================================================
-    //                   SELECTION LOGIC
+    // SELECTION LOGIC
     // =========================================================
 
     public void SelectSkill(Skill skill)
     {
-        if (skill == null || inventory == null) return;
+        if (skill == null || inventory == null)
+            return;
 
         selectedSkill = skill;
 
-        // If a slot is already selected, commit immediately.
+        // If a slot is already selected, commit immediately
         if (selectedSlotIndex >= 0)
         {
             TryCommitSelection();
@@ -284,18 +291,20 @@ public class CheckpointSkillUI : MonoBehaviour
 
     public void SelectSlot(int slotIndex)
     {
-        if (inventory == null) return;
+        if (inventory == null)
+            return;
 
-        if (slotIndex < 0 || slotIndex >= 4) return;
+        if (slotIndex < 0 || slotIndex >= 4)
+            return;
 
-        // If a skill is already selected, commit it to this slot.
+        // If a skill is already selected, equip it to this slot
         if (selectedSkill != null)
         {
             TryCommitSelection(slotIndex);
             return;
         }
 
-        // If the same slot is clicked twice, deselect it.
+        // If clicking the same slot twice, deselect it
         if (selectedSlotIndex == slotIndex)
         {
             ClearSelection();
@@ -303,16 +312,18 @@ public class CheckpointSkillUI : MonoBehaviour
             return;
         }
 
-        // If another slot was already selected, swap both.
+        // If another slot was already selected, swap both
         if (selectedSlotIndex >= 0)
         {
-            inventory.SwapSlots(selectedSlotIndex, slotIndex);
+            // NEW: request swap through the networked inventory
+            inventory.RequestSwapSlots(selectedSlotIndex, slotIndex);
+
             ClearSelection();
             Refresh();
             return;
         }
 
-        // Otherwise just select the slot.
+        // Otherwise just select the slot
         selectedSlotIndex = slotIndex;
         RefreshInfo();
         RefreshSlots();
@@ -320,20 +331,14 @@ public class CheckpointSkillUI : MonoBehaviour
 
     private void TryCommitSelection()
     {
-        if (selectedSkill == null || selectedSlotIndex < 0)  return;
+        if (selectedSkill == null || selectedSlotIndex < 0)
+            return;
 
-        bool success =
-            inventory.TryEquipSkillToSlot(selectedSkill, selectedSlotIndex);
+        // NEW: request equip through the networked inventory
+        inventory.RequestEquipSkillToSlot(selectedSkill, selectedSlotIndex);
 
-        if (success)
-        {
-            ClearSelection();
-            Refresh();
-        }
-        else
-        {
-            infoText.text = "Cannot equip skill there.";
-        }
+        ClearSelection();
+        Refresh();
     }
 
     private void TryCommitSelection(int slotIndex)
@@ -349,16 +354,19 @@ public class CheckpointSkillUI : MonoBehaviour
     }
 
     // =========================================================
-    //                       UNEQUIP
+    // UNEQUIP
     // =========================================================
 
     public void UnequipSelectedSlot()
     {
-        if (inventory == null) return;
+        if (inventory == null)
+            return;
 
-        if (selectedSlotIndex < 0) return;
+        if (selectedSlotIndex < 0)
+            return;
 
-        inventory.UnequipSkill(selectedSlotIndex);
+        // NEW: request unequip through the networked inventory
+        inventory.RequestUnequipSlot(selectedSlotIndex);
 
         ClearSelection();
         Refresh();

@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -15,50 +17,107 @@ public class PlayerSkillInventory : NetworkBehaviour
     [Header("Config")]
     [SerializeField] private int maxSkillSlots = 4;
 
-    public System.Action OnSkillsChanged;
+    public event Action OnSkillsChanged;
 
-    private readonly HashSet<string> unlockedSkills = new();
-
-    public IReadOnlyCollection<string> UnlockedSkills => unlockedSkills;
-
-    private string[] equippedSkillIds;
+    // SERVER-AUTHORITATIVE NETWORK STATE
+    private NetworkList<FixedString64Bytes> unlockedSkillIds;
+    private NetworkList<FixedString64Bytes> equippedSkillIds;
 
     private void Awake()
     {
-        equippedSkillIds = new string[maxSkillSlots];
+        unlockedSkillIds = new NetworkList<FixedString64Bytes>();
+        equippedSkillIds = new NetworkList<FixedString64Bytes>();
     }
+
+
+    public override void OnNetworkSpawn()
+    {
+        base.OnNetworkSpawn();
+
+        unlockedSkillIds.OnListChanged += HandleNetworkListChanged;
+        equippedSkillIds.OnListChanged += HandleNetworkListChanged;
+
+        if (IsServer)
+        {
+            EnsureEquippedSlotsInitialized();
+        }
+
+        OnSkillsChanged?.Invoke();
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        base.OnNetworkDespawn();
+
+        unlockedSkillIds.OnListChanged -= HandleNetworkListChanged;
+        equippedSkillIds.OnListChanged -= HandleNetworkListChanged;
+    }
+
+    private void HandleNetworkListChanged(NetworkListEvent<FixedString64Bytes> _)
+    {
+        OnSkillsChanged?.Invoke();
+    }
+
+    private void EnsureEquippedSlotsInitialized()
+    {
+        while (equippedSkillIds.Count < maxSkillSlots)
+        {
+            equippedSkillIds.Add(default);
+        }
+    }
+
+    // =========================================================
+    // HELPERS
+    // =========================================================
 
     public Skill GetSkillById(string id)
     {
-        if (string.IsNullOrEmpty(id)) return null;
+        if (string.IsNullOrEmpty(id))
+            return null;
 
         return allSkills.Find(s => s != null && s.skillId == id);
     }
 
     public bool HasSkillUnlocked(Skill skill)
     {
-        return skill != null && unlockedSkills.Contains(skill.skillId);
+        return skill != null && HasSkillUnlocked(skill.skillId);
     }
 
     public bool HasSkillUnlocked(string skillId)
     {
-        return !string.IsNullOrEmpty(skillId) && unlockedSkills.Contains(skillId);
+        if (string.IsNullOrEmpty(skillId))
+            return false;
+
+        return unlockedSkillIds.Contains(new FixedString64Bytes(skillId));
+    }
+
+    public bool IsEquipped(Skill skill)
+    {
+        if (skill == null)
+            return false;
+
+        return GetEquippedSlotIndex(skill) != -1;
     }
 
     public int GetEquippedSlotIndex(Skill skill)
     {
-        if (skill == null) return -1;
+        if (skill == null)
+            return -1;
 
         return GetEquippedSlotIndex(skill.skillId);
     }
 
     public int GetEquippedSlotIndex(string skillId)
     {
-        if (string.IsNullOrEmpty(skillId)) return -1;
+        if (string.IsNullOrEmpty(skillId))
+            return -1;
 
-        for (int i = 0; i < maxSkillSlots; i++)
+        var id = new FixedString64Bytes(skillId);
+
+        for (int i = 0; i < equippedSkillIds.Count; i++)
         {
-            if (equippedSkillIds[i] == skillId)  return i;
+            if (equippedSkillIds[i] == id)
+                return i;
         }
 
         return -1;
@@ -66,93 +125,153 @@ public class PlayerSkillInventory : NetworkBehaviour
 
     public int GetEmptySlotIndex()
     {
-        for (int i = 0; i < maxSkillSlots; i++)
+        for (int i = 0; i < equippedSkillIds.Count; i++)
         {
-            if (string.IsNullOrEmpty(equippedSkillIds[i])) return i;
+            if (equippedSkillIds[i].Length == 0)
+                return i;
         }
 
         return -1;
     }
 
-    public bool IsEquipped(Skill skill)
+    // =========================================================
+    // REQUESTS (CLIENT -> SERVER)
+    // =========================================================
+
+    public void RequestUnlockSkill(Skill skill)
     {
-        if (skill == null) return false;
+        if (skill == null || string.IsNullOrEmpty(skill.skillId))
+            return;
 
-        return GetEquippedSlotIndex(skill) != -1;
-    }
-
-    // =========================================================
-    // UNLOCK
-    // =========================================================
-
-    public bool UnlockSkill(Skill skill)
-    {
-        if (skill == null || string.IsNullOrEmpty(skill.skillId)) return false;
-
-        if (unlockedSkills.Contains(skill.skillId)) return false;
-
-        unlockedSkills.Add(skill.skillId);
-
-        Debug.Log($"[SkillInventory] Unlocked: {skill.skillName}");
-
-        OnSkillsChanged?.Invoke();
-        return true;
-    }
-
-    // =========================================================
-    // EQUIP / UNEQUIP / SWAP
-    // =========================================================
-
-    public bool EquipSkill(Skill skill, int slotIndex)
-    {
-        if (skill == null) return false;
-
-        if (!HasSkillUnlocked(skill)) return false;
-
-        if (slotIndex < 0 || slotIndex >= maxSkillSlots) return false;
-
-        // Remove this skill from any other slot first to avoid duplicates
-        int existingSlot = GetEquippedSlotIndex(skill);
-        if (existingSlot >= 0 && existingSlot != slotIndex)
+        if (IsServer)
         {
-            equippedSkillIds[existingSlot] = null;
+            UnlockSkillServer(skill.skillId);
+            return;
         }
 
-        equippedSkillIds[slotIndex] = skill.skillId;
+        RequestUnlockSkillServerRpc(skill.skillId);
+    }
 
-        OnSkillsChanged?.Invoke();
-        return true;
+    public void RequestEquipSkillToSlot(Skill skill, int slotIndex)
+    {
+        if (skill == null || string.IsNullOrEmpty(skill.skillId))
+            return;
+
+        if (IsServer)
+        {
+            EquipSkillToSlotServer(skill.skillId, slotIndex);
+            return;
+        }
+
+        RequestEquipSkillToSlotServerRpc(skill.skillId, slotIndex);
+    }
+
+    public void RequestSwapSlots(int slotA, int slotB)
+    {
+        if (IsServer)
+        {
+            SwapSlotsServer(slotA, slotB);
+            return;
+        }
+
+        RequestSwapSlotsServerRpc(slotA, slotB);
+    }
+
+    public void RequestUnequipSlot(int slotIndex)
+    {
+        if (IsServer)
+        {
+            UnequipSlotServer(slotIndex);
+            return;
+        }
+
+        RequestUnequipSlotServerRpc(slotIndex);
+    }
+
+    [ServerRpc]
+    private void RequestUnlockSkillServerRpc(string skillId)
+    {
+        UnlockSkillServer(skillId);
+    }
+
+    [ServerRpc]
+    private void RequestEquipSkillToSlotServerRpc(string skillId, int slotIndex)
+    {
+        EquipSkillToSlotServer(skillId, slotIndex);
+    }
+
+    [ServerRpc]
+    private void RequestSwapSlotsServerRpc(int slotA, int slotB)
+    {
+        SwapSlotsServer(slotA, slotB);
+    }
+
+    [ServerRpc]
+    private void RequestUnequipSlotServerRpc(int slotIndex)
+    {
+        UnequipSlotServer(slotIndex);
     }
 
     // =========================================================
-    // METHOD USED BY UI
+    // SERVER LOGIC
     // =========================================================
-    public bool TryEquipSkillToSlot(Skill skill, int slotIndex)
+
+    private void UnlockSkillServer(string skillId)
     {
-        if (skill == null) return false;
+        if (!IsServer)
+            return;
 
-        if (!HasSkillUnlocked(skill)) return false;
+        if (string.IsNullOrEmpty(skillId))
+            return;
 
-        if (slotIndex < 0 || slotIndex >= maxSkillSlots) return false;
+        var id = new FixedString64Bytes(skillId);
 
-        int sourceSlot = GetEquippedSlotIndex(skill);
-        Skill targetSkill = GetEquippedSkill(slotIndex);
+        if (unlockedSkillIds.Contains(id))
+            return;
 
-        // Same slot, nothing to do
-        if (sourceSlot == slotIndex) return true;
+        unlockedSkillIds.Add(id);
+
+        OnSkillsChanged?.Invoke();
+        Debug.Log($"[SkillInventory] Unlocked: {skillId}");
+    }
+
+    private bool EquipSkillToSlotServer(string skillId, int slotIndex)
+    {
+        if (!IsServer)
+            return false;
+
+        if (string.IsNullOrEmpty(skillId))
+            return false;
+
+        if (slotIndex < 0 || slotIndex >= maxSkillSlots)
+            return false;
+
+        EnsureEquippedSlotsInitialized();
+
+        if (!HasSkillUnlocked(skillId))
+            return false;
+
+        var skillIdFS = new FixedString64Bytes(skillId);
+
+        int sourceSlot = GetEquippedSlotIndex(skillId);
+        FixedString64Bytes targetSkillId = equippedSkillIds[slotIndex];
+
+        // Same slot
+        if (sourceSlot == slotIndex)
+            return true;
 
         // Skill already equipped somewhere else
         if (sourceSlot >= 0)
         {
-            if (targetSkill == null)
+            if (targetSkillId.Length == 0)
             {
-                equippedSkillIds[sourceSlot] = null;
-                equippedSkillIds[slotIndex] = skill.skillId;
+                equippedSkillIds[sourceSlot] = default;
+                equippedSkillIds[slotIndex] = skillIdFS;
             }
             else
             {
-                equippedSkillIds[sourceSlot] = targetSkill.skillId;
-                equippedSkillIds[slotIndex] = skill.skillId;
+                equippedSkillIds[sourceSlot] = targetSkillId;
+                equippedSkillIds[slotIndex] = skillIdFS;
             }
 
             OnSkillsChanged?.Invoke();
@@ -160,15 +279,14 @@ public class PlayerSkillInventory : NetworkBehaviour
         }
 
         // Skill not equipped yet
-        if (targetSkill == null)
+        if (targetSkillId.Length == 0)
         {
-            equippedSkillIds[slotIndex] = skill.skillId;
-
+            equippedSkillIds[slotIndex] = skillIdFS;
             OnSkillsChanged?.Invoke();
             return true;
         }
 
-        // Target slot occupied, try to move its skill to an empty slot
+        // Target occupied, move old skill to an empty slot if possible
         int emptySlot = GetEmptySlotIndex();
         if (emptySlot == -1)
         {
@@ -176,49 +294,50 @@ public class PlayerSkillInventory : NetworkBehaviour
             return false;
         }
 
-        equippedSkillIds[emptySlot] = targetSkill.skillId;
-        equippedSkillIds[slotIndex] = skill.skillId;
+        equippedSkillIds[emptySlot] = targetSkillId;
+        equippedSkillIds[slotIndex] = skillIdFS;
 
         OnSkillsChanged?.Invoke();
         return true;
     }
 
-    public void UnequipSkill(int slotIndex)
+    private bool SwapSlotsServer(int slotA, int slotB)
     {
-        if (slotIndex < 0 || slotIndex >= maxSkillSlots) return;
+        if (!IsServer)
+            return false;
 
-        equippedSkillIds[slotIndex] = null;
+        if (slotA < 0 || slotA >= maxSkillSlots)
+            return false;
+
+        if (slotB < 0 || slotB >= maxSkillSlots)
+            return false;
+
+        EnsureEquippedSlotsInitialized();
+
+        if (slotA == slotB)
+            return true;
+
+        (equippedSkillIds[slotA], equippedSkillIds[slotB]) =
+            (equippedSkillIds[slotB], equippedSkillIds[slotA]);
 
         OnSkillsChanged?.Invoke();
+        return true;
     }
 
-    public void UnequipSkill(Skill skill)
+    private bool UnequipSlotServer(int slotIndex)
     {
-        if (skill == null)
-            return;
+        if (!IsServer)
+            return false;
 
-        for (int i = 0; i < maxSkillSlots; i++)
-        {
-            if (equippedSkillIds[i] == skill.skillId)
-            {
-                equippedSkillIds[i] = null;
-                OnSkillsChanged?.Invoke();
-                return;
-            }
-        }
-    }
+        if (slotIndex < 0 || slotIndex >= maxSkillSlots)
+            return false;
 
-    public void SwapSlots(int slotA, int slotB)
-    {
-        if (slotA < 0 || slotA >= maxSkillSlots) return;
+        EnsureEquippedSlotsInitialized();
 
-        if (slotB < 0 || slotB >= maxSkillSlots) return;
-
-        if (slotA == slotB) return;
-
-        (equippedSkillIds[slotA], equippedSkillIds[slotB]) = (equippedSkillIds[slotB], equippedSkillIds[slotA]);
+        equippedSkillIds[slotIndex] = default;
 
         OnSkillsChanged?.Invoke();
+        return true;
     }
 
     // =========================================================
@@ -227,9 +346,15 @@ public class PlayerSkillInventory : NetworkBehaviour
 
     public Skill GetEquippedSkill(int slotIndex)
     {
-        if (slotIndex < 0 || slotIndex >= maxSkillSlots) return null;
+        if (slotIndex < 0 || slotIndex >= equippedSkillIds.Count)
+            return null;
 
-        return GetSkillById(equippedSkillIds[slotIndex]);
+        string id = equippedSkillIds[slotIndex].ToString();
+
+        if (string.IsNullOrEmpty(id))
+            return null;
+
+        return GetSkillById(id);
     }
 
     // =========================================================
@@ -244,13 +369,17 @@ public class PlayerSkillInventory : NetworkBehaviour
 
         foreach (var skill in allSkills)
         {
-            if (skill == null)  continue;
+            if (skill == null)
+                continue;
 
-            if (!unlockedSkills.Contains(skill.skillId)) continue;
+            if (!HasSkillUnlocked(skill))
+                continue;
 
-            if (skill.ownerCharacter != currentCharacter) continue;
+            if (skill.ownerCharacter != currentCharacter)
+                continue;
 
-            if (IsEquipped(skill)) continue;
+            if (IsEquipped(skill))
+                continue;
 
             result.Add(skill);
         }
@@ -262,53 +391,83 @@ public class PlayerSkillInventory : NetworkBehaviour
     // SAVE / LOAD
     // =========================================================
 
-    public string[] CaptureEquippedSkillIds()
-    {
-        return (string[])equippedSkillIds.Clone();
-    }
-
-    public void RestoreEquippedSkills(string[] ids)
-    {
-        equippedSkillIds = new string[maxSkillSlots];
-
-        if (ids != null)
-        {
-            for (int i = 0; i < ids.Length && i < maxSkillSlots; i++)
-            {
-                equippedSkillIds[i] = ids[i];
-            }
-        }
-
-        OnSkillsChanged?.Invoke();
-    }
-
     public List<string> CaptureUnlockedSkills()
     {
-        return new List<string>(unlockedSkills);
+        List<string> result = new List<string>(unlockedSkillIds.Count);
+
+        for (int i = 0; i < unlockedSkillIds.Count; i++)
+        {
+            result.Add(unlockedSkillIds[i].ToString());
+        }
+
+        return result;
+    }
+    public string[] CaptureEquippedSkillIds()
+    {
+        string[] result = new string[maxSkillSlots];
+
+        for (int i = 0; i < maxSkillSlots; i++)
+        {
+            if (i < equippedSkillIds.Count)
+                result[i] = equippedSkillIds[i].ToString();
+            else
+                result[i] = string.Empty;
+        }
+
+        return result;
     }
 
     public void RestoreUnlockedSkills(List<string> savedSkills)
     {
-        unlockedSkills.Clear();
+        if (!IsServer)
+            return;
+
+        unlockedSkillIds.Clear();
 
         if (savedSkills != null)
         {
             foreach (var id in savedSkills)
             {
-                if (!string.IsNullOrEmpty(id)) unlockedSkills.Add(id);
+                if (!string.IsNullOrEmpty(id))
+                    unlockedSkillIds.Add(new FixedString64Bytes(id));
             }
         }
 
         OnSkillsChanged?.Invoke();
     }
 
-    // Optional helper if you want to clear everything
-    public void ClearAll()
-    {
-        unlockedSkills.Clear();
 
-        for (int i = 0; i < maxSkillSlots; i++) equippedSkillIds[i] = null;
+    public void RestoreEquippedSkills(string[] ids)
+    {
+        if (!IsServer)
+            return;
+
+        EnsureEquippedSlotsInitialized();
+
+        for (int i = 0; i < maxSkillSlots; i++)
+        {
+            if (ids != null && i < ids.Length && !string.IsNullOrEmpty(ids[i]))
+                equippedSkillIds[i] = new FixedString64Bytes(ids[i]);
+            else
+                equippedSkillIds[i] = default;
+        }
 
         OnSkillsChanged?.Invoke();
     }
+
+    public void ClearAll()
+    {
+        if (!IsServer)
+            return;
+
+        unlockedSkillIds.Clear();
+
+        EnsureEquippedSlotsInitialized();
+
+        for (int i = 0; i < maxSkillSlots; i++)
+            equippedSkillIds[i] = default;
+
+        OnSkillsChanged?.Invoke();
+    }
+
 }
