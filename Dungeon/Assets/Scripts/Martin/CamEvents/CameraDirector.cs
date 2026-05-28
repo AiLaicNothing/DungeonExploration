@@ -1,5 +1,6 @@
 using Cinemachine;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 public class CameraDirector : MonoBehaviour
@@ -10,15 +11,11 @@ public class CameraDirector : MonoBehaviour
     [SerializeField] private bool debug;
 
     [Header("Gameplay")]
-    [SerializeField] private int gameplayPriority = 100;
+    [SerializeField] private int gameplayPriority = 10;
 
-    [Header("Cameras")]
-    [SerializeField] private CinemachineVirtualCameraBase[] cinematicCameras;
-
+    private readonly Dictionary<int, CinemachineVirtualCameraBase> cinematicCameras = new();
     private CinemachineFreeLook playerCam;
-
     private CinemachineVirtualCameraBase currentCinematicCamera;
-
     private Coroutine activeRoutine;
 
     private void Awake()
@@ -32,38 +29,55 @@ public class CameraDirector : MonoBehaviour
         Instance = this;
     }
 
-    private void OnEnable()
+    private void Start()
     {
+        RegisterAllCameras();
+
         if (CameraEventSystem.Instance != null)
-        {
             CameraEventSystem.Instance.OnCameraRequest += HandleCameraRequest;
-        }
     }
 
-    private void OnDisable()
+    private void OnDestroy()
     {
         if (CameraEventSystem.Instance != null)
-        {
             CameraEventSystem.Instance.OnCameraRequest -= HandleCameraRequest;
+    }
+
+    private void RegisterAllCameras()
+    {
+        CameraID[] cameras = FindObjectsByType<CameraID>(FindObjectsSortMode.None);
+
+        foreach (CameraID cam in cameras)
+        {
+            if (cam == null || cam.VirtualCamera == null)
+                continue;
+
+            if (cinematicCameras.ContainsKey(cam.ID))
+            {
+                Debug.LogWarning($"Duplicate Camera ID: {cam.ID}");
+                continue;
+            }
+
+            cinematicCameras.Add(cam.ID, cam.VirtualCamera);
+
+            if (debug)
+                Debug.Log($"Registered Camera ID: {cam.ID}");
         }
     }
 
     public void RegisterPlayerCam(CinemachineFreeLook cam)
     {
-        if (cam == null) return;
+        if (cam == null)
+            return;
 
         playerCam = cam;
         playerCam.Priority = gameplayPriority;
-
-        if (debug)
-        {
-            Debug.Log("[CameraDirector] Gameplay camera registered");
-        }
     }
 
     private void HandleCameraRequest(CameraRequest request)
     {
-        if (request == null) return;
+        if (request == null)
+            return;
 
         CinemachineVirtualCameraBase cam = GetCameraByID(request.cameraID);
 
@@ -75,8 +89,13 @@ public class CameraDirector : MonoBehaviour
 
         if (activeRoutine != null)
         {
-            if (!request.interruptCurrent)return;
+            if (!request.interruptCurrent)
+                return;
 
+            if (currentCinematicCamera != null)
+                currentCinematicCamera.Priority = 0;
+
+            RestoreGameplayCamera();
             StopCoroutine(activeRoutine);
         }
 
@@ -87,43 +106,26 @@ public class CameraDirector : MonoBehaviour
     {
         currentCinematicCamera = cam;
 
-        if (debug)
-        {
-            Debug.Log($"[CameraDirector] Playing Camera: {cam.name}");
-        }
-
-        // FOLLOW / LOOKAT
         if (request.followTarget != null)
-        {
             cam.Follow = request.followTarget;
-        }
 
         if (request.lookAtTarget != null)
-        {
             cam.LookAt = request.lookAtTarget;
-        }
 
-        // PRIORITIES
         if (playerCam != null)
-        {
             playerCam.Priority = request.inactivePriority;
-        }
 
         cam.Priority = request.activePriority;
 
         request.onStarted?.Invoke();
 
         if (request.duration > 0f)
-        {
             yield return new WaitForSeconds(request.duration);
-        }
 
         cam.Priority = request.inactivePriority;
 
         if (request.restoreGameplayCamera)
-        {
             RestoreGameplayCamera();
-        }
 
         request.onFinished?.Invoke();
 
@@ -133,25 +135,14 @@ public class CameraDirector : MonoBehaviour
 
     private void RestoreGameplayCamera()
     {
-        if (playerCam == null) return;
+        if (playerCam == null)
+            return;
 
         playerCam.Priority = gameplayPriority;
-
-        if (debug)
-        {
-            Debug.Log("[CameraDirector] Restored gameplay camera");
-        }
     }
 
-    private CinemachineVirtualCameraBase GetCameraByID(string id)
+    private CinemachineVirtualCameraBase GetCameraByID(int id)
     {
-        foreach (var cam in cinematicCameras)
-        {
-            if (cam == null)  continue;
-
-            if (cam.name == id) return cam;
-        }
-
-        return null;
+        return cinematicCameras.TryGetValue(id, out var cam) ? cam : null;
     }
 }

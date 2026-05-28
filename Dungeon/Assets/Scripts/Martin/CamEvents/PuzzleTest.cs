@@ -5,7 +5,7 @@ using UnityEngine;
 public class PuzzleTest : NetworkBehaviour, IInteractable
 {
     [Header("Camera")]
-    [SerializeField] private string cameraID = "Test";
+    [SerializeField] private int cameraID = 1;
     [SerializeField] private float duration = 3f;
 
     [Header("Puzzle")]
@@ -13,55 +13,46 @@ public class PuzzleTest : NetworkBehaviour, IInteractable
 
     public void Interact()
     {
-        if (isActive)  return;
+        if (isActive)
+            return;
 
-        if (LocalPlayer.Controller == null) return;
-
-        ulong clientID = LocalPlayer.Controller.OwnerClientId;
-
-        ActivatePuzzleServerRpc(clientID);
+        ActivatePuzzleServerRpc();
     }
 
     [Rpc(SendTo.Server)]
-    private void ActivatePuzzleServerRpc(ulong clientID)
+    private void ActivatePuzzleServerRpc(RpcParams rpcParams = default)
     {
-        if (isActive) return;
+        if (isActive)
+            return;
 
         isActive = true;
 
-        // PLAY CAMERA ONLY FOR PLAYER WHO ACTIVATED IT
+        ulong senderClientID = rpcParams.Receive.SenderClientId;
+
         CameraRequest request = new CameraRequest
         {
             cameraID = cameraID,
             duration = duration
         };
 
-        CameraEventRelay.Instance.PlayForTarget(request, clientID);
+        if (CameraEventRelay.Instance != null)
+        {
+            CameraEventRelay.Instance.PlayForTarget(request, senderClientID);
+        }
+        else
+        {
+            Debug.LogError("[PuzzleTest] CameraEventRelay missing.");
+        }
 
-        // ACTIVATE GAMEPLAY LOGIC
         StartCoroutine(Activate());
-
-        // OPTIONAL VISUAL FX FOR EVERYONE
-        ActivePuzzleClientRpc();
     }
 
     private IEnumerator Activate()
     {
         Debug.Log("Puzzle Activated");
 
-        // Example:
-        // door open
-        // platform move
-        // etc
-
         yield return new WaitForSeconds(duration);
 
         Debug.Log("Puzzle Finished");
-    }
-
-    [ClientRpc]
-    private void ActivePuzzleClientRpc()
-    {
-        Debug.Log("Puzzle has been activated");
     }
 }

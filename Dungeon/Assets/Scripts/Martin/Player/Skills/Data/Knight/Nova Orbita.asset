@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d73c7eef9f560974fbed523e68c16e2c, type: 3}
   m_Name: Nova Orbita
   m_EditorClassIdentifier: Assembly-CSharp::NovaOrbita
-  skillId: 5
+  skillId: 005
+  skillSprite: {fileID: 0}
   skillName: Nova Orbita
   ownerCharacter: 0
   resourceType: 2

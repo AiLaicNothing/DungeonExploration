@@ -1,6 +1,6 @@
 using UnityEngine;
 
-[CreateAssetMenu(menuName = "Skills/Frenzy")]
+[CreateAssetMenu(menuName = "Skills/Heal")]
 public class Heal : Skill
 {
     [Header("Buff")]

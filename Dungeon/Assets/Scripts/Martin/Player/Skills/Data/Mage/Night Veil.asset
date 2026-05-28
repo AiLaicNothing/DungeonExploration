@@ -9,21 +9,25 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6971583f522c4e5408a537a965d81a87, type: 3}
-  m_Name: Frenzy
-  m_EditorClassIdentifier: Assembly-CSharp::Frenzy
-  skillId: 004
+  m_Script: {fileID: 11500000, guid: 0191950f359b10044b7335ab4c32f9d4, type: 3}
+  m_Name: Night Veil
+  m_EditorClassIdentifier: Assembly-CSharp::NightVeil
+  skillId: 107
   skillSprite: {fileID: 0}
-  skillName: Frenzy
-  ownerCharacter: 0
-  resourceType: 2
-  cost: 20
+  skillName: 
+  ownerCharacter: 1
+  resourceType: 0
+  cost: 0
   castTime: 0
   cooldown: 0
   actionTime: 0
   castAnimation: 
   actionAnimation: 
-  increasePorcentage: 10000
-  duration: 6
+  increasePorcentage: 0
+  duration: 0
   timer: 0
   sfx: {fileID: 0}
+  sfxCount: 3
+  orbitRadius: 1.5
+  orbitSpeed: 120
+  heightOffset: 1.2

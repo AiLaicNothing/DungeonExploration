@@ -9,26 +9,22 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9e60bdabcb7a6ef499645bfd3ca85169, type: 3}
-  m_Name: Magic Beam
-  m_EditorClassIdentifier: Assembly-CSharp::MagicBeam
-  skillId: 104
+  m_Script: {fileID: 11500000, guid: 0898c21a94258f147ae8bddd3e0d7369, type: 3}
+  m_Name: Freeze
+  m_EditorClassIdentifier: Assembly-CSharp::Freeze
+  skillId: 102
   skillSprite: {fileID: 0}
-  skillName: Beam
+  skillName: 
   ownerCharacter: 1
-  resourceType: 2
-  cost: 10
-  castTime: 0.3
-  cooldown: 3
-  actionTime: 2
+  resourceType: 0
+  cost: 0
+  castTime: 0
+  cooldown: 0
+  actionTime: 0
   castAnimation: 
   actionAnimation: 
-  maxRange: 15
-  width: 2
-  height: 2
-  duration: 2
-  tickRate: 0.2
-  startOffset: {x: 0, y: 0, z: 1}
+  hitBoxSize: {x: 0, y: 0, z: 0}
+  startOffset: {x: 0, y: 0, z: 0}
   hitData:
     physicalScale: 1
     magicalScale: 1
@@ -38,10 +34,7 @@ MonoBehaviour:
     stunDuration: 0
     keepInAir: 0
     airLiftForce: 0
-  obstacleLayer:
-    serializedVersion: 2
-    m_Bits: 384
   enemyLayer:
     serializedVersion: 2
-    m_Bits: 4096
+    m_Bits: 0
   sfx: {fileID: 0}

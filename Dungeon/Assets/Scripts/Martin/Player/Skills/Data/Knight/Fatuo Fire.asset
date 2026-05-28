@@ -12,21 +12,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3c1fc30492c3e50478ac258af914d5ec, type: 3}
   m_Name: Fatuo Fire
   m_EditorClassIdentifier: Assembly-CSharp::FatuoFire
-  skillId: 1
+  skillId: 001
+  skillSprite: {fileID: 0}
   skillName: FatuoFire
   ownerCharacter: 0
-  resourceType: 0
-  cost: 0
+  resourceType: 1
+  cost: 10
   castTime: 0
   cooldown: 0
   actionTime: 0
   castAnimation: 
   actionAnimation: 
-  hitBoxSize: {x: 0, y: 0, z: 0}
+  hitBoxSize: {x: 10, y: 10, z: 10}
   startOffset: {x: 0, y: 0, z: 0}
   hitData:
-    physicalScale: 1
-    magicalScale: 1
+    physicalScale: 2
+    magicalScale: 2
     damageMultiplier: 1
     staggerCharge: 10
     throwType: 0
@@ -35,5 +36,5 @@ MonoBehaviour:
     airLiftForce: 0
   enemyLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 4096
   sfx: {fileID: 0}

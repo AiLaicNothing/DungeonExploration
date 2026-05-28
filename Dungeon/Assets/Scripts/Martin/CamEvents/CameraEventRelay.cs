@@ -16,111 +16,69 @@ public class CameraEventRelay : NetworkBehaviour
         Instance = this;
     }
 
-    // =========================================================
-    // PUBLIC
-    // =========================================================
-
     public void PlayForEveryone(CameraRequest request)
     {
-        if (request == null) return;
+        if (request == null)
+            return;
 
         RequestPlayForEveryoneRpc(request.cameraID, request.duration);
     }
 
     public void PlayForTarget(CameraRequest request, ulong targetClientID)
     {
-        if (request == null) return;
+        if (request == null)
+            return;
 
-        ulong followID = 0;
-        ulong lookID = 0;
-
-        if (request.followTarget != null)
-        {
-            NetworkObject netObj = request.followTarget.GetComponent<NetworkObject>();
-
-            if (netObj != null)
-            {
-                followID = netObj.NetworkObjectId;
-            }
-        }
-
-        if (request.lookAtTarget != null)
-        {
-            NetworkObject netObj = request.lookAtTarget.GetComponent<NetworkObject>();
-
-            if (netObj != null)
-            {
-                lookID = netObj.NetworkObjectId;
-            }
-        }
-
-        RequestPlayForTargetRpc(request.cameraID, request.duration, followID, lookID, targetClientID);
+        RequestPlayForTargetRpc(request.cameraID, request.duration, targetClientID);
     }
 
-    // =========================================================
-    // SERVER RPC
-    // =========================================================
-
     [Rpc(SendTo.Server)]
-    private void RequestPlayForEveryoneRpc(string cameraID, float duration)
+    private void RequestPlayForEveryoneRpc(int cameraID, float duration)
     {
         PlayForEveryoneClientRpc(cameraID, duration);
     }
 
     [Rpc(SendTo.Server)]
-    private void RequestPlayForTargetRpc(string cameraID, float duration, ulong followTargetID, ulong lookAtTargetID, ulong targetClientID)
+    private void RequestPlayForTargetRpc(int cameraID, float duration, ulong targetClientID)
     {
-        ClientRpcParams rpcParams = new ClientRpcParams { Send = new ClientRpcSendParams {TargetClientIds = new ulong[] { targetClientID } } };
-
-        PlayForTargetClientRpc(cameraID, duration, followTargetID, lookAtTargetID, rpcParams);
+        PlayForTargetClientRpc(cameraID, duration, targetClientID);
     }
 
-    // =========================================================
-    // CLIENT RPC
-    // =========================================================
-
-    [ClientRpc]
-    private void PlayForEveryoneClientRpc(string cameraID, float duration)
+    [Rpc(SendTo.ClientsAndHost)]
+    private void PlayForEveryoneClientRpc(int cameraID, float duration)
     {
-        CameraRequest request = new CameraRequest
+        if (CameraEventSystem.Instance == null)
+        {
+            Debug.LogError("[CameraEventRelay] CameraEventSystem missing.");
+            return;
+        }
+
+        CameraEventSystem.Instance.Play(new CameraRequest
         {
             cameraID = cameraID,
             duration = duration
-        };
-
-        CameraEventSystem.Instance.Play(request);
+        });
     }
 
-    [ClientRpc]
-    private void PlayForTargetClientRpc(string cameraID, float duration, ulong followTargetID, ulong lookAtTargetID, ClientRpcParams rpcParams = default)
+    [Rpc(SendTo.ClientsAndHost)]
+    private void PlayForTargetClientRpc(int cameraID, float duration, ulong targetClientID)
     {
-        Transform followTarget = null;
-        Transform lookAtTarget = null;
+        if (NetworkManager.Singleton == null)
+            return;
 
-        if (followTargetID != 0)
+        if (NetworkManager.Singleton.LocalClientId != targetClientID)
+            return;
+
+        if (CameraEventSystem.Instance == null)
         {
-            if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue( followTargetID, out var followObj))
-            {
-                followTarget = followObj.transform;
-            }
+            Debug.LogError("[CameraEventRelay] CameraEventSystem missing.");
+            return;
         }
 
-        if (lookAtTargetID != 0)
-        {
-            if (NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(lookAtTargetID, out var lookObj))
-            {
-                lookAtTarget = lookObj.transform;
-            }
-        }
-
-        CameraRequest request = new CameraRequest
+        CameraEventSystem.Instance.Play(new CameraRequest
         {
             cameraID = cameraID,
-            duration = duration,
-            followTarget = followTarget,
-            lookAtTarget = lookAtTarget
-        };
-
-        CameraEventSystem.Instance.Play(request);
+            duration = duration
+        });
     }
 }

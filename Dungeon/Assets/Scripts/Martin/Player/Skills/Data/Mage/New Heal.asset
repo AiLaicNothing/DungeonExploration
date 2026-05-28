@@ -9,21 +9,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6971583f522c4e5408a537a965d81a87, type: 3}
-  m_Name: Frenzy
-  m_EditorClassIdentifier: Assembly-CSharp::Frenzy
-  skillId: 004
+  m_Script: {fileID: 11500000, guid: 1552a16fc36cf714d859e9934adf57a9, type: 3}
+  m_Name: New Heal
+  m_EditorClassIdentifier: Assembly-CSharp::Heal
+  skillId: 106
   skillSprite: {fileID: 0}
-  skillName: Frenzy
-  ownerCharacter: 0
+  skillName: 
+  ownerCharacter: 1
   resourceType: 2
-  cost: 20
+  cost: 10
   castTime: 0
   cooldown: 0
   actionTime: 0
   castAnimation: 
   actionAnimation: 
-  increasePorcentage: 10000
-  duration: 6
-  timer: 0
+  HealPorcentage: 0.3
   sfx: {fileID: 0}

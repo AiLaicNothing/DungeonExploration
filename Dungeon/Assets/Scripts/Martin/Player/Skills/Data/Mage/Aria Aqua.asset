@@ -12,7 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb42c04a6de6aad4c8e261d081b2f2ee, type: 3}
   m_Name: Aria Aqua
   m_EditorClassIdentifier: Assembly-CSharp::AriaAqua
+  skillId: 100
+  skillSprite: {fileID: 0}
   skillName: 
+  ownerCharacter: 1
   resourceType: 2
   cost: 10
   castTime: 0.5

@@ -12,7 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c99615997890bd48953ab76e90e633b, type: 3}
   m_Name: Blood Moon
   m_EditorClassIdentifier: Assembly-CSharp::BloodMoon
+  skillId: 101
+  skillSprite: {fileID: 0}
   skillName: BloodMoon
+  ownerCharacter: 1
   resourceType: 2
   cost: 20
   castTime: 0.6
@@ -32,3 +35,4 @@ MonoBehaviour:
     stunDuration: 0
     keepInAir: 0
     airLiftForce: 0
+  sfx: {fileID: 0}

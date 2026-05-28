@@ -12,7 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5baeb963577cae545b257ad4da9715ad, type: 3}
   m_Name: Magic Bullet Data
   m_EditorClassIdentifier: Assembly-CSharp::MagicBullet
+  skillId: 105
+  skillSprite: {fileID: 0}
   skillName: Magic bullet
+  ownerCharacter: 1
   resourceType: 2
   cost: 10
   castTime: 0
@@ -37,3 +40,4 @@ MonoBehaviour:
     stunDuration: 0
     keepInAir: 0
     airLiftForce: 0
+  sfx: {fileID: 0}

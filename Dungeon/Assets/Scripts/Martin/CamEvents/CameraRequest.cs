@@ -6,7 +6,7 @@ using UnityEngine;
 public class CameraRequest 
 {
     [Header("Camera")]
-    public string cameraID;
+    public int cameraID;
 
     [Header("Timing")]
     public float duration = 3f;

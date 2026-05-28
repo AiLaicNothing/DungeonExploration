@@ -26,6 +26,7 @@ GameObject:
   - component: {fileID: -6088543945035626960}
   - component: {fileID: -4133662015506230434}
   - component: {fileID: 2345430435825851821}
+  - component: {fileID: 3492432277748455978}
   m_Layer: 11
   m_Name: Player_Mage
   m_TagString: Player
@@ -115,7 +116,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2925421483
+  GlobalObjectIdHash: 1647603511
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -747,8 +748,30 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerSkillInventory
   ShowTopMostFoldoutHeaderGroup: 1
-  allSkills: []
+  allSkills:
+  - {fileID: 11400000, guid: afbcde7509b561e4dae6dfbf31339e50, type: 2}
+  - {fileID: 11400000, guid: 964f0fa63f880ee46b303b1ba093ae2d, type: 2}
+  - {fileID: 11400000, guid: 4599ca888d6dcb44b86b06a9261dae28, type: 2}
+  - {fileID: 11400000, guid: 81d34fd3a4b515c42b67b9c207be9399, type: 2}
+  - {fileID: 11400000, guid: 5c4159f0d14fef943beee12e5c812287, type: 2}
+  - {fileID: 11400000, guid: 3c647d8a38a7c2b4ebe1fe8a46de8734, type: 2}
+  - {fileID: 11400000, guid: 2ee7192f4032dfa44b93d722508930b8, type: 2}
+  - {fileID: 0}
   maxSkillSlots: 4
+--- !u!114 &3492432277748455978
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1709885077992164042}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a69e6a115a204ba44b9a1af211141fbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCamRegister
+  ShowTopMostFoldoutHeaderGroup: 1
+  playerCam: {fileID: 8644750467369546798}
 --- !u!1 &1872310054643754506
 GameObject:
   m_ObjectHideFlags: 0

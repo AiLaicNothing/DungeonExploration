@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a903d71be4a903499fc3119417a2499, type: 3}
   m_Name: Spin Attack
   m_EditorClassIdentifier: Assembly-CSharp::SpinAttack
-  skillId: 6
+  skillId: 006
+  skillSprite: {fileID: 0}
   skillName: Spin Attack
   ownerCharacter: 0
   resourceType: 1

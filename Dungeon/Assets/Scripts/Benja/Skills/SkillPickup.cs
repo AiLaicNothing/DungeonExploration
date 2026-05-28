@@ -23,6 +23,7 @@ public class SkillPickup : MonoBehaviour, IInteractable
 
         if ((int)skill.ownerCharacter != currentCharacter)
         {
+            Debug.Log($"SkillPickUp: {(int)skill.ownerCharacter}");
             Debug.Log("Esta skill no pertenece a este personaje.");
             return;
         }

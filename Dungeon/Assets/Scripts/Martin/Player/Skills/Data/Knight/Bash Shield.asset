@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8ba049dade61b04f86084d78424d1d4, type: 3}
   m_Name: Bash Shield
   m_EditorClassIdentifier: Assembly-CSharp::BashShieldSkill
-  skillId: 0
+  skillId: 000
   skillSprite: {fileID: -1489116000, guid: dd872b2952bec8f4b8191dd2615972ec, type: 3}
   skillName: Golpe de escudo
   ownerCharacter: 0

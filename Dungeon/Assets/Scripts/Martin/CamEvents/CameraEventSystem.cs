@@ -13,7 +13,7 @@ public class CameraEventSystem : MonoBehaviour
         {
             Destroy(gameObject);
             return;
-        } 
+        }
 
         Instance = this;
     }
@@ -22,12 +22,6 @@ public class CameraEventSystem : MonoBehaviour
     {
         if (request == null)
             return;
-
-        if (string.IsNullOrEmpty(request.cameraID))
-        {
-            Debug.LogError("[CameraEventSystem] Missing camera ID");
-            return;
-        }
 
         OnCameraRequest?.Invoke(request);
     }
