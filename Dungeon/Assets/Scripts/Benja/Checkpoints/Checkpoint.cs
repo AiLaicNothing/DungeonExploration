@@ -5,19 +5,14 @@ using UnityEngine;
 /// <summary>
 /// Checkpoint en multiplayer.
 ///
-/// Comportamiento:
-///   - Si NO está descubierto a nivel mundo:
-///     * Al activarlo, descubrimiento mundial → da puntos a TODOS los jugadores presentes
-///     * Si era tu primer checkpoint personal, se hace tu respawn automáticamente
-///   - Si YA está descubierto a nivel mundo:
-///     * NO da puntos (ya alguien lo había descubierto)
-///     * Se muestra un toast explicando esto al jugador
-///     * Si era tu primer checkpoint personal, se hace tu respawn automáticamente
-///   - El respawn personal solo se cambia automáticamente la PRIMERA vez.
-///     Después, el jugador lo cambia manualmente desde el panel.
-///   - Al activar, se abre el menú del checkpoint.
+/// NUEVO DISEÑO:
+///   - El mundo genera puntos SOLO UNA VEZ por checkpoint.
+///   - Cada jugador reclama los puntos mundialmente generados que le faltan.
+///   - Si un jugador nuevo entra después:
+///       recibe TODOS los puntos pendientes automáticamente.
+///   - Activar un checkpoint ya descubierto NO da puntos extra.
 /// </summary>
-public class Checkpoint : MonoBehaviour, IInteractable
+public class Checkpoint : NetworkBehaviour, IInteractable
 {
     [Header("Info")]
     public string checkpointName;
@@ -26,8 +21,8 @@ public class Checkpoint : MonoBehaviour, IInteractable
     public Transform spawnPoint;
 
     [Header("UI mundo")]
-    public GameObject activateUI;       // "Pulsa E para activar"
-    public GameObject openPanelUI;      // "Pulsa E para usar"
+    public GameObject activateUI;
+    public GameObject openPanelUI;
 
     [Header("Recompensa")]
     public int upgradePointsReward = 5;
@@ -42,7 +37,10 @@ public class Checkpoint : MonoBehaviour, IInteractable
         if (WorldCheckpointState.Instance != null)
         {
             RefreshVisual();
-            WorldCheckpointState.Instance.DiscoveredCheckpoints.OnListChanged += _ => RefreshVisual();
+
+            WorldCheckpointState.Instance
+                .DiscoveredCheckpoints
+                .OnListChanged += _ => RefreshVisual();
         }
         else
         {
@@ -52,188 +50,406 @@ public class Checkpoint : MonoBehaviour, IInteractable
 
     private System.Collections.IEnumerator WaitForWorldStateAndRefresh()
     {
-        while (WorldCheckpointState.Instance == null) yield return null;
+        while (WorldCheckpointState.Instance == null)
+            yield return null;
+
         RefreshVisual();
-        WorldCheckpointState.Instance.DiscoveredCheckpoints.OnListChanged += _ => RefreshVisual();
+
+        WorldCheckpointState.Instance
+            .DiscoveredCheckpoints
+            .OnListChanged += _ => RefreshVisual();
     }
 
     private void RefreshVisual()
     {
-        if (visual == null) return;
-        if (WorldCheckpointState.Instance == null) return;
-
-        bool discovered = WorldCheckpointState.Instance.IsDiscoveredInWorld(checkpointName);
-        if (discovered) visual.ActivateVisual();
-        else visual.DeactivateVisual();
-    }
-
-    // ── Interacción ───────────────────────────────────────────────────
-    public void Interact()
-    {
-        if (LocalPlayer.Controller == null) return;
-
-        var checkpointData = LocalPlayer.Controller.GetComponent<PlayerCheckpointData>();
-        if (checkpointData == null) return;
-
-        // Pedimos al servidor activar el checkpoint
-        RequestActivateServerRpc();
-
-        // Abrimos el menú del checkpoint inmediatamente
-        if (CheckpointMenuUI.Instance != null)
-            CheckpointMenuUI.Instance.Open(checkpointName);
-    }
-
-
-[ServerRpc(RequireOwnership = false)]
-private void RequestActivateServerRpc(ServerRpcParams rpcParams = default)
-    {
-        ulong activatorClientId = rpcParams.Receive.SenderClientId;
-
-        if (!NetworkManager.Singleton.ConnectedClients.TryGetValue(activatorClientId, out var client))
+        if (visual == null)
             return;
 
-        var session = client.PlayerObject.GetComponent<PlayerSessionData>(); 
-        ulong avatarId = session.CurrentCharacterNetId.Value;
+        if (WorldCheckpointState.Instance == null)
+            return;
 
-        var playerObj = NetworkManager.Singleton.SpawnManager.SpawnedObjects[avatarId]; if (playerObj == null) return;
+        bool discovered =
+            WorldCheckpointState.Instance
+                .IsDiscoveredInWorld(checkpointName);
 
-        var checkpointData = playerObj.GetComponent<PlayerCheckpointData>();
-        if (checkpointData == null) return;
+        if (discovered)
+            visual.ActivateVisual();
+        else
+            visual.DeactivateVisual();
+    }
 
-        if (WorldCheckpointState.Instance == null) return;
+    // ─────────────────────────────────────────
+    // INTERACT
+    // ─────────────────────────────────────────
 
-        bool wasNewInWorld = !WorldCheckpointState.Instance.IsDiscoveredInWorld(checkpointName);
-        bool wasNewForPlayer = !checkpointData.HasPersonallyDiscovered(checkpointName);
+    public void Interact()
+    {
+        Debug.Log(
+            $"[CHECKPOINT CLIENT] " +
+            $"LocalClientId={NetworkManager.Singleton.LocalClientId} " +
+            $"Checkpoint={checkpointName}"
+        );
+
+        if (LocalPlayer.Controller == null)
+        {
+            Debug.Log(
+                "[CHECKPOINT CLIENT] LocalPlayer.Controller NULL"
+            );
+
+            return;
+        }
+
+        Debug.Log(
+            $"[CHECKPOINT CLIENT] " +
+            $"ControllerOwner={LocalPlayer.Controller.OwnerClientId} " +
+            $"ControllerName={LocalPlayer.Controller.name}"
+        );
+
+        var checkpointData =
+            LocalPlayer.Controller
+                .GetComponent<PlayerCheckpointData>();
+
+        if (checkpointData == null)
+        {
+            Debug.Log(
+                "[CHECKPOINT CLIENT] PlayerCheckpointData NULL"
+            );
+
+            return;
+        }
+
+        Debug.Log(
+            $"[CHECKPOINT CLIENT] " +
+            $"Sending RequestActivateServerRpc()"
+        );
+
+        RequestActivateServerRpc();
+
+        if (CheckpointMenuUI.Instance != null)
+        {
+            Debug.Log(
+                $"[CHECKPOINT CLIENT] Opening menu for {checkpointName}"
+            );
+
+            CheckpointMenuUI.Instance.Open(checkpointName);
+        }
+    }
+
+    // ─────────────────────────────────────────
+    // SERVER
+    // ─────────────────────────────────────────
+
+    [ServerRpc(RequireOwnership = false)]
+    private void RequestActivateServerRpc(
+    ServerRpcParams rpcParams = default)
+    {
+        ulong activatorClientId =
+            rpcParams.Receive.SenderClientId;
+
+        Debug.Log(
+            $"[CHECKPOINT RPC RECEIVED] " +
+            $"SenderClientId={activatorClientId}"
+        );
+
+        if (!NetworkManager.Singleton
+                .ConnectedClients
+                .TryGetValue(
+                    activatorClientId,
+                    out var client))
+        {
+            Debug.LogError(
+                $"[CHECKPOINT RPC] Client not found. " +
+                $"SenderClientId={activatorClientId}"
+            );
+
+            return;
+        }
+
+        Debug.Log(
+            $"[CHECKPOINT RPC] " +
+            $"Client.PlayerObject=" +
+            $"{client.PlayerObject?.name}"
+        );
+
+        var session =
+            client.PlayerObject
+                .GetComponent<PlayerSessionData>();
+
+        if (session == null)
+        {
+            Debug.LogError(
+                $"[CHECKPOINT RPC] Session NULL " +
+                $"Client={activatorClientId}"
+            );
+
+            return;
+        }
+
+        Debug.Log(
+            $"[CHECKPOINT RPC] " +
+            $"Session Owner={session.OwnerClientId} " +
+            $"PlayerId={session.PlayerId.Value} " +
+            $"PlayerName={session.PlayerName.Value} " +
+            $"CurrentCharacterNetId={session.CurrentCharacterNetId.Value}"
+        );
+
+        ulong avatarId =
+            session.CurrentCharacterNetId.Value;
+
+        if (!NetworkManager.Singleton
+                .SpawnManager
+                .SpawnedObjects
+                .TryGetValue(
+                    avatarId,
+                    out var playerObj))
+        {
+            Debug.LogError(
+                $"[CHECKPOINT RPC] Avatar not found. " +
+                $"AvatarId={avatarId}"
+            );
+
+            return;
+        }
+
+        Debug.Log(
+            $"[CHECKPOINT RPC] Avatar Found " +
+            $"Name={playerObj.name} " +
+            $"NetId={playerObj.NetworkObjectId} " +
+            $"Owner={playerObj.OwnerClientId}"
+        );
+
+        if (playerObj == null)
+            return;
+
+        var checkpointData =
+            playerObj.GetComponent<PlayerCheckpointData>();
+
+        var stats =
+            playerObj.GetComponent<PlayerStats>();
+
+        if (checkpointData == null || stats == null)
+        {
+            Debug.LogError(
+                $"[CHECKPOINT RPC] Missing components " +
+                $"CheckpointData={(checkpointData != null)} " +
+                $"Stats={(stats != null)}"
+            );
+
+            return;
+        }
+
+        if (WorldCheckpointState.Instance == null)
+            return;
+
+        // =====================================================
+        // DEBUGS IMPORTANTES
+        // =====================================================
+
+        Debug.Log(
+            $"[CHECKPOINT SERVER] " +
+            $"Client={activatorClientId} " +
+            $"Player={session.PlayerName.Value} " +
+            $"Checkpoint={checkpointName}"
+        );
+
+        Debug.Log(
+            $"[CHECKPOINT SERVER] " +
+            $"WorldCheckpointCount=" +
+            $"{WorldCheckpointState.Instance.DiscoveredCheckpoints.Count}"
+        );
+
+        for (int i = 0;
+             i < WorldCheckpointState.Instance.DiscoveredCheckpoints.Count;
+             i++)
+        {
+            Debug.Log(
+                $"[CHECKPOINT SERVER] CP[{i}]=" +
+                $"{WorldCheckpointState.Instance.DiscoveredCheckpoints[i]}"
+            );
+        }
+
+        bool wasNewInWorld =
+            !WorldCheckpointState.Instance
+                .IsDiscoveredInWorld(checkpointName);
+
+        bool wasNewForPlayer =
+            !checkpointData
+                .HasPersonallyDiscovered(checkpointName);
+
+        Debug.Log(
+            $"[CHECKPOINT SERVER] " +
+            $"wasNewInWorld={wasNewInWorld} " +
+            $"wasNewForPlayer={wasNewForPlayer}"
+        );
 
         if (wasNewInWorld)
         {
-            // Nuevo en el mundo
-            WorldCheckpointState.Instance.TryDiscoverInWorld(checkpointName, upgradePointsReward);
+            WorldCheckpointState.Instance
+                .TryDiscoverInWorld(
+                    checkpointName,
+                    upgradePointsReward
+                );
 
-            GivePointsToAllPlayers(upgradePointsReward);
-
-            Debug.Log($"[Checkpoint] '{checkpointName}' descubierto mundial por {activatorClientId}. " +
-                      $"Todos reciben {upgradePointsReward} puntos.");
-
-            NotifyDiscoveryClientRpc(
-                checkpointName,
-                upgradePointsReward,
-                true,
-                CreateClientRpcParams(activatorClientId));
+            Debug.Log(
+                $"[Checkpoint] Nuevo checkpoint mundial: {checkpointName}"
+            );
         }
-        else if (wasNewForPlayer)
+
+        int worldGenerated =
+            WorldCheckpointState.Instance
+                .WorldPointsGenerated.Value;
+
+        int alreadyClaimed =
+            stats.WorldPointsClaimed;
+
+        Debug.Log(
+            $"[CHECKPOINT SERVER] " +
+            $"WorldGenerated={worldGenerated} " +
+            $"AlreadyClaimed={alreadyClaimed}"
+        );
+
+        int missing =
+            worldGenerated - alreadyClaimed;
+
+        Debug.Log(
+            $"[CHECKPOINT SERVER] Missing={missing}"
+        );
+
+        if (missing > 0)
         {
-            // Ya existía mundialmente
-            Debug.Log($"[Checkpoint] '{checkpointName}' ya descubierto mundial.");
+            stats.AddUpgradePoints(missing);
 
-            NotifyDiscoveryClientRpc(
-                checkpointName,
-                0,
-                false,
-                CreateClientRpcParams(activatorClientId));
+            stats.SetWorldPointsClaimed(worldGenerated);
+
+            Debug.Log(
+                $"[Checkpoint] Player {activatorClientId} reclamó {missing} puntos pendientes."
+            );
         }
 
-        // ── Descubrimiento personal ─────────────────────
+        if (wasNewForPlayer)
+        {
+            checkpointData
+                .MarkPersonallyDiscovered(checkpointName);
+        }
 
-        checkpointData.MarkPersonallyDiscovered(checkpointName);
+        checkpointData
+            .SetLastUsedIfEmpty(checkpointName);
 
-        // ── Primer respawn automático ───────────────────
-
-        checkpointData.SetLastUsedIfEmpty(checkpointName);
-
-        // ── NUEVA INTEGRACIÓN: autosave ─────────────────
+        NotifyDiscoveryClientRpc(
+            checkpointName,
+            missing,
+            wasNewInWorld,
+            CreateClientRpcParams(activatorClientId)
+        );
 
         if (SaveGameIntegration.Instance != null)
         {
-            SaveGameIntegration.Instance.OnCheckpointActivated();
+            SaveGameIntegration.Instance
+                .OnCheckpointActivated();
         }
     }
 
+    // ─────────────────────────────────────────
+    // CLIENT UI
+    // ─────────────────────────────────────────
 
-
-    /// <summary>
-    /// Notifica al cliente que activó el checkpoint, para mostrarle un toast informativo.
-    /// </summary>
     [ClientRpc]
-    private void NotifyDiscoveryClientRpc(string cpName, int pointsAwarded, bool wasNewInWorld,
-                                           ClientRpcParams rpcParams = default)
+    private void NotifyDiscoveryClientRpc(
+        string cpName,
+        int pointsAwarded,
+        bool wasNewInWorld,
+        ClientRpcParams rpcParams = default)
     {
-        if (ToastNotificationUI.Instance == null) return;
+        if (ToastNotificationUI.Instance == null)
+            return;
 
         if (wasNewInWorld)
         {
             ToastNotificationUI.Instance.Show(
                 "¡Checkpoint descubierto!",
-                $"Has descubierto '{cpName}'. Todos los jugadores reciben +{pointsAwarded} puntos.");
+                $"'{cpName}' generó puntos globales. Recibiste +{pointsAwarded}."
+            );
         }
         else
         {
-            ToastNotificationUI.Instance.Show(
-                "Checkpoint registrado",
-                $"'{cpName}' ya fue descubierto por otro jugador. Tienes acceso pero no recibes puntos.");
+            if (pointsAwarded > 0)
+            {
+                ToastNotificationUI.Instance.Show(
+                    "Puntos sincronizados",
+                    $"Recibiste +{pointsAwarded} puntos pendientes del progreso mundial."
+                );
+            }
+            else
+            {
+                ToastNotificationUI.Instance.Show(
+                    "Checkpoint registrado",
+                    $"'{cpName}' ya estaba descubierto y ya tenías todos los puntos."
+                );
+            }
         }
     }
 
-    /// <summary>Helper para enviar un ClientRpc solo a un cliente concreto.</summary>
-    private ClientRpcParams CreateClientRpcParams(ulong targetClientId)
+    // ─────────────────────────────────────────
+    // HELPERS
+    // ─────────────────────────────────────────
+
+    private ClientRpcParams CreateClientRpcParams(
+        ulong targetClientId)
     {
         return new ClientRpcParams
         {
-            Send = new ClientRpcSendParams { TargetClientIds = new ulong[] { targetClientId } }
+            Send = new ClientRpcSendParams
+            {
+                TargetClientIds =
+                    new ulong[] { targetClientId }
+            }
         };
     }
 
-    private void GivePointsToAllPlayers(int amount)
-    {
-        foreach (var clientPair in NetworkManager.Singleton.ConnectedClients)
-        {
-            var session = FindObjectsByType<PlayerSessionData>(FindObjectsSortMode.None)
-                .FirstOrDefault(s => s.OwnerClientId == clientPair.Key);
+    // ─────────────────────────────────────────
+    // TRIGGER UI
+    // ─────────────────────────────────────────
 
-            if (session == null) continue;
-
-            ulong avatarId = session.CurrentCharacterNetId.Value;
-
-            if (avatarId == 0) continue;
-
-            if (!NetworkManager.Singleton.SpawnManager.SpawnedObjects.TryGetValue(avatarId, out var avatar))
-                continue;
-
-            var stats = avatar.GetComponent<PlayerStats>();
-
-            if (stats != null)
-                stats.AddUpgradePoints(amount);
-        }
-    }
-
-    // ── Trigger UI (mundo) ────────────────────────────────────────────
     void OnTriggerEnter(Collider other)
     {
-        if (!IsLocalPlayer(other)) return;
+        if (!IsLocalPlayer(other))
+            return;
+
         _localPlayerInRange = true;
 
-        bool worldDiscovered = WorldCheckpointState.Instance != null
-                            && WorldCheckpointState.Instance.IsDiscoveredInWorld(checkpointName);
+        bool worldDiscovered =
+            WorldCheckpointState.Instance != null
+            && WorldCheckpointState.Instance
+                .IsDiscoveredInWorld(checkpointName);
 
-        if (worldDiscovered) openPanelUI?.SetActive(true);
-        else activateUI?.SetActive(true);
+        if (worldDiscovered)
+            openPanelUI?.SetActive(true);
+        else
+            activateUI?.SetActive(true);
     }
 
     void OnTriggerExit(Collider other)
     {
-        if (!IsLocalPlayer(other)) return;
+        if (!IsLocalPlayer(other))
+            return;
+
         _localPlayerInRange = false;
 
         activateUI?.SetActive(false);
         openPanelUI?.SetActive(false);
 
-        if (CheckpointMenuUI.Instance != null && CheckpointMenuUI.Instance.IsOpen)
+        if (CheckpointMenuUI.Instance != null
+            && CheckpointMenuUI.Instance.IsOpen)
+        {
             CheckpointMenuUI.Instance.Close();
+        }
     }
 
     private bool IsLocalPlayer(Collider col)
     {
-        var pc = col.GetComponentInParent<PlayerController>();
+        var pc =
+            col.GetComponentInParent<PlayerController>();
+
         return pc != null && pc.IsOwner;
     }
 }

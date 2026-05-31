@@ -94,8 +94,10 @@ public class PlayerSaveManager : MonoBehaviour
                 isConnected = true,
                 hasSpawnedAvatar = false,
 
+                worldPointsClaimed = 0,
+
                 lastUpdatedTimestamp =
-                    DateTimeOffset.UtcNow.ToUnixTimeSeconds()
+    DateTimeOffset.UtcNow.ToUnixTimeSeconds()
             };
 
             slot.players.Add(entry);
@@ -243,7 +245,13 @@ public class PlayerSaveManager : MonoBehaviour
             personalCheckpoints = new List<string>(),
 
             isConnected = true,
-            hasSpawnedAvatar = true
+            hasSpawnedAvatar = true,
+
+            // CORREGIDO
+            worldPointsClaimed =
+                stats != null
+                    ? stats.WorldPointsClaimed
+                    : 0
         };
 
         Debug.Log(
@@ -301,9 +309,11 @@ public class PlayerSaveManager : MonoBehaviour
 
             manaRegenPoints =
                 stats.ManaRegen.PointsAssigned,
+            worldPointsClaimed = stats.WorldPointsClaimed,
 
             staminaRegenPoints =
-                stats.StaminaRegen.PointsAssigned
+                stats.StaminaRegen.PointsAssigned,
+
         };
     }
 
@@ -349,10 +359,21 @@ public class PlayerSaveManager : MonoBehaviour
 
         if (stats != null)
         {
-            stats.SubscribeOrInvokeWhenReady(() =>
+            Action restoreCallback = null;
+
+            restoreCallback = () =>
             {
+                stats.OnStatsReady -= restoreCallback;
+
                 RestoreStats(stats, entry.stats);
-            });
+
+                ApplyMissingWorldPoints(
+                    entry,
+                    stats
+                );
+            };
+
+            stats.SubscribeOrInvokeWhenReady(restoreCallback);
         }
 
         // ─────────────────────────────────────────
@@ -505,6 +526,10 @@ public class PlayerSaveManager : MonoBehaviour
         stats.RestoreUpgradePoints(
             snapshot.upgradePoints,
             snapshot.totalPointsEarned
+        );
+
+        stats.SetWorldPointsClaimed(
+            snapshot.worldPointsClaimed
         );
 
         stats.SetCurrentValue(
@@ -739,6 +764,49 @@ public class PlayerSaveManager : MonoBehaviour
             $"PlayerId={entry.playerId} " +
             $"Pos={entry.position.ToVector3()}"
         );
+    }
+    private void ApplyMissingWorldPoints(
+    PlayerSaveEntry entry,
+    PlayerStats stats
+)
+    {
+        if (entry == null)
+            return;
+
+        if (stats == null)
+            return;
+
+        if (WorldCheckpointState.Instance == null)
+            return;
+
+        int totalWorldPoints =
+            WorldCheckpointState.Instance
+                .WorldPointsGenerated.Value;
+
+        int alreadyClaimed =
+            entry.worldPointsClaimed;
+
+        int missing =
+            totalWorldPoints - alreadyClaimed;
+
+        if (missing <= 0)
+            return;
+
+        Debug.Log(
+            $"[PlayerSaveManager] " +
+            $"Applying missing world points. " +
+            $"Missing={missing}"
+        );
+
+        stats.AddUpgradePoints(missing);
+
+        stats.SetWorldPointsClaimed(
+            totalWorldPoints
+        );
+
+        entry.worldPointsClaimed =
+            totalWorldPoints;
+        
     }
 }
 

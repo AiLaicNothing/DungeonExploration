@@ -177,12 +177,22 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
     public override void OnNetworkSpawn()
     {
+        Debug.Log(
+            $"[PLAYER CONTROLLER] Spawn " +
+            $"Name={gameObject.name} " +
+            $"NetId={NetworkObjectId} " +
+            $"Owner={OwnerClientId} " +
+            $"IsOwner={IsOwner} " +
+            $"IsServer={IsServer}"
+        );
+
         var inventory = GetComponent<PlayerSkillInventory>();
 
         if (inventory != null)
         {
             inventory.OnSkillsChanged += RefreshSkillsFromInventory;
         }
+
         if (rb == null)
             rb = GetComponent<Rigidbody>();
 
@@ -202,6 +212,12 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
         if (IsOwner)
         {
+            Debug.Log(
+                $"[PLAYER CONTROLLER] Registering LocalPlayer " +
+                $"Owner={OwnerClientId} " +
+                $"NetId={NetworkObjectId}"
+            );
+
             if (thirdCam != null)
                 thirdCam.SetActive(true);
 

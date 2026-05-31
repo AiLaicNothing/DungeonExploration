@@ -163,6 +163,42 @@ public class SaveGameIntegration : NetworkBehaviour
         Debug.Log("[SaveGameIntegration] World restored.");
     }
 
+    private void SyncMissingWorldPoints(PlayerStats stats)
+    {
+        if (!IsServer)
+            return;
+
+        if (stats == null)
+            return;
+
+        if (WorldCheckpointState.Instance == null)
+            return;
+
+        int generated =
+            WorldCheckpointState.Instance
+                .WorldPointsGenerated.Value;
+
+        int claimed =
+            stats.WorldPointsClaimed;
+
+        int missing =
+            generated - claimed;
+
+        if (missing <= 0)
+            return;
+
+        stats.AddUpgradePoints(missing);
+
+        stats.SetWorldPointsClaimed(generated);
+
+        Debug.Log(
+            $"[SaveGameIntegration] Synced missing world points. " +
+            $"Missing={missing} " +
+            $"Generated={generated} " +
+            $"ClaimedBefore={claimed}"
+        );
+    }
+
     public void OnPlayerSpawned(NetworkObject playerObject, string playerId)
     {
         if (!IsServer || _isShuttingDown)
@@ -199,7 +235,10 @@ public class SaveGameIntegration : NetworkBehaviour
                 playerData,
                 restorePosition: false
             );
+            var stats =
+    playerObject.GetComponent<PlayerStats>();
 
+            SyncMissingWorldPoints(stats);
             Debug.Log(
                 $"[SaveGameIntegration] Player restored successfully Player={playerId}"
             );

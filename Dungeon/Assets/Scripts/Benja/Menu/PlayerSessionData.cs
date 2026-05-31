@@ -174,19 +174,29 @@ public class PlayerSessionData : NetworkBehaviour
     // Called by the CharacterSelectionManager after the avatar is spawned.
     public void NotifyCharacterSpawned(ulong netId)
     {
-        if (!IsServer) return;
+        if (!IsServer)
+            return;
+
+        Debug.Log(
+            $"[SESSION] NotifyCharacterSpawned " +
+            $"Client={OwnerClientId} " +
+            $"OldNetId={CurrentCharacterNetId.Value} " +
+            $"NewNetId={netId}"
+        );
 
         CurrentCharacterNetId.Value = netId;
+
         BeginLiveSyncServer();
 
         if (PlayerSaveManager.Instance != null &&
             SaveSlotManager.Instance != null &&
             SaveSlotManager.Instance.HasActiveSlot)
         {
-            SaveSlotManager.Instance.DebugDumpActiveSlot($"NotifyCharacterSpawned client={OwnerClientId} netId={netId}");
+            SaveSlotManager.Instance.DebugDumpActiveSlot(
+                $"NotifyCharacterSpawned client={OwnerClientId} netId={netId}"
+            );
         }
     }
-
     private void BeginLiveSyncServer()
     {
         if (!IsServer)

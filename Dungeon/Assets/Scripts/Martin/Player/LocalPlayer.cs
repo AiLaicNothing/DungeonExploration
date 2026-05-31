@@ -15,15 +15,33 @@ public static class LocalPlayer
 
     public static void RegisterLocalPlayer(PlayerController controller)
     {
+        Debug.Log(
+            $"[LOCAL PLAYER] Register " +
+            $"Name={controller.name} " +
+            $"Owner={controller.OwnerClientId}"
+        );
+
         Controller = controller;
+
         OnLocalPlayerReady?.Invoke(controller);
-        Debug.Log($"[LocalPlayer] Registrado: {controller.name} (Owner: {controller.OwnerClientId})");
+
+        Debug.Log(
+            $"[LocalPlayer] Registrado: {controller.name} (Owner: {controller.OwnerClientId})"
+        );
     }
 
     public static void UnregisterLocalPlayer()
     {
-        if (Controller == null) return;
+        if (Controller == null)
+            return;
+
+        Debug.Log(
+            $"[LOCAL PLAYER] Unregister " +
+            $"Owner={Controller.OwnerClientId}"
+        );
+
         Controller = null;
+
         OnLocalPlayerDespawned?.Invoke();
     }
 

@@ -34,6 +34,8 @@ public class PlayerStats : NetworkBehaviour
 
         _upgradePoints.Value = 0;
         _totalPointsEarned.Value = 0;
+        _worldPointsClaimed.Value = 0;
+
     }
 
     /// <summary>
@@ -45,11 +47,12 @@ public class PlayerStats : NetworkBehaviour
             return;
 
         _totalPointsEarned.Value = amount;
+
     }
 
     [Header("Config")]
     [SerializeField] private PlayerStatsData data;
-
+    public int WorldPointsClaimed => _worldPointsClaimed.Value;
     // ── Stats sincronizadas (servidor autoritativo) ───────────────────
     // Una NetworkList paralela para currentValue y otra para max, indexadas igual que data.stats.
     // Usamos arrays porque NetworkList<float> existe pero un array de NetworkVariable es más explícito.
@@ -64,7 +67,24 @@ public class PlayerStats : NetworkBehaviour
 
     private NetworkVariable<int> _totalPointsEarned = new NetworkVariable<int>(
         0, NetworkVariableReadPermission.Owner, NetworkVariableWritePermission.Server);
+    private NetworkVariable<int> _worldPointsClaimed =
+    new NetworkVariable<int>(
+        0,
+        NetworkVariableReadPermission.Owner,
+        NetworkVariableWritePermission.Server
+    );
+    /// <summary>
+    /// SOLO SERVIDOR.
+    /// Marca cuántos puntos globales del mundo ya fueron reclamados
+    /// por este jugador.
+    /// </summary>
+    public void SetWorldPointsClaimed(int amount)
+    {
+        if (!IsServer)
+            return;
 
+        _worldPointsClaimed.Value = Mathf.Max(0, amount);
+    }
     // ── Diccionario local de stats (config, no estado runtime) ────────
     private Dictionary<string, PlayerStat> _statsById;
     private Dictionary<string, int> _idToIndex; // id -> índice en NetworkList
@@ -127,10 +147,16 @@ public class PlayerStats : NetworkBehaviour
     /// </summary>
     public void SubscribeOrInvokeWhenReady(Action callback)
     {
-        if (callback == null) return;
-        OnStatsReady += callback;
+        if (callback == null)
+            return;
 
-        if (IsStatsReady) callback();
+        if (IsStatsReady)
+        {
+            callback();
+            return;
+        }
+
+        OnStatsReady += callback;
     }
 
     // ── Atajos al estilo del singleton anterior ───────────────────────
@@ -145,9 +171,12 @@ public class PlayerStats : NetworkBehaviour
 
     public PlayerStat GetStat(string id) => _statsById != null && _statsById.TryGetValue(id, out var s) ? s : null;
 
+    public bool HasFinishedRestore { get; private set; }
+
     // ── Lifecycle ─────────────────────────────────────────────────────
     private void Awake()
     {
+        HasFinishedRestore = false;
         // Inicializa las NetworkList ANTES de OnNetworkSpawn
         _currentValues = new NetworkList<float>();
         _maxValues = new NetworkList<float>();
@@ -155,7 +184,13 @@ public class PlayerStats : NetworkBehaviour
 
         BuildLocalConfig();
     }
+    public void MarkRestoreFinished()
+    {
+        if (!IsServer)
+            return;
 
+        HasFinishedRestore = true;
+    }
     public override void OnNetworkSpawn()
     {
         if (IsServer)

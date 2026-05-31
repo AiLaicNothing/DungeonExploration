@@ -56,12 +56,21 @@ public class PuzzleStateEntry
 [Serializable]
 public class PlayerSaveEntry
 {
-
+    /// <summary>
+    /// Cuántos puntos globales del mundo
+    /// este jugador YA recibió.
+    /// 
+    /// Ejemplo:
+    /// Mundo generó 25.
+    /// Jugador recibió 10.
+    /// Entonces faltan 15.
+    /// </summary>
+    public int worldPointsClaimed;
     public string[] equippedSkillIds;
 
     public string playerId;
     public string playerName;
-
+    public int worldPointsReceived;
     public int selectedCharacter = -1;
 
     // CHANGE:
@@ -104,6 +113,8 @@ public class PlayerStatsSnapshot
     public int healthPoints;
     public int manaPoints;
     public int staminaPoints;
+
+    public int worldPointsClaimed;
 
     public int physicalDamagePoints;
     public int magicalDamagePoints;

@@ -81,7 +81,7 @@ public class CharacterSelectionManager : NetworkBehaviour
     {
         if (!selectedCharacters.TryGetValue(clientId, out int selectedIndex))
         {
-            Debug.LogWarning($"[CharacterSelectionManager] No selected character for Client={clientId}");return;
+            Debug.LogWarning($"[CharacterSelectionManager] No selected character for Client={clientId}"); return;
         }
 
         CharacterData data = characters[selectedIndex];
@@ -100,9 +100,9 @@ public class CharacterSelectionManager : NetworkBehaviour
         {
             playerId = session.PlayerId.Value.ToString();
 
-            Debug.Log( $"[CharacterSelectionManager] Spawn decision " +$"Client={clientId} PlayerId={playerId} Selected={selectedIndex}");
+            Debug.Log($"[CharacterSelectionManager] Spawn decision " + $"Client={clientId} PlayerId={playerId} Selected={selectedIndex}");
 
-            if (SaveSlotManager.Instance != null &&SaveSlotManager.Instance.HasActiveSlot && !string.IsNullOrEmpty(playerId))
+            if (SaveSlotManager.Instance != null && SaveSlotManager.Instance.HasActiveSlot && !string.IsNullOrEmpty(playerId))
             {
                 if (!SaveSlotManager.Instance.TryGetActivePlayerEntry(playerId, out savedEntry))
                 {
@@ -112,7 +112,7 @@ public class CharacterSelectionManager : NetworkBehaviour
         }
         else
         {
-            Debug.LogWarning( $"[CharacterSelectionManager] Session not found for Client={clientId}" );
+            Debug.LogWarning($"[CharacterSelectionManager] Session not found for Client={clientId}");
         }
 
         Transform fallbackSpawn = GetFallbackSpawnPoint();
@@ -123,9 +123,9 @@ public class CharacterSelectionManager : NetworkBehaviour
         {
             // CHANGE:
             // Prefer the last known saved position instead of the fallback spawn point.
-            spawnPosition = savedEntry.lastKnownPosition.ToVector3().sqrMagnitude > 0.0001f? savedEntry.lastKnownPosition.ToVector3() : savedEntry.position.ToVector3();
+            spawnPosition = savedEntry.lastKnownPosition.ToVector3().sqrMagnitude > 0.0001f ? savedEntry.lastKnownPosition.ToVector3() : savedEntry.position.ToVector3();
 
-            Debug.Log( $"[CharacterSelectionManager] Using saved spawn position " + $"Player={playerId} Pos={spawnPosition}");
+            Debug.Log($"[CharacterSelectionManager] Using saved spawn position " + $"Player={playerId} Pos={spawnPosition}");
         }
 
         if (spawnedCharacters.TryGetValue(clientId, out NetworkObject oldCharacter) && oldCharacter != null)
@@ -145,7 +145,7 @@ public class CharacterSelectionManager : NetworkBehaviour
 
         netObj.SpawnWithOwnership(clientId);
 
-        Debug.Log( $"[CharacterSelectionManager] Spawned prefab " + $"Character={data.characterName} Client={clientId} NetId={netObj.NetworkObjectId} SpawnPos={spawnPosition}" );
+        Debug.Log($"[CharacterSelectionManager] Spawned prefab " + $"Character={data.characterName} Client={clientId} NetId={netObj.NetworkObjectId} SpawnPos={spawnPosition}");
 
         if (session != null)
         {
@@ -155,12 +155,33 @@ public class CharacterSelectionManager : NetworkBehaviour
 
         spawnedCharacters[clientId] = netObj;
 
-        if (savedEntry != null && SaveGameIntegration.Instance != null)
+        if (savedEntry != null &&
+            SaveGameIntegration.Instance != null)
         {
-            SaveGameIntegration.Instance.OnPlayerSpawned(netObj, playerId);
+            SaveGameIntegration.Instance.OnPlayerSpawned(
+                netObj,
+                playerId
+            );
+        }
+        else
+        {
+            var stats = netObj.GetComponent<PlayerStats>();
+
+            if (stats != null &&
+                WorldCheckpointState.Instance != null)
+            {
+                stats.SetWorldPointsClaimed(
+                    WorldCheckpointState.Instance.WorldPointsGenerated.Value
+                );
+
+                Debug.Log(
+                    $"[CharacterSelectionManager] " +
+                    $"New player synced with world points. " +
+                    $"Claimed={WorldCheckpointState.Instance.WorldPointsGenerated.Value}"
+                );
+            }
         }
 
-        Debug.Log($"[CharacterSelectionManager] Spawned {data.characterName} for Client {clientId}");
     }
 
     private Transform GetFallbackSpawnPoint()
@@ -201,4 +222,5 @@ public class CharacterSelectionManager : NetworkBehaviour
         selectedCharacters[clientId] = selected;
         SpawnCharacter(clientId);
     }
-}
+
+}   
