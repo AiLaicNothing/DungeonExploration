@@ -937,7 +937,28 @@ public class PlayerController : NetworkBehaviour, IDamageable
             );
         }
     }
+    public void TeleportToPosition(Vector3 position)
+    {
+        if (IsServer)
+        {
+            TeleportToPosition_Server(position);
+        }
+        else
+        {
+            TeleportToPositionServerRpc(position);
+        }
+    }
+    [ServerRpc(RequireOwnership = false)]
+    private void TeleportToPositionServerRpc(Vector3 position)
+    {
+        TeleportToPosition_Server(position);
+    }
+    private void TeleportToPosition_Server(Vector3 position)
+    {
+        ApplyTeleport(position);
 
+        ForceTeleportClientRpc(position);
+    }
     [ServerRpc]
     private void TeleportToCheckpointServerRpc(
         string checkpointName
