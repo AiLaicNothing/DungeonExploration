@@ -17,3 +17,6 @@ MonoBehaviour:
   description: Sooooooooooooy seluuuuune
   portrait: {fileID: 21300000, guid: 8fd15fcc192518c44acf554b17d7ba34, type: 3}
   playerPrefab: {fileID: 1709885077992164042, guid: 0d3aa8d3f18500f4ca5389ad8eb9243d, type: 3}
+  startingHealth: 75
+  startingMana: 80
+  startingStamina: 50

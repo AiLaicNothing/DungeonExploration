@@ -228,7 +228,17 @@ public class SaveSlotManager : MonoBehaviour
         Debug.Log(
             $"[SaveSlotManager] Player entry found. PlayerId={playerId} " + $"SelectedCharacter={entry.selectedCharacter} Pos={entry.position.ToVector3()} LastPos={entry.lastKnownPosition.ToVector3()} Scene={entry.currentScene}");
 
+        Debug.Log(
+    $"[ACTIVE ENTRY] " +
+    $"Player={entry.playerName} " +
+    $"HP={entry.stats.currentHealth} " +
+    $"MP={entry.stats.currentMana} " +
+    $"STA={entry.stats.currentStamina} " +
+    $"UpgradePoints={entry.stats.upgradePoints} " +
+    $"WorldPointsClaimed={entry.stats.worldPointsClaimed}"
+);
         return true;
+
     }
 
     // CHANGE:
@@ -284,16 +294,42 @@ public class SaveSlotManager : MonoBehaviour
     private SaveSlotData LoadSlotFromDisk(string saveId)
     {
         string path = GetSlotPath(saveId);
-        if (!File.Exists(path)) return null;
+
+        if (!File.Exists(path))
+            return null;
 
         try
         {
             string json = File.ReadAllText(path);
-            return JsonUtility.FromJson<SaveSlotData>(json);
+
+            SaveSlotData slot =
+                JsonUtility.FromJson<SaveSlotData>(json);
+
+            Debug.Log(
+                $"[LOAD FILE] SaveId={saveId} Players={slot.players.Count}"
+            );
+
+            foreach (var p in slot.players)
+            {
+                Debug.Log(
+                    $"[LOAD FILE ENTRY] " +
+                    $"Player={p.playerName} " +
+                    $"HP={p.stats.currentHealth} " +
+                    $"MP={p.stats.currentMana} " +
+                    $"STA={p.stats.currentStamina} " +
+                    $"UpgradePoints={p.stats.upgradePoints} " +
+                    $"WorldPointsClaimed={p.stats.worldPointsClaimed}"
+                );
+            }
+
+            return slot;
         }
         catch (Exception e)
         {
-            Debug.LogError($"[SaveSlotManager] Error cargando slot: {e.Message}");
+            Debug.LogError(
+                $"[SaveSlotManager] Error cargando slot: {e.Message}"
+            );
+
             return null;
         }
     }

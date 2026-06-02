@@ -22,17 +22,39 @@ public class PlayerInputBridge : NetworkBehaviour
     public void OnPauseInput(InputAction.CallbackContext context)
     {
         if (!context.performed) return;
-
-        // Solo el dueño puede abrir SU menú de pausa
         if (!IsOwner) return;
+
+        if (CheckpointSkillUI.Instance != null &&
+            CheckpointSkillUI.Instance.IsOpen)
+        {
+            CheckpointSkillUI.Instance.Close();
+            return;
+        }
+
+        if (CheckpointUpgradeUI.Instance != null &&
+            CheckpointUpgradeUI.Instance.IsOpen)
+        {
+            CheckpointUpgradeUI.Instance.Close();
+            return;
+        }
+
+        if (TeleporterPanelUI.Instance != null &&
+            TeleporterPanelUI.Instance.IsOpen)
+        {
+            TeleporterPanelUI.Instance.Close();
+            return;
+        }
+
+        if (CheckpointMenuUI.Instance != null &&
+            CheckpointMenuUI.Instance.IsOpen)
+        {
+            CheckpointMenuUI.Instance.Close();
+            return;
+        }
 
         if (PauseMenuUI.Instance != null)
         {
             PauseMenuUI.Instance.OnPause(context);
-        }
-        else
-        {
-            Debug.LogWarning("[PlayerInputBridge] No hay PauseMenuUI en escena.");
         }
     }
 }   

@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -125,7 +126,15 @@ public class PlayerInputHandler : MonoBehaviour
 
     private void Update()
     {
-        if (attackBufferCounter  > 0)
+        if (moveInput != Vector2.zero)
+        {
+            //Debug.Log(
+            //    $"[INPUT] Owner={GetComponent<NetworkObject>()?.OwnerClientId} " +
+            //    $"Move={moveInput}"
+            //);
+        }
+
+        if (attackBufferCounter > 0)
         {
             attackBufferCounter -= Time.deltaTime;
         }

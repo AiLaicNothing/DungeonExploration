@@ -31,7 +31,7 @@ MonoBehaviour:
     downgradeValue: 1
   - id: stamina
     displayName: Stamina
-    baseValue: 100
+    baseValue: 80
     minValue: 10
     maxValue: 300
     valuePerPoint: 10

@@ -243,8 +243,25 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
     private void Start()
     {
+        Debug.Log(
+            $"[PLAYER START] " +
+            $"Name={name} " +
+            $"Owner={OwnerClientId} " +
+            $"IsOwner={IsOwner}"
+        );
+
         if (!IsOwner)
+        {
+            Debug.Log(
+                $"[PLAYER START] ABORTED (not owner)"
+            );
+
             return;
+        }
+
+        Debug.Log(
+            $"[PLAYER START] Initializing state machines"
+        );
 
         movementSM.Initialize(iddle_State);
         actionSM.Initialize(iddeAction_State);
@@ -254,6 +271,12 @@ public class PlayerController : NetworkBehaviour, IDamageable
     {
         if (!IsOwner)
             return;
+
+        Debug.Log(
+            $"[PLAYER UPDATE] " +
+            $"Owner={OwnerClientId} " +
+            $"Ready={startingHealthInitialized}"
+        );
 
         if (!startingHealthInitialized)
             return;
@@ -287,6 +310,17 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
         if (isDead)
             return;
+
+        if (UIBlockingManager.IsAnyUIOpen)
+        {
+            rb.linearVelocity = new Vector3(
+                0,
+                rb.linearVelocity.y,
+                0
+            );
+
+            return;
+        }
 
         ApplyGravity();
 
@@ -794,8 +828,9 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
     private IEnumerator InitializeStartingHealthWhenReady()
     {
-        if (startingHealthInitialized)
-            yield break;
+        Debug.Log(
+            $"[HEALTH INIT] Started Owner={OwnerClientId}"
+        );
 
         while (
             stats == null ||
@@ -803,8 +838,19 @@ public class PlayerController : NetworkBehaviour, IDamageable
             stats.Health.Max <= 0f
         )
         {
-            yield return null;
+            Debug.Log(
+                $"[HEALTH INIT] Waiting..." +
+                $" StatsNull={stats == null}" +
+                $" Ready={(stats != null ? stats.IsStatsReady : false)}" +
+                $" Max={(stats != null ? stats.Health.Max : -1)}"
+            );
+
+            yield return new WaitForSeconds(1f);
         }
+
+        Debug.Log(
+            $"[HEALTH INIT] Finished"
+        );
 
         if (stats.Health.CurrentValue <= 0f)
         {

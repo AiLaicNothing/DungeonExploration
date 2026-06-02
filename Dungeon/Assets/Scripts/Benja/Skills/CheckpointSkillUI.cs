@@ -6,6 +6,9 @@ using UnityEngine.UI;
 public class CheckpointSkillUI : MonoBehaviour
 {
     public static CheckpointSkillUI Instance;
+    public bool IsOpen =>
+    panelRoot != null &&
+    panelRoot.activeSelf;
 
     [Header("Root")]
     [SerializeField] private GameObject panelRoot;
@@ -60,9 +63,12 @@ public class CheckpointSkillUI : MonoBehaviour
         if (unequipButton != null)
             unequipButton.onClick.RemoveListener(UnequipSelectedSlot);
 
-        // NEW: unsubscribe from inventory updates
         if (inventory != null)
             inventory.OnSkillsChanged -= Refresh;
+
+        // Safety cleanup
+        if (UIBlockingManager.Instance != null)
+            UIBlockingManager.Instance.Unregister(this);
     }
 
     // =========================================================
@@ -96,7 +102,6 @@ public class CheckpointSkillUI : MonoBehaviour
         if (inventory == null)
             return;
 
-        // NEW: subscribe to network-synced inventory changes
         inventory.OnSkillsChanged -= Refresh;
         inventory.OnSkillsChanged += Refresh;
 
@@ -106,6 +111,10 @@ public class CheckpointSkillUI : MonoBehaviour
         selectedSlotIndex = -1;
 
         Refresh();
+
+        // Registrar UI abierta
+        if (UIBlockingManager.Instance != null)
+            UIBlockingManager.Instance.Register(this);
     }
 
     public void Close()
@@ -117,6 +126,10 @@ public class CheckpointSkillUI : MonoBehaviour
             inventory.OnSkillsChanged -= Refresh;
 
         panelRoot.SetActive(false);
+
+        // Registrar UI cerrada
+        if (UIBlockingManager.Instance != null)
+            UIBlockingManager.Instance.Unregister(this);
     }
 
     // =========================================================

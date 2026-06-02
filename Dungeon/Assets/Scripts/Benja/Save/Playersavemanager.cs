@@ -67,14 +67,54 @@ public class PlayerSaveManager : MonoBehaviour
 
         if (entry == null)
         {
+            CharacterData characterData = null;
+
+            if (CharacterSelectionManager.Instance != null)
+            {
+                characterData =
+                    CharacterSelectionManager.Instance.GetCharacter(
+                        selectedCharacter
+                    );
+            }
             entry = new PlayerSaveEntry
             {
                 playerId = playerId,
                 playerName = playerName,
                 selectedCharacter = selectedCharacter,
 
-                stats = new PlayerStatsSnapshot(),
+                stats = new PlayerStatsSnapshot
+                {
+                    currentHealth =
+        characterData != null
+            ? characterData.startingHealth
+            : 100,
 
+                    currentMana =
+        characterData != null
+            ? characterData.startingMana
+            : 50,
+
+                    currentStamina =
+        characterData != null
+            ? characterData.startingStamina
+            : 100,
+
+                    upgradePoints = 0,
+                    totalPointsEarned = 0,
+
+                    healthPoints = 0,
+                    manaPoints = 0,
+                    staminaPoints = 0,
+
+                    physicalDamagePoints = 0,
+                    magicalDamagePoints = 0,
+
+                    healthRegenPoints = 0,
+                    manaRegenPoints = 0,
+                    staminaRegenPoints = 0,
+
+                    worldPointsClaimed = 0
+                },
                 unlockedSkills = new List<string>(),
 
                 position = Vector3.zero,
@@ -219,6 +259,7 @@ public class PlayerSaveManager : MonoBehaviour
         var entry = new PlayerSaveEntry
         {
             equippedSkillIds = equippedSkillIds,
+
             playerId =
                 sessionData.PlayerId.Value.ToString(),
 
@@ -247,12 +288,21 @@ public class PlayerSaveManager : MonoBehaviour
             isConnected = true,
             hasSpawnedAvatar = true,
 
-            // CORREGIDO
             worldPointsClaimed =
                 stats != null
                     ? stats.WorldPointsClaimed
                     : 0
         };
+
+        Debug.Log(
+            $"[SAVE ENTRY] " +
+            $"Player={entry.playerName} " +
+            $"HP={entry.stats.currentHealth} " +
+            $"MP={entry.stats.currentMana} " +
+            $"STA={entry.stats.currentStamina} " +
+            $"UpgradePoints={entry.stats.upgradePoints} " +
+            $"WorldPointsClaimed={entry.stats.worldPointsClaimed}"
+        );
 
         Debug.Log(
             $"[PlayerSaveManager] Capturing player state " +
@@ -285,6 +335,16 @@ public class PlayerSaveManager : MonoBehaviour
 
     private PlayerStatsSnapshot CaptureStats(PlayerStats stats)
     {
+        Debug.Log(
+            $"[CAPTURE STATS] " +
+            $"HP={stats.Health.CurrentValue} " +
+            $"MP={stats.Mana.CurrentValue} " +
+            $"STA={stats.Stamina.CurrentValue} " +
+            $"MaxHP={stats.Health.Max} " +
+            $"UpgradePoints={stats.UpgradePoints} " +
+            $"WorldPointsClaimed={stats.WorldPointsClaimed}"
+        );
+
         return new PlayerStatsSnapshot
         {
             currentHealth = stats.Health.CurrentValue,
@@ -309,11 +369,12 @@ public class PlayerSaveManager : MonoBehaviour
 
             manaRegenPoints =
                 stats.ManaRegen.PointsAssigned,
-            worldPointsClaimed = stats.WorldPointsClaimed,
 
             staminaRegenPoints =
                 stats.StaminaRegen.PointsAssigned,
 
+            worldPointsClaimed =
+                stats.WorldPointsClaimed,
         };
     }
 
@@ -356,14 +417,31 @@ public class PlayerSaveManager : MonoBehaviour
         // ─────────────────────────────────────────
         // RESTORE STATS
         // ─────────────────────────────────────────
-
         if (stats != null)
         {
+            Debug.Log(
+                $"[LOAD ENTRY] " +
+                $"Player={entry.playerName} " +
+                $"HP={entry.stats.currentHealth} " +
+                $"MP={entry.stats.currentMana} " +
+                $"STA={entry.stats.currentStamina} " +
+                $"UpgradePoints={entry.stats.upgradePoints} " +
+                $"WorldPointsClaimed={entry.stats.worldPointsClaimed}"
+            );
+
             Action restoreCallback = null;
 
             restoreCallback = () =>
             {
                 stats.OnStatsReady -= restoreCallback;
+
+                Debug.Log(
+                    $"[RESTORE CALLBACK] " +
+                    $"Player={entry.playerName} " +
+                    $"HP={entry.stats.currentHealth} " +
+                    $"MP={entry.stats.currentMana} " +
+                    $"STA={entry.stats.currentStamina}"
+                );
 
                 RestoreStats(stats, entry.stats);
 
@@ -486,8 +564,57 @@ public class PlayerSaveManager : MonoBehaviour
     {
         if (stats == null || snapshot == null)
             return;
+        bool emptySnapshot =
+    snapshot.currentHealth <= 0 &&
+    snapshot.currentMana <= 0 &&
+    snapshot.currentStamina <= 0 &&
+    snapshot.totalPointsEarned <= 0;
+
+        if (emptySnapshot)
+        {
+            Debug.LogWarning(
+                "[PlayerSaveManager] Empty snapshot detected. Using defaults."
+            );
+
+            snapshot.currentHealth =
+                stats.GetMaxValue("health");
+
+            snapshot.currentMana =
+                stats.GetMaxValue("mana");
+
+            snapshot.currentStamina =
+                stats.GetMaxValue("stamina");
+
+            Debug.Log(
+                $"[RESTORE FALLBACK] " +
+                $"HP={snapshot.currentHealth} " +
+                $"MP={snapshot.currentMana} " +
+                $"STA={snapshot.currentStamina}"
+            );
+        }
+        Debug.Log(
+            $"[RESTORE STATS] Snapshot " +
+            $"HP={snapshot.currentHealth} " +
+            $"MP={snapshot.currentMana} " +
+            $"STA={snapshot.currentStamina} " +
+            $"UpgradePoints={snapshot.upgradePoints} " +
+            $"WorldPointsClaimed={snapshot.worldPointsClaimed}"
+        );
+
+        Debug.Log(
+            $"[RESTORE STATS] Before Reset " +
+            $"HP={stats.GetCurrentValue("health")} " +
+            $"MaxHP={stats.GetMaxValue("health")} " +
+            $"Ready={stats.IsStatsReady}"
+        );
 
         stats.ResetAllStatsForLoad();
+
+        Debug.Log(
+            $"[RESTORE STATS] After Reset " +
+            $"HP={stats.GetCurrentValue("health")} " +
+            $"MaxHP={stats.GetMaxValue("health")}"
+        );
 
         RestorePoints(stats, "health", snapshot.healthPoints);
         RestorePoints(stats, "mana", snapshot.manaPoints);
@@ -523,6 +650,12 @@ public class PlayerSaveManager : MonoBehaviour
             snapshot.staminaRegenPoints
         );
 
+        Debug.Log(
+            $"[RESTORE STATS] After Points Restore " +
+            $"HP={stats.GetCurrentValue("health")} " +
+            $"MaxHP={stats.GetMaxValue("health")}"
+        );
+
         stats.RestoreUpgradePoints(
             snapshot.upgradePoints,
             snapshot.totalPointsEarned
@@ -545,6 +678,15 @@ public class PlayerSaveManager : MonoBehaviour
         stats.SetCurrentValue(
             "stamina",
             snapshot.currentStamina
+        );
+
+        Debug.Log(
+            $"[RESTORE STATS] Final Values " +
+            $"HP={stats.GetCurrentValue("health")} " +
+            $"MP={stats.GetCurrentValue("mana")} " +
+            $"STA={stats.GetCurrentValue("stamina")} " +
+            $"MaxHP={stats.GetMaxValue("health")} " +
+            $"UpgradePoints={stats.UpgradePoints}"
         );
 
         Debug.Log("[PlayerSaveManager] Stats restored.");
@@ -582,12 +724,26 @@ public class PlayerSaveManager : MonoBehaviour
         if (!SaveSlotManager.Instance.HasActiveSlot)
             return null;
 
-        return SaveSlotManager.Instance
+        var entry = SaveSlotManager.Instance
             .ActiveSlot
             .players
             .FirstOrDefault(p => p.playerId == playerId);
-    }
 
+        if (entry != null)
+        {
+            Debug.Log(
+                $"[GET ENTRY] " +
+                $"Player={entry.playerName} " +
+                $"HP={entry.stats.currentHealth} " +
+                $"MP={entry.stats.currentMana} " +
+                $"STA={entry.stats.currentStamina} " +
+                $"UpgradePoints={entry.stats.upgradePoints} " +
+                $"WorldPointsClaimed={entry.stats.worldPointsClaimed}"
+            );
+        }
+
+        return entry;
+    }
     // ==================================================
     // UPDATE SLOT
     // ==================================================

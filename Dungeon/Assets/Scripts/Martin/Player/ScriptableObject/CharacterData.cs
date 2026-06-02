@@ -14,4 +14,10 @@ public class CharacterData : ScriptableObject
     public Sprite portrait;
 
     public GameObject playerPrefab;
+
+
+    [Header("Starting Stats")]
+    public int startingHealth = 100;
+    public int startingMana = 50;
+    public int startingStamina = 100;
 }

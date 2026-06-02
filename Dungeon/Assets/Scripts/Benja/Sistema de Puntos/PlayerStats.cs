@@ -193,11 +193,28 @@ public class PlayerStats : NetworkBehaviour
     }
     public override void OnNetworkSpawn()
     {
+        Debug.Log(
+            $"[PLAYER STATS] Spawn " +
+            $"Owner={OwnerClientId} " +
+            $"LocalClient={NetworkManager.Singleton.LocalClientId} " +
+            $"IsServer={IsServer} " +
+            $"IsOwner={IsOwner}"
+        );
+
         if (IsServer)
         {
-            // Solo el servidor inicializa los valores
+            Debug.Log(
+                $"[PLAYER STATS] Initializing stats " +
+                $"Count={data.stats.Count}"
+            );
+
             for (int i = 0; i < data.stats.Count; i++)
             {
+                Debug.Log(
+                    $"[PLAYER STATS] Add Stat " +
+                    $"{data.stats[i].id} = {data.stats[i].baseValue}"
+                );
+
                 _currentValues.Add(data.stats[i].baseValue);
                 _maxValues.Add(data.stats[i].baseValue);
                 _pointsAssigned.Add(0);
@@ -205,15 +222,44 @@ public class PlayerStats : NetworkBehaviour
 
             _upgradePoints.Value = data.startingPoints;
             _totalPointsEarned.Value = data.startingPoints;
+
+            Debug.Log(
+                $"[PLAYER STATS] StartingPoints={data.startingPoints}"
+            );
         }
 
-        // Suscribirse a cambios para emitir eventos C# locales
         _currentValues.OnListChanged += OnCurrentValuesListChanged;
         _maxValues.OnListChanged += OnMaxValuesListChanged;
-        _upgradePoints.OnValueChanged += (oldV, newV) => OnPointsChanged?.Invoke(newV);
+        _upgradePoints.OnValueChanged += (oldV, newV) =>
+            OnPointsChanged?.Invoke(newV);
 
-        // Si ya está listo (caso del servidor: acaba de llenar las listas), disparar el evento
+        Debug.Log(
+            $"[PLAYER STATS] Before TryFireStatsReady " +
+            $"CurrentCount={_currentValues.Count} " +
+            $"MaxCount={_maxValues.Count} " +
+            $"Expected={data.stats.Count} " +
+            $"Ready={IsStatsReady}"
+        );
+
         TryFireStatsReady();
+
+        Debug.Log(
+            $"[PLAYER STATS] After TryFireStatsReady " +
+            $"CurrentCount={_currentValues.Count} " +
+            $"MaxCount={_maxValues.Count} " +
+            $"Expected={data.stats.Count} " +
+            $"Ready={IsStatsReady}"
+        );
+
+        if (IsStatsReady)
+        {
+            Debug.Log(
+                $"[PLAYER STATS VALUES] " +
+                $"Health={GetCurrentValue("health")} " +
+                $"Mana={GetCurrentValue("mana")} " +
+                $"Stamina={GetCurrentValue("stamina")}"
+            );
+        }
     }
 
     public override void OnNetworkDespawn()
@@ -229,11 +275,29 @@ public class PlayerStats : NetworkBehaviour
     /// </summary>
     private void TryFireStatsReady()
     {
-        if (_statsReadyFired) return;
-        if (!IsStatsReady) return;
+        Debug.Log(
+            $"[PLAYER STATS READY CHECK] " +
+            $"Owner={OwnerClientId} " +
+            $"CurrentCount={_currentValues.Count} " +
+            $"MaxCount={_maxValues.Count} " +
+            $"Expected={data.stats.Count} " +
+            $"Ready={IsStatsReady}"
+        );
+
+        if (_statsReadyFired)
+            return;
+
+        if (!IsStatsReady)
+            return;
 
         _statsReadyFired = true;
-        Debug.Log($"[PlayerStats] Stats listas (cliente {NetworkManager.Singleton.LocalClientId}, owner {OwnerClientId})");
+
+        Debug.Log(
+            $"[PLAYER STATS READY] " +
+            $"Owner={OwnerClientId} " +
+            $"LocalClient={NetworkManager.Singleton.LocalClientId}"
+        );
+
         OnStatsReady?.Invoke();
     }
 
