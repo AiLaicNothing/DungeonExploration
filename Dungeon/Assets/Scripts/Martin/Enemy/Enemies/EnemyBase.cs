@@ -33,6 +33,7 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
 
     [SerializeField] protected LayerMask whatIsGround;
     [SerializeField] protected Transform groundCheck;
+    [SerializeField] protected bool isGroundEnemy = true;
     protected bool isGrounded;
 
     protected Coroutine stunCourutine;
@@ -283,12 +284,17 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
 
         yield return new WaitForSeconds(0.05f);
 
-        EnableAgent();
+        if (isGroundEnemy)
+        {
+            EnableAgent();
+        }
     }
 
     private void CheckGround()
     {
         isGrounded = Physics.Raycast(groundCheck.position, Vector3.down, 0.2f, whatIsGround);
+
+        Debug.DrawRay(groundCheck.position, Vector3.down * 0.2f);
     }
 
     private void DisableAgents()

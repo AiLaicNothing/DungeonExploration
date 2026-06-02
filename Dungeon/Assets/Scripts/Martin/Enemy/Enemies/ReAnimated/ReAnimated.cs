@@ -1,12 +1,25 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using Unity.Netcode;
 using UnityEngine;
 
 public class ReAnimated : EnemyBase
 {
-    //[SerializeField] private GameObject[] players;
-    private GameObject player;
-    [SerializeField] private float attackRange;
+    [Header("Targeting")]
+    [SerializeField] private float attackRange = 2.5f;
+
+    [SerializeField] private LayerMask obstacleLayer;
+
+    [Range(0f, 1f)]
+    [SerializeField] private float closestTargetChance = 0.6f;
+
+    [SerializeField] private float targetRayHeight = 1.2f;
+
+    [Header("Rotation")]
+    [SerializeField] private float facingAngleThreshold = 15f;
+
+    [SerializeField] private float turnSpeed = 15f;
 
     [Header("OnHitData")]
     [SerializeField] private Vector3 hitBoxSize;
@@ -14,7 +27,6 @@ public class ReAnimated : EnemyBase
     [SerializeField] private float hitTime;
     [SerializeField] private float attackAnimDuration;
     [SerializeField] private float recoveryTime;
-    private Quaternion lockedAttackRot;
 
     [Header("DecayZone")]
     [SerializeField] private GameObject decaySFX;
@@ -22,7 +34,7 @@ public class ReAnimated : EnemyBase
     [SerializeField] private float decayCd;
     [SerializeField] private float decayAnimDuration;
     [SerializeField] private float decayRecoveryTime;
-    private bool canUseDecay;
+    private bool canUseDecay = true;
 
     [Header("Decay Zone Stats")]
     [SerializeField] private GameObject decayZonePrefab;
@@ -45,8 +57,10 @@ public class ReAnimated : EnemyBase
     private int patrolIndex = 0;
     private int patrolDir = 1;
 
-    //TEMPORAL
-    public GameObject hitBoxPrefab;
+    [Header("Temp")]
+    [SerializeField] private GameObject hitBoxPrefab;
+
+    private PlayerController currentTarget;
 
     private bool isPerformingAction;
     private bool instantDetection;
@@ -59,54 +73,122 @@ public class ReAnimated : EnemyBase
     {
         base.Awake();
 
-        AssignActivePlayer();
-
         agent.updateRotation = false;
-
     }
+
     protected override void Update()
     {
-        if (!IsServer) return;
+        if (!IsServer)
+            return;
 
         base.Update();
 
-        if (player == null || !player.activeInHierarchy)
-        {
-            AssignActivePlayer();
-        }
-
-        if (isStunned || IsStaggered) return;
-
+        UpdateTarget();
         HandleDetection();
+
+        if (isStunned || IsStaggered)
+            return;
+
         HandleActions();
 
-        if (isPerformingAction) return;
+        if (isPerformingAction)
+            return;
 
         HandleMovement();
     }
 
-    private void AssignActivePlayer()
-    {
-        GameObject[] players = GameObject.FindGameObjectsWithTag("Player");
+    // =========================================================
+    // TARGETING
+    // =========================================================
 
-        foreach (GameObject p in players)
+    private void UpdateTarget()
+    {
+        if (currentTarget != null && !IsTargetValid(currentTarget))
         {
-            if (p.activeInHierarchy)
-            {
-                player = p;
-                return;
-            }
+            currentTarget = null;
         }
 
-        player = null; // fallback if none found
+        if (currentTarget == null)
+        {
+            currentTarget = SelectTarget();
+        }
     }
+
+    private PlayerController SelectTarget()
+    {
+        List<PlayerController> validTargets = GetVisibleTargets();
+
+        if (validTargets.Count == 0) return null;
+
+        validTargets = validTargets.OrderBy(t => Vector3.Distance(transform.position, t.transform.position)).ToList();
+
+        if (validTargets.Count == 1) return validTargets[0];
+
+        if (Random.value <= closestTargetChance) return validTargets[0];
+
+        int index = Random.Range(1, validTargets.Count);
+
+        return validTargets[index];
+    }
+
+    private List<PlayerController> GetVisibleTargets()
+    {
+        PlayerController[] players = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
+
+        List<PlayerController> validTargets = new();
+
+        Vector3 origin = transform.position + Vector3.up * targetRayHeight;
+
+        foreach (PlayerController player in players)
+        {
+            if (player == null) continue;
+            if (!player.gameObject.activeInHierarchy) continue;
+            if (player.isDead) continue;
+
+            float dist = Vector3.Distance(transform.position, player.transform.position);
+            if (dist > detectionRange) continue;
+
+            Vector3 targetPos = player.transform.position + Vector3.up * targetRayHeight;
+            Vector3 dir = (targetPos - origin).normalized;
+            float rayDistance = Vector3.Distance(origin, targetPos);
+
+            if (Physics.Raycast(origin, dir, out RaycastHit hit, rayDistance, obstacleLayer))
+            {
+                if (hit.transform != player.transform &&
+                    hit.transform.root != player.transform.root)
+                {
+                    continue;
+                }
+            }
+
+            validTargets.Add(player);
+        }
+
+        return validTargets;
+    }
+
+    private bool IsTargetValid(PlayerController target)
+    {
+        if (target == null) return false;
+        if (!target.gameObject.activeInHierarchy) return false;
+        if (target.isDead) return false;
+
+        float dist = Vector3.Distance(transform.position, target.transform.position);
+        if (dist > detectionRange) return false;
+
+        return HasLineOfSight(target);
+    }
+
+    // =========================================================
+    // DETECTION
+    // =========================================================
 
     private void HandleDetection()
     {
-        if (player == null) return;
+        if (safeZone == null)
+            return;
 
-        distPlayer = Vector3.Distance(transform.position, player.transform.position);
-        float distHome = Vector3.Distance(transform.position, safeZone.transform.position);
+        float distHome = Vector3.Distance(transform.position, safeZone.position);
 
         if (instantDetection)
         {
@@ -114,6 +196,16 @@ public class ReAnimated : EnemyBase
             isFollowingPlayer = true;
             return;
         }
+
+        if (currentTarget == null)
+        {
+            detectionTimer = 0f;
+            hasDetectedPlayer = false;
+            isFollowingPlayer = false;
+            return;
+        }
+
+        distPlayer = Vector3.Distance(transform.position, currentTarget.transform.position);
 
         if (!hasDetectedPlayer)
         {
@@ -134,30 +226,37 @@ public class ReAnimated : EnemyBase
         }
         else
         {
-            //--> If to far from "home" return to home
             if (distHome > maxChaseDistance)
             {
                 hasDetectedPlayer = false;
                 isFollowingPlayer = false;
                 detectionTimer = 0f;
+                currentTarget = null;
                 return;
             }
         }
     }
 
+    // =========================================================
+    // MOVEMENT
+    // =========================================================
+
     private void HandleMovement()
     {
-        if (isFollowingPlayer)
+        if (isFollowingPlayer && currentTarget != null)
         {
-            agent.SetDestination(player.transform.position);
+            float distance = Vector3.Distance(transform.position, currentTarget.transform.position);
 
-            //-->Rotate the player depending of distance if its not close, it rotate toward it destination else toward the player
-            if (distPlayer > attackRange * 2f)
+            if (distance > attackRange || !HasLineOfSight(currentTarget))
             {
+                agent.isStopped = false;
+                agent.SetDestination(currentTarget.transform.position);
                 RotateToVelocity();
             }
             else
             {
+                agent.isStopped = true;
+                agent.ResetPath();
                 RotateToPlayer();
             }
         }
@@ -165,6 +264,7 @@ public class ReAnimated : EnemyBase
         {
             if (hasPatrol)
             {
+                agent.isStopped = false;
                 HandlePatrol();
                 RotateToVelocity();
             }
@@ -177,7 +277,8 @@ public class ReAnimated : EnemyBase
 
     private void HandlePatrol()
     {
-        if (patrolZones == null || patrolZones.Length == 0) return;
+        if (patrolZones == null || patrolZones.Length == 0)
+            return;
 
         Transform posDesired = patrolZones[patrolIndex];
 
@@ -202,26 +303,29 @@ public class ReAnimated : EnemyBase
         }
     }
 
+    // =========================================================
+    // ATTACK
+    // =========================================================
+
     private void HandleActions()
     {
-        if (isPerformingAction || !hasDetectedPlayer) return;
+        if (isPerformingAction || !hasDetectedPlayer || currentTarget == null) return;
 
-        float distance = Vector3.Distance(transform.position, player.transform.position);
-        Debug.Log(distance);
+        float distance = Vector3.Distance(transform.position, currentTarget.transform.position);
 
         float hpPercent = CurrentHp / stats.maxHp;
 
-        if (hpPercent <= 0.75f)
+        // Decay zone: low HP, chance-based, and only when the target is relevant.
+        if (hpPercent <= 0.75f && canUseDecay)
         {
-            float rng = Random.value;
-
-            if (rng <= 0.3)
+            if (Random.value <= 0.3f)
             {
                 StartCoroutine(PerformDecayZone());
+                return;
             }
         }
 
-        if (distance < attackRange)
+        if (distance < attackRange && HasLineOfSight(currentTarget) && IsFacingTarget())
         {
             StartCoroutine(PerformAttack());
         }
@@ -229,18 +333,42 @@ public class ReAnimated : EnemyBase
 
     private IEnumerator PerformAttack()
     {
+        if (currentTarget == null) yield break;
+
         agent.isStopped = true;
+        agent.ResetPath();
         isPerformingAction = true;
 
-        //Trigger animation
+        // Trigger animation here if needed
+        // anim.SetTrigger("Attack");
+
+        FaceTargetInstant();
 
         yield return new WaitForSeconds(hitTime);
 
+        if (currentTarget == null)
+        {
+            isPerformingAction = false;
+            yield break;
+        }
+
+        FaceTargetInstant();
+
         DoHit();
+
         float remainingTime = attackAnimDuration - hitTime;
-        if (remainingTime > 0) yield return new WaitForSeconds(remainingTime);
+
+        if (remainingTime > 0f) yield return new WaitForSeconds(remainingTime);
 
         yield return new WaitForSeconds(recoveryTime);
+
+        currentTarget = SelectTarget();
+
+        if (currentTarget == null)
+        {
+            hasDetectedPlayer = false;
+            isFollowingPlayer = false;
+        }
 
         agent.isStopped = false;
         isPerformingAction = false;
@@ -248,25 +376,40 @@ public class ReAnimated : EnemyBase
 
     private IEnumerator PerformDecayZone()
     {
-        agent.isStopped = true;
-        isPerformingAction = true;
+        if (currentTarget == null) yield break;
 
+        agent.isStopped = true;
+        agent.ResetPath();
+        isPerformingAction = true;
         canUseDecay = false;
+
+        FaceTargetInstant();
 
         yield return new WaitForSeconds(decayHitTime);
 
-        Vector3 targetPos = player.transform.position;
+        if (currentTarget == null)
+        {
+            isPerformingAction = false;
+            agent.isStopped = false;
+            yield break;
+        }
 
-        if (Physics.Raycast(targetPos + Vector3.up * 10, Vector3.down, out RaycastHit hit, 30f))
+        Vector3 targetPos = currentTarget.transform.position;
+
+        if (Physics.Raycast(targetPos + Vector3.up * 10f, Vector3.down, out RaycastHit hit, 30f))
         {
             targetPos = hit.point;
         }
 
         GameObject zone = Instantiate(decayZonePrefab, targetPos, Quaternion.identity);
-        zone.GetComponent<NetworkObject>().Spawn();
+
+        NetworkObject netObj = zone.GetComponent<NetworkObject>();
+        if (netObj != null)
+        {
+            netObj.Spawn();
+        }
 
         DecayZone decay = zone.GetComponent<DecayZone>();
-
         if (decay != null)
         {
             decay.Initialize(decayDamage, decayDuration, decayTickRate, decayRadius);
@@ -274,28 +417,39 @@ public class ReAnimated : EnemyBase
 
         if (decaySFX != null)
         {
-            Instantiate(decaySFX, targetPos,Quaternion.identity);
+            Instantiate(decaySFX, targetPos, Quaternion.identity);
         }
 
         float remaining = decayAnimDuration - decayHitTime;
 
-        if (remaining > 0) yield return new WaitForSeconds(remaining);
+        if (remaining > 0f) yield return new WaitForSeconds(remaining);
+
+        yield return new WaitForSeconds(decayRecoveryTime);
+
+        currentTarget = SelectTarget();
+
+        if (currentTarget == null)
+        {
+            hasDetectedPlayer = false;
+            isFollowingPlayer = false;
+        }
 
         agent.isStopped = false;
         isPerformingAction = false;
 
         yield return new WaitForSeconds(decayCd);
-
         canUseDecay = true;
     }
 
     private void DoHit()
     {
-        Vector3 center = transform.position + transform.forward * hitBoxPos.z + transform.up * hitBoxPos.y;
+        Vector3 attackForward = GetAttackForward();
 
-        Collider[] hits = Physics.OverlapBox(center, hitBoxSize * 0.5f, transform.rotation);
+        Vector3 center = transform.position + attackForward * hitBoxPos.z + transform.up * hitBoxPos.y;
 
-        ShowHitbox(center, hitBoxSize, transform.rotation);
+        Collider[] hits = Physics.OverlapBox(center, hitBoxSize * 0.5f, Quaternion.LookRotation(attackForward) );
+
+        ShowHitbox(center, hitBoxSize, Quaternion.LookRotation(attackForward));
 
         foreach (var hit in hits)
         {
@@ -303,41 +457,125 @@ public class ReAnimated : EnemyBase
             {
                 IDamageable damageable = hit.GetComponentInParent<IDamageable>();
 
-                damageable.TakeDamage(stats.damage, ThrowType.None, transform.forward, 0, false, 0, 0);
+                if (damageable != null)
+                {
+                    damageable.TakeDamage(stats.damage, ThrowType.None, attackForward, 0, false, 0, 0);
+                }
             }
         }
     }
 
+    // =========================================================
+    // ROTATION
+    // =========================================================
+
     private void RotateToVelocity()
     {
+        if (isPerformingAction) return;
+
         Vector3 vel = agent.velocity;
-        vel.y = 0;
+        vel.y = 0f;
 
         if (vel.sqrMagnitude < 0.01f) return;
 
         Quaternion rot = Quaternion.LookRotation(vel);
-        transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * 10f);
+        transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * turnSpeed);
     }
 
     private void RotateToPlayer()
     {
-        Vector3 dir = player.transform.position - transform.position;
+        if (isPerformingAction) return;
+
+        if (currentTarget == null) return;
+
+        Vector3 dir = currentTarget.transform.position - transform.position;
         dir.y = 0f;
 
         if (dir.sqrMagnitude < 0.01f) return;
 
         Quaternion rot = Quaternion.LookRotation(dir);
-        transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * 15f);
+        transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * turnSpeed);
     }
 
-    //=========TEMPORAL===========
+    private void FaceTargetInstant()
+    {
+        if (currentTarget == null)return;
+
+        Vector3 dir = currentTarget.transform.position - transform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.01f)  return;
+
+        transform.rotation = Quaternion.LookRotation(dir.normalized);
+    }
+
+    private bool IsFacingTarget()
+    {
+        if (currentTarget == null) return false;
+
+        Vector3 dir = currentTarget.transform.position - transform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.01f) return false;
+
+        float angle = Vector3.Angle(transform.forward, dir.normalized);
+        return angle <= facingAngleThreshold;
+    }
+
+    private Vector3 GetAttackForward()
+    {
+        if (currentTarget != null)
+        {
+            Vector3 dir = currentTarget.transform.position - transform.position;
+            dir.y = 0f;
+
+            if (dir.sqrMagnitude > 0.01f) return dir.normalized;
+        }
+
+        Vector3 fallback = transform.forward;
+        fallback.y = 0f;
+
+        if (fallback.sqrMagnitude < 0.01f) fallback = Vector3.forward;
+
+        return fallback.normalized;
+    }
+
+    // =========================================================
+    // LOS
+    // =========================================================
+
+    private bool HasLineOfSight(PlayerController target)
+    {
+        if (target == null)
+            return false;
+
+        Vector3 origin = transform.position + Vector3.up * targetRayHeight;
+        Vector3 targetPos = target.transform.position + Vector3.up * targetRayHeight;
+        Vector3 dir = (targetPos - origin).normalized;
+        float rayDistance = Vector3.Distance(origin, targetPos);
+
+        if (Physics.Raycast(origin, dir, out RaycastHit hit, rayDistance, obstacleLayer))
+        {
+            if (hit.transform != target.transform &&
+                hit.transform.root != target.transform.root)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // =========================================================
+    // TEMP VISUAL
+    // =========================================================
 
     public void ShowHitbox(Vector3 center, Vector3 size, Quaternion rot)
     {
+        if (hitBoxPrefab == null) return;
+
         GameObject box = GameObject.Instantiate(hitBoxPrefab, center, rot);
-
         box.transform.localScale = size;
-
         Destroy(box, 0.2f);
     }
 }
