@@ -192,6 +192,7 @@ GameObject:
   - component: {fileID: 230193302997254401}
   - component: {fileID: 790403574437810393}
   - component: {fileID: 42832557652174275}
+  - component: {fileID: 6651509992002158781}
   m_Layer: 12
   m_Name: Goblin-Range
   m_TagString: Enemy
@@ -280,14 +281,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 0
-  InScenePlacedSourceGlobalObjectIdHash: 0
+  GlobalObjectIdHash: 3910938869
+  InScenePlacedSourceGlobalObjectIdHash: 3910938869
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
   ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
+  SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
@@ -353,12 +354,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GoblinRange
   ShowTopMostFoldoutHeaderGroup: 1
   stats: {fileID: 11400000, guid: b79c3349a4973434db54e3763dbbbb9d, type: 2}
+  vfxHit: {fileID: 1035977224672214417, guid: 057aa477789506a44bd206e9c5acad19, type: 3}
+  hitVfxOffset: {x: 0, y: 1.2, z: 0}
+  hitVfxDuration: 1.5
   whatIsGround:
     serializedVersion: 2
     m_Bits: 128
   groundCheck: {fileID: 3236489989841371191}
+  isGroundEnemy: 1
   projectilePrefab: {fileID: 6045340872100566797, guid: 6e906c62c2f26a74da8a445375a0bdd8, type: 3}
   firePoint: {fileID: 4229759553355033911}
+  moveSpeed: 4.5
   attackRange: 10
   escapeRange: 2
   repositionRange: 5
@@ -366,16 +372,22 @@ MonoBehaviour:
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 384
+  repathDelay: 0.25
+  closestTargetChance: 0.6
+  targetRayHeight: 1.2
+  attackBuffer: 0.75
+  turnSpeed: 15
   hitTime: 0.6
   attackAnimDuration: 1
   recoveryTime: 1.5
-  detectionRange: 15
-  maxChaseDistance: 10
+  detectionRange: 30
+  maxChaseDistance: 30
   detectionDelay: 0.3
   safeZone: {fileID: 0}
   hasPatrol: 0
   patrolZones: []
   stopDistance: 0.5
+  hitBoxPrefab: {fileID: 0}
 --- !u!195 &42832557652174275
 NavMeshAgent:
   m_ObjectHideFlags: 0
@@ -398,6 +410,26 @@ NavMeshAgent:
   m_BaseOffset: 1
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &6651509992002158781
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7524637751124622858}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1e3fdca004f2d45fe8abbed571a8abd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.AI.Navigation::Unity.AI.Navigation.NavMeshModifier
+  m_SerializedVersion: 0
+  m_OverrideArea: 0
+  m_Area: 0
+  m_OverrideGenerateLinks: 0
+  m_GenerateLinks: 0
+  m_IgnoreFromBuild: 1
+  m_ApplyToChildren: 1
+  m_AffectedAgents: ffffffff
 --- !u!1 &9161756239039199295
 GameObject:
   m_ObjectHideFlags: 0

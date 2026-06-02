@@ -9,22 +9,24 @@ public class GoblinRange : EnemyBase
     [Header("Core")]
     [SerializeField] private GameObject projectilePrefab;
     [SerializeField] private Transform firePoint;
+    [SerializeField] private float moveSpeed = 4.5f;
     [SerializeField] private float attackRange = 8f;
 
     [Header("Escape / Reposition")]
-    [SerializeField] private float escapeRange = 3f;          // if too close, run away
-    [SerializeField] private float repositionRange = 6f;      // used when LOS is blocked
+    [SerializeField] private float escapeRange = 3f;
+    [SerializeField] private float repositionRange = 6f;
     [SerializeField] private int tryReposition = 8;
     [SerializeField] private LayerMask obstacleLayer;
+    [SerializeField] private float repathDelay = 0.25f;
 
     [Header("Targeting")]
     [Range(0f, 1f)]
     [SerializeField] private float closestTargetChance = 0.6f;
     [SerializeField] private float targetRayHeight = 1.2f;
+    [SerializeField] private float attackBuffer = 0.75f;
 
     [Header("Rotation")]
-    [SerializeField] private float turnSpeed = 15f;
-    [SerializeField] private float facingAngleThreshold = 12f;
+    [SerializeField] private float turnSpeed = 12f;
 
     [Header("OnHitData")]
     [SerializeField] private float hitTime;
@@ -35,7 +37,6 @@ public class GoblinRange : EnemyBase
     [SerializeField] private float detectionRange;
     [SerializeField] private float maxChaseDistance;
     [SerializeField] private float detectionDelay;
-    private float detectionTimer;
 
     [Header("Patrol")]
     [SerializeField] private Transform safeZone;
@@ -45,29 +46,38 @@ public class GoblinRange : EnemyBase
     private int patrolIndex = 0;
     private int patrolDir = 1;
 
+    [Header("Temp")]
+    public GameObject hitBoxPrefab;
+
+    private PlayerController currentTarget;
+
     private bool isPerformingAction;
     private bool instantDetection;
     private bool hasDetectedPlayer;
     private bool isFollowingPlayer;
 
-    private float distPlayer;
-
-    // NEW: current server-side target
-    private PlayerController currentTarget;
-
-    // NEW: stable movement destination for escape/reposition
-    private Vector3 currentMoveDestination;
-    private bool hasMoveDestination;
     private bool isEscaping;
     private bool isRepositioning;
+    private Vector3 currentMoveDestination;
+    private bool hasMoveDestination;
 
-    // TEMPORAL
-    public GameObject hitBoxPrefab;
+    private float distPlayer;
+    private float detectionTimer;
+    private float nextRepathTime;
+
+    private Coroutine attackRoutine;
 
     protected override void Awake()
     {
         base.Awake();
-        agent.updateRotation = false;
+
+        if (agent != null)
+        {
+            agent.updateRotation = false;
+            agent.speed = moveSpeed;
+            agent.stoppingDistance = 0.25f;
+            agent.autoBraking = true;
+        }
     }
 
     protected override void Update()
@@ -107,21 +117,22 @@ public class GoblinRange : EnemyBase
         }
     }
 
-    /// <summary>
-    /// 60% closest visible target, 40% one of the others.
-    /// Server only.
-    /// </summary>
     private PlayerController SelectTarget()
     {
         List<PlayerController> validTargets = GetVisibleTargets();
 
-        if (validTargets.Count == 0) return null;
+        if (validTargets.Count == 0)
+            return null;
 
-        validTargets = validTargets.OrderBy(t => Vector3.Distance(transform.position, t.transform.position)).ToList();
+        validTargets = validTargets
+            .OrderBy(t => Vector3.Distance(transform.position, t.transform.position))
+            .ToList();
 
-        if (validTargets.Count == 1) return validTargets[0];
+        if (validTargets.Count == 1)
+            return validTargets[0];
 
-        if (Random.value <= closestTargetChance) return validTargets[0];
+        if (Random.value <= closestTargetChance)
+            return validTargets[0];
 
         int index = Random.Range(1, validTargets.Count);
         return validTargets[index];
@@ -129,10 +140,10 @@ public class GoblinRange : EnemyBase
 
     private List<PlayerController> GetVisibleTargets()
     {
-        PlayerController[] players = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
+        PlayerController[] players =
+            FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
 
         List<PlayerController> validTargets = new List<PlayerController>();
-
         Vector3 origin = transform.position + Vector3.up * targetRayHeight;
 
         foreach (PlayerController player in players)
@@ -142,8 +153,7 @@ public class GoblinRange : EnemyBase
             if (player.isDead) continue;
 
             float dist = Vector3.Distance(transform.position, player.transform.position);
-            if (dist > detectionRange)
-                continue;
+            if (dist > detectionRange) continue;
 
             Vector3 targetPos = player.transform.position + Vector3.up * targetRayHeight;
             Vector3 dir = (targetPos - origin).normalized;
@@ -151,7 +161,8 @@ public class GoblinRange : EnemyBase
 
             if (Physics.Raycast(origin, dir, out RaycastHit hit, rayDistance, obstacleLayer))
             {
-                if (hit.transform != player.transform && hit.transform.root != player.transform.root)
+                if (hit.transform != player.transform &&
+                    hit.transform.root != player.transform.root)
                 {
                     continue;
                 }
@@ -179,7 +190,8 @@ public class GoblinRange : EnemyBase
 
         if (Physics.Raycast(origin, dir, out RaycastHit hit, rayDistance, obstacleLayer))
         {
-            if (hit.transform != target.transform && hit.transform.root != target.transform.root)
+            if (hit.transform != target.transform &&
+                hit.transform.root != target.transform.root)
             {
                 return false;
             }
@@ -199,26 +211,14 @@ public class GoblinRange : EnemyBase
 
         if (Physics.Raycast(origin, dir, out RaycastHit hit, dist, obstacleLayer))
         {
-            if (hit.transform != currentTarget.transform && hit.transform.root != currentTarget.transform.root)
+            if (hit.transform != currentTarget.transform &&
+                hit.transform.root != currentTarget.transform.root)
             {
                 return false;
             }
         }
 
         return true;
-    }
-
-    private bool IsFacingTarget()
-    {
-        if (currentTarget == null) return false;
-
-        Vector3 dir = currentTarget.transform.position - transform.position;
-        dir.y = 0f;
-
-        if (dir.sqrMagnitude < 0.01f) return false;
-
-        float angle = Vector3.Angle(transform.forward, dir.normalized);
-        return angle <= facingAngleThreshold;
     }
 
     // ==================================================
@@ -277,7 +277,6 @@ public class GoblinRange : EnemyBase
                 isEscaping = false;
                 isRepositioning = false;
                 hasMoveDestination = false;
-                return;
             }
         }
     }
@@ -292,22 +291,20 @@ public class GoblinRange : EnemyBase
         {
             float distance = Vector3.Distance(transform.position, currentTarget.transform.position);
 
-            // too close -> flee to a stable destination
             if (distance < escapeRange)
             {
-                if (!isEscaping || !hasMoveDestination)
+                if (!isEscaping || !hasMoveDestination || Time.time >= nextRepathTime)
                 {
                     StartEscape();
                 }
 
                 agent.isStopped = false;
                 agent.SetDestination(currentMoveDestination);
-                RotateToVelocity();
+                RotateAwayFromTarget();
                 return;
             }
 
-            // pathing is fine, move toward target
-            if (distance > attackRange)
+            if (distance > attackRange + attackBuffer)
             {
                 isEscaping = false;
                 isRepositioning = false;
@@ -315,41 +312,38 @@ public class GoblinRange : EnemyBase
 
                 agent.isStopped = false;
                 agent.SetDestination(currentTarget.transform.position);
-                RotateToVelocity();
+                RotateToTargetSmooth();
                 return;
             }
 
-            // inside attack range but maybe blocked or not facing well
             if (!HasLineOfSightToTarget())
             {
-                if (!isRepositioning || !hasMoveDestination)
+                if (!isRepositioning || !hasMoveDestination || Time.time >= nextRepathTime)
                 {
                     StartReposition();
                 }
 
                 agent.isStopped = false;
                 agent.SetDestination(currentMoveDestination);
-                RotateToVelocity();
+                RotateToTargetSmooth();
                 return;
             }
 
-            // in range and visible, stop and face target
             agent.isStopped = true;
             agent.ResetPath();
-            RotateToTarget();
+            RotateToTargetSmooth();
+            return;
+        }
+
+        if (hasPatrol)
+        {
+            agent.isStopped = false;
+            HandlePatrol();
         }
         else
         {
-            if (hasPatrol)
-            {
-                agent.isStopped = false;
-                HandlePatrol();
-                RotateToVelocity();
-            }
-            else
-            {
-                agent.ResetPath();
-            }
+            agent.isStopped = true;
+            agent.ResetPath();
         }
     }
 
@@ -358,10 +352,23 @@ public class GoblinRange : EnemyBase
         if (currentTarget == null) return;
 
         Vector3 targetPos = currentTarget.transform.position;
-        currentMoveDestination = FindValidPosAway(targetPos);
+        Vector3 awayDir = (transform.position - targetPos).normalized;
+
+        Vector3 desired = transform.position + awayDir * (escapeRange + repositionRange);
+
+        if (NavMesh.SamplePosition(desired, out NavMeshHit hit, repositionRange, NavMesh.AllAreas))
+        {
+            currentMoveDestination = hit.position;
+        }
+        else
+        {
+            currentMoveDestination = desired;
+        }
+
         hasMoveDestination = true;
         isEscaping = true;
         isRepositioning = false;
+        nextRepathTime = Time.time + repathDelay;
     }
 
     private void StartReposition()
@@ -370,37 +377,11 @@ public class GoblinRange : EnemyBase
 
         Vector3 center = currentTarget.transform.position;
         currentMoveDestination = FindValidPosAround(center, repositionRange);
+
         hasMoveDestination = true;
         isRepositioning = true;
         isEscaping = false;
-    }
-
-    private Vector3 FindValidPosAway(Vector3 targetPos)
-    {
-        Vector3 bestPos = transform.position;
-        float bestScore = -Mathf.Infinity;
-
-        for (int i = 0; i < tryReposition; i++)
-        {
-            Vector2 rand = Random.insideUnitCircle.normalized;
-            Vector3 dir = new Vector3(rand.x, 0, rand.y);
-
-            Vector3 awayDir = (transform.position - targetPos).normalized;
-            Vector3 candidate = transform.position + (awayDir + dir * 0.35f).normalized * repositionRange;
-
-            if (NavMesh.SamplePosition(candidate, out NavMeshHit hit, 2f, NavMesh.AllAreas))
-            {
-                float dist = Vector3.Distance(hit.position, targetPos);
-
-                if (dist > bestScore)
-                {
-                    bestScore = dist;
-                    bestPos = hit.position;
-                }
-            }
-        }
-
-        return bestPos;
+        nextRepathTime = Time.time + repathDelay;
     }
 
     private Vector3 FindValidPosAround(Vector3 center, float radius)
@@ -433,7 +414,6 @@ public class GoblinRange : EnemyBase
         if (patrolZones == null || patrolZones.Length == 0) return;
 
         Transform posDesired = patrolZones[patrolIndex];
-
         agent.SetDestination(posDesired.position);
 
         float dist = Vector3.Distance(transform.position, posDesired.position);
@@ -461,49 +441,57 @@ public class GoblinRange : EnemyBase
 
     private void HandleActions()
     {
-        if (isPerformingAction || !hasDetectedPlayer) return;
-        if (currentTarget == null) return;
+        if (isPerformingAction || !hasDetectedPlayer || currentTarget == null)
+            return;
 
         float distance = Vector3.Distance(transform.position, currentTarget.transform.position);
-        Debug.Log(distance);
 
-        // only attack if:
-        // - in range
-        // - not escaping
-        // - has LOS
-        // - facing enough
-        if (distance < attackRange && !isEscaping && !isRepositioning && HasLineOfSightToTarget() && IsFacingTarget())
+        if (distance <= attackRange &&
+            HasLineOfSightToTarget() &&
+            !isEscaping &&
+            !isRepositioning &&
+            attackRoutine == null)
         {
-            StartCoroutine(PerformAttack());
+            attackRoutine = StartCoroutine(PerformAttack());
         }
     }
 
     private IEnumerator PerformAttack()
     {
+        if (currentTarget == null)
+        {
+            attackRoutine = null;
+            yield break;
+        }
+
         agent.isStopped = true;
         agent.ResetPath();
         isPerformingAction = true;
 
-        // Final rotation correction before the hit
-        RotateToTarget();
+        float elapsed = 0f;
 
-        // Trigger animation here if needed
-        // anim.SetTrigger("Attack");
+        while (elapsed < hitTime)
+        {
+            if (currentTarget == null || isEscaping || isRepositioning)
+            {
+                isPerformingAction = false;
+                attackRoutine = null;
+                yield break;
+            }
 
-        yield return new WaitForSeconds(hitTime);
-
-        // Re-check facing right before the shot
-        RotateToTarget();
+            RotateToTargetSmooth();
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
 
         Shoot();
 
         float remainingTime = attackAnimDuration - hitTime;
-
-        if (remainingTime > 0) yield return new WaitForSeconds(remainingTime);
+        if (remainingTime > 0f)
+            yield return new WaitForSeconds(remainingTime);
 
         yield return new WaitForSeconds(recoveryTime);
 
-        // pick a new target after attacking
         currentTarget = SelectTarget();
 
         isEscaping = false;
@@ -516,22 +504,25 @@ public class GoblinRange : EnemyBase
             isFollowingPlayer = false;
         }
 
-        agent.isStopped = false;
         isPerformingAction = false;
+        attackRoutine = null;
+        agent.isStopped = false;
     }
 
     private void Shoot()
     {
-        if (currentTarget == null) return;
+        if (currentTarget == null || projectilePrefab == null || firePoint == null)
+            return;
 
-        Vector3 dir = (currentTarget.transform.position - firePoint.position).normalized;
+        if (!HasLineOfSightToTarget())
+            return;
 
-        if (!HasLineOfSightToTarget()) return;
+        Vector3 targetPos = currentTarget.transform.position + Vector3.up * targetRayHeight;
+        Vector3 dir = (targetPos - firePoint.position).normalized;
 
         GameObject proj = Instantiate(projectilePrefab, firePoint.position, Quaternion.LookRotation(dir));
 
         var projectile = proj.GetComponent<EnemyProyectile>();
-
         if (projectile != null)
         {
             projectile.InitProj(stats.damage, dir);
@@ -542,18 +533,7 @@ public class GoblinRange : EnemyBase
     // ROTATION
     // ==================================================
 
-    private void RotateToVelocity()
-    {
-        Vector3 vel = agent.velocity;
-        vel.y = 0;
-
-        if (vel.sqrMagnitude < 0.05f) return;
-
-        Quaternion rot = Quaternion.LookRotation(vel);
-        transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * turnSpeed);
-    }
-
-    private void RotateToTarget()
+    private void RotateToTargetSmooth()
     {
         if (currentTarget == null) return;
 
@@ -562,7 +542,20 @@ public class GoblinRange : EnemyBase
 
         if (dir.sqrMagnitude < 0.01f) return;
 
-        Quaternion rot = Quaternion.LookRotation(dir.normalized);
-        transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * turnSpeed);
+        Quaternion targetRot = Quaternion.LookRotation(dir.normalized);
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, turnSpeed * 60f * Time.deltaTime);
+    }
+
+    private void RotateAwayFromTarget()
+    {
+        if (currentTarget == null) return;
+
+        Vector3 dir = transform.position - currentTarget.transform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.01f) return;
+
+        Quaternion targetRot = Quaternion.LookRotation(dir.normalized);
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRot, turnSpeed * 60f * Time.deltaTime);
     }
 }
