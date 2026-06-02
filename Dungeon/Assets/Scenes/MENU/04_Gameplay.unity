@@ -13040,6 +13040,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TimedPlatformChallenge
   ShowTopMostFoldoutHeaderGroup: 1
   challengeDuration: 120
+  platformHideDelay: 12
   platforms:
   - {fileID: 154367724}
   - {fileID: 1356114602}
