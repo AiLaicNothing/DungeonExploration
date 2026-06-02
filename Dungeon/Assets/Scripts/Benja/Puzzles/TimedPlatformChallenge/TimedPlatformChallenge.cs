@@ -14,7 +14,9 @@ public class TimedPlatformChallenge : NetworkBehaviour
 
     [Header("Challenge")]
     [SerializeField] private float challengeDuration = 30f;
-
+    [Header("Platform Hide")]
+    [SerializeField]
+    private float platformHideDelay = 12f;
     [Header("Platforms")]
     [SerializeField]
     private List<ChallengePlatform> platforms =
@@ -38,7 +40,18 @@ public class TimedPlatformChallenge : NetworkBehaviour
         _state.Value == ChallengeState.Running;
 
 
+    private IEnumerator HidePlatformsRoutine()
+{
+    yield return new WaitForSeconds(platformHideDelay);
 
+    foreach (var platform in platforms)
+    {
+        if (platform == null)
+            continue;
+
+        platform.Hide();
+    }
+}
     public void StartChallenge()
     {
         if (!IsServer)
@@ -102,17 +115,11 @@ public class TimedPlatformChallenge : NetworkBehaviour
 
         Debug.Log("[Challenge] Timeout");
 
-        foreach (var platform in platforms)
-        {
-            if (platform == null)
-                continue;
-
-            platform.Hide();
-            HideUIClientRpc();
-
-        }
-
         _state.Value = ChallengeState.Idle;
+
+        HideUIClientRpc();
+
+        StartCoroutine(HidePlatformsRoutine());
     }
 
     public void CompleteChallenge()
@@ -126,18 +133,12 @@ public class TimedPlatformChallenge : NetworkBehaviour
         if (_timerRoutine != null)
             StopCoroutine(_timerRoutine);
 
-        foreach (var platform in platforms)
-        {
-            if (platform == null)
-                continue;
-
-            platform.Hide();
-        }
-
         _state.Value = ChallengeState.Completed;
 
-        Debug.Log("[Challenge] Completed");
         HideUIClientRpc();
 
+        StartCoroutine(HidePlatformsRoutine());
+
+        Debug.Log("[Challenge] Completed");
     }
 }
