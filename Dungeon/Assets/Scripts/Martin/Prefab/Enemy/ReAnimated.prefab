@@ -321,7 +321,7 @@ CapsuleCollider:
   m_Radius: 0.5
   m_Height: 2.5
   m_Direction: 1
-  m_Center: {x: 0, y: 0.25, z: 0}
+  m_Center: {x: 0, y: 1.2, z: 0}
 --- !u!54 &8518561787605784587
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -445,7 +445,7 @@ MonoBehaviour:
   attackRange: 2
   obstacleLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 384
   closestTargetChance: 0.6
   targetRayHeight: 1.2
   facingAngleThreshold: 15
@@ -465,8 +465,8 @@ MonoBehaviour:
   decayTickRate: 1
   decayDamage: 5
   decayRadius: 5
-  detectionRange: 8
-  maxChaseDistance: 10
+  detectionRange: 30
+  maxChaseDistance: 25
   detectionDelay: 0.3
   safeZone: {fileID: 0}
   hasPatrol: 0
@@ -492,7 +492,7 @@ NavMeshAgent:
   m_AutoBraking: 1
   m_AutoRepath: 1
   m_Height: 2.52
-  m_BaseOffset: 1
+  m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
 --- !u!1001 &6613476359124915379
@@ -569,7 +569,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 748493645842915378, guid: 63c33b44d054f5748ae5b468322a20f1, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 2.527
+      value: 3.188
       objectReference: {fileID: 0}
     - target: {fileID: 748493645842915378, guid: 63c33b44d054f5748ae5b468322a20f1, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -671,7 +671,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1112658220800125642, guid: bf561e84524f1204eab2e089e68761a4, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.419
+      value: 1.371
       objectReference: {fileID: 0}
     - target: {fileID: 1112658220800125642, guid: bf561e84524f1204eab2e089e68761a4, type: 3}
       propertyPath: m_LocalPosition.z

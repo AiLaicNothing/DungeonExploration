@@ -247,7 +247,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 317668962
+  GlobalObjectIdHash: 3195422587
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -327,12 +327,15 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   groundCheck: {fileID: 5693354988608341659}
+  isGroundEnemy: 1
   attackRange: 2
   obstacleLayer:
     serializedVersion: 2
     m_Bits: 384
   closestTargetChance: 0.6
   targetRayHeight: 1.2
+  facingAngleThreshold: 15
+  turnSpeed: 15
   hitBoxSize: {x: 1.5, y: 2, z: 1.5}
   hitBoxPos: {x: 0, y: 0, z: 1.3}
   hitTime: 0.6
@@ -356,7 +359,7 @@ NavMeshAgent:
   m_Enabled: 1
   m_AgentTypeID: 0
   m_Radius: 1
-  m_Speed: 4.5
+  m_Speed: 6
   m_Acceleration: 8
   avoidancePriority: 50
   m_AngularSpeed: 120
