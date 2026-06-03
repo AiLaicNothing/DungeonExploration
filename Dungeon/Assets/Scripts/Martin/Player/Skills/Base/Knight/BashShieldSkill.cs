@@ -34,6 +34,8 @@ public class BashShieldSkill : Skill
     }
     public override void ServerExecute(PlayerController player, Vector3 targetPoint, Vector3 lockTargetPos)
     {
+        AudioManager.Instance.PlaySFX(actionSound);
+
         player.StartCoroutine(BashShield(player));
     }
 

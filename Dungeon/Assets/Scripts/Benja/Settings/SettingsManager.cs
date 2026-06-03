@@ -19,6 +19,7 @@ public class SettingsManager : MonoBehaviour
     private const string KEY_VOL_MUSIC = "settings_vol_music";
     private const string KEY_VOL_SFX = "settings_vol_sfx";
     private const string KEY_VOL_UI = "settings_vol_ui";
+    private const string KEY_VOL_AMBIENT = "settings_vol_ambient";
     private const string KEY_HIDE_HUD = "settings_hide_hud";
     private const string KEY_DIFFICULTY = "settings_difficulty";
     private const string KEY_LANGUAGE = "settings_language";
@@ -57,7 +58,7 @@ public class SettingsManager : MonoBehaviour
     private bool _vsync;
     private int _qualityLevel;
     private int _fpsLimit;
-    private float _volMaster, _volMusic, _volSFX, _volUI;
+    private float _volMaster, _volMusic, _volSFX, _volUI, _volAmbient;
     private bool _hideHud;
     private int _difficulty;
     private string _language;
@@ -83,6 +84,7 @@ public class SettingsManager : MonoBehaviour
     public float VolumeMusic { get => _volMusic; set { _volMusic = Mathf.Clamp01(value); PlayerPrefs.SetFloat(KEY_VOL_MUSIC, _volMusic); ApplyMixerVolume("MusicVolume", _volMusic); } }
     public float VolumeSFX { get => _volSFX; set { _volSFX = Mathf.Clamp01(value); PlayerPrefs.SetFloat(KEY_VOL_SFX, _volSFX); ApplyMixerVolume("SFXVolume", _volSFX); } }
     public float VolumeUI { get => _volUI; set { _volUI = Mathf.Clamp01(value); PlayerPrefs.SetFloat(KEY_VOL_UI, _volUI); ApplyMixerVolume("UIVolume", _volUI); } }
+    public float VolumeAmbient { get => _volAmbient; set { _volAmbient = Mathf.Clamp01(value); PlayerPrefs.SetFloat(KEY_VOL_AMBIENT, _volAmbient); ApplyMixerVolume("AmbientVolume", _volAmbient); } }
     public bool HideHud { get => _hideHud; set { _hideHud = value; PlayerPrefs.SetInt(KEY_HIDE_HUD, value ? 1 : 0); OnHudVisibilityChanged?.Invoke(!_hideHud); } }
     public int Difficulty { get => _difficulty; set { _difficulty = value; PlayerPrefs.SetInt(KEY_DIFFICULTY, value); OnDifficultyChanged?.Invoke(value); } }
     public string Language { get => _language; set { _language = value; PlayerPrefs.SetString(KEY_LANGUAGE, value); OnLanguageChanged?.Invoke(value); } }
@@ -137,6 +139,7 @@ public class SettingsManager : MonoBehaviour
         _volMusic = PlayerPrefs.GetFloat(KEY_VOL_MUSIC, DEFAULT_VOLUME);
         _volSFX = PlayerPrefs.GetFloat(KEY_VOL_SFX, DEFAULT_VOLUME);
         _volUI = PlayerPrefs.GetFloat(KEY_VOL_UI, DEFAULT_VOLUME);
+        _volAmbient = PlayerPrefs.GetFloat( KEY_VOL_AMBIENT,DEFAULT_VOLUME);
 
         _hideHud = PlayerPrefs.GetInt(KEY_HIDE_HUD, 0) == 1;
         _difficulty = PlayerPrefs.GetInt(KEY_DIFFICULTY, DEFAULT_DIFFICULTY);
@@ -155,7 +158,7 @@ public class SettingsManager : MonoBehaviour
         ApplyMixerVolume("MusicVolume", _volMusic);
         ApplyMixerVolume("SFXVolume", _volSFX);
         ApplyMixerVolume("UIVolume", _volUI);
-
+        ApplyMixerVolume( "AmbientVolume", _volAmbient);
         OnSettingsChanged?.Invoke();
         OnHudVisibilityChanged?.Invoke(!_hideHud);
         OnFOVChanged?.Invoke(_fov);

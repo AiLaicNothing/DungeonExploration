@@ -6,6 +6,22 @@ using static UnityEngine.Analytics.IAnalytic;
 
 public class PlayerController : NetworkBehaviour, IDamageable
 {
+    [Header("Audio")]
+    [SerializeField] private AudioSource sfxSource;
+    [SerializeField] private AudioSource movementSource;
+
+    [SerializeField] private AudioClip dashClip;
+    [SerializeField] private AudioClip footstepLoopClip;
+    public void PlayDashAudio()
+    {
+        if (sfxSource == null || dashClip == null) return;
+
+        //sfxSource.Stop(); // opcional
+        sfxSource.PlayOneShot(dashClip);
+    }
+
+
+    private float footstepTimer;
     // ─────────────────────────────────────────
     // MOVEMENT
     // ─────────────────────────────────────────
@@ -300,6 +316,8 @@ public class PlayerController : NetworkBehaviour, IDamageable
         }
 
         UpdateCooldowns();
+        HandleFootsteps();
+
     }
 
     private void FixedUpdate()
@@ -406,7 +424,31 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
         HandleRotation(moveDir);
     }
+    private void HandleFootsteps()
+    {
+        bool shouldPlay =
+            isGrounded &&
+            input.moveInput.magnitude > 0.1f &&
+            !isDead &&
+            !isPerformingAction;
 
+        if (shouldPlay)
+        {
+            if (!movementSource.isPlaying)
+            {
+                movementSource.clip = footstepLoopClip;
+                movementSource.loop = true;
+                movementSource.Play();
+            }
+        }
+        else
+        {
+            if (movementSource.isPlaying)
+            {
+                movementSource.Stop();
+            }
+        }
+    }
     public void Jump()
     {
         if (!isGrounded) return;

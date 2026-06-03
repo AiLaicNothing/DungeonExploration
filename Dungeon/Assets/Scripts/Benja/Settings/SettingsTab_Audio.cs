@@ -11,6 +11,7 @@ public class SettingsTab_Audio : MonoBehaviour
     [SerializeField] private Slider musicSlider;
     [SerializeField] private Slider sfxSlider;
     [SerializeField] private Slider uiSlider;
+    [SerializeField] private Slider ambientSlider;
 
     void OnEnable()
     {
@@ -20,6 +21,8 @@ public class SettingsTab_Audio : MonoBehaviour
         BindSlider(musicSlider, SettingsManager.Instance.VolumeMusic, v => SettingsManager.Instance.VolumeMusic = v);
         BindSlider(sfxSlider, SettingsManager.Instance.VolumeSFX, v => SettingsManager.Instance.VolumeSFX = v);
         BindSlider(uiSlider, SettingsManager.Instance.VolumeUI, v => SettingsManager.Instance.VolumeUI = v);
+        BindSlider(ambientSlider,SettingsManager.Instance.VolumeAmbient,v => SettingsManager.Instance.VolumeAmbient = v
+);
     }
 
     private void BindSlider(Slider slider, float initialValue, System.Action<float> onChange)

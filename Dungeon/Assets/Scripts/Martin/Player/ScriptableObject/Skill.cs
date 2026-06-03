@@ -29,6 +29,10 @@ public abstract class Skill : ScriptableObject
     public string castAnimation;
     public string actionAnimation;
 
+    [Header("Audio")]
+    public AudioClip castSound;
+    public AudioClip actionSound;
+
     public abstract void LocalExecute(PlayerController player, Vector3 targetPoint);
 
     public abstract void ServerExecute(

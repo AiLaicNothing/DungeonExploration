@@ -11,7 +11,6 @@ public class PlayerDash : PlayerStates
     {
         Debug.Log("Enter Dash State");
 
-        // Check stamina
         if (!player.HasStamina(player.DashCost))
         {
             player.ChangeActionState(player.iddeAction_State);
@@ -20,12 +19,14 @@ public class PlayerDash : PlayerStates
 
         player.ConsumeStamina(player.DashCost);
 
+        // 🎧 AUDIO CENTRALIZADO
+        player.PlayDashAudio();
+
         timer = player.DashDuration;
         dashSpeed = player.DashDistance / player.DashDuration;
 
         player.isPerformingAction = true;
 
-        //--> Check input movement, if it doesnt recive one dash forward else toward the input direction
         Vector2 input = player.Input.moveInput;
 
         if (input.magnitude > 0.1f)
@@ -46,10 +47,6 @@ public class PlayerDash : PlayerStates
         }
 
         player.Rb.useGravity = false;
-
-        // Optional animation
-        // player.Animator.Play("Dash");
-
     }
 
     public override void OnUpdate()

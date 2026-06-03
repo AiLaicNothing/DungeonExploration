@@ -23,6 +23,8 @@ MonoBehaviour:
   actionTime: 0.3
   castAnimation: 
   actionAnimation: 
+  castSound: {fileID: 8300000, guid: cf9c41b9d69471d4ca7f97c34c96c24f, type: 3}
+  actionSound: {fileID: 0}
   dashSpeed: 30
   duration: 0.3
   hitData:
