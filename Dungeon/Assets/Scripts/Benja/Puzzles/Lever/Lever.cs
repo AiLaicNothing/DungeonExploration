@@ -87,8 +87,18 @@ public class Lever : NetworkBehaviour, IInteractable, IActivator
 
     private void OnTriggerEnter(Collider other)
     {
-        
+        PlayerController player = other.GetComponent<PlayerController>();
+
+        if (player == null) return;
+
+        if (!player.IsOwner) return;
+
+        InteractionUI.Instance.SetUp("Mover palanca");
+        InteractionUI.Instance.ShowUI();
     }
 
-    private void OnTriggerExit(Collider other) {
+    private void OnTriggerExit(Collider other)
+    {
+        InteractionUI.Instance.HideUI();
+    }
 }

@@ -31,6 +31,32 @@ public class SkillPickup : MonoBehaviour, IInteractable
         inventory.RequestUnlockSkill(skill);
 
         // If this pickup is networked, despawn it on the server instead of Destroy.
+
+        InteractionUI.Instance.HideUI();
+
         Destroy(gameObject);
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        PlayerController player = other.GetComponent<PlayerController>();
+
+        if (player == null) return;
+
+        if (!player.IsOwner) return;
+
+        InteractionUI.Instance.SetUp("Desbloquear habilidad");
+        InteractionUI.Instance.ShowUI();
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        PlayerController player = other.GetComponent<PlayerController>();
+
+        if (player == null) return;
+
+        if (!player.IsOwner) return;
+
+        InteractionUI.Instance.HideUI();
     }
 }

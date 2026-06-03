@@ -62,7 +62,9 @@ public class CheckpointMenuUI : MonoBehaviour
             skillsButton.onClick.AddListener(OnSkillsClicked);
 
         if (closeButton != null)
+        {
             closeButton.onClick.AddListener(Close);
+        }
     }
 
     private void OnDisable()
@@ -108,6 +110,11 @@ public class CheckpointMenuUI : MonoBehaviour
 
         if (UIBlockingManager.Instance != null)
             UIBlockingManager.Instance.Unregister(this);
+
+        if (InteractionUI.Instance != null)
+        {
+            InteractionUI.Instance.ShowUI();
+        }
     }
 
     // =========================================================

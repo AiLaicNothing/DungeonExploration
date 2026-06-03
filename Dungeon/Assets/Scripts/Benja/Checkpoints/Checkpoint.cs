@@ -131,6 +131,7 @@ public class Checkpoint : NetworkBehaviour, IInteractable
                 $"[CHECKPOINT CLIENT] Opening menu for {checkpointName}"
             );
 
+            InteractionUI.Instance.HideUI();
             CheckpointMenuUI.Instance.Open(checkpointName);
         }
     }
@@ -412,8 +413,19 @@ public class Checkpoint : NetworkBehaviour, IInteractable
 
     void OnTriggerEnter(Collider other)
     {
+        //PlayerController player = other.GetComponent<PlayerController>();
+
+        //if (player == null) return;
+
+        //if (!player.IsOwner) return;
+
+
         if (!IsLocalPlayer(other))
             return;
+
+        Debug.Log("CheckPoint: Show interaction");
+        InteractionUI.Instance.SetUp("Abrir punto de guardado");
+        InteractionUI.Instance.ShowUI();
 
         _localPlayerInRange = true;
 
@@ -423,15 +435,22 @@ public class Checkpoint : NetworkBehaviour, IInteractable
                 .IsDiscoveredInWorld(checkpointName);
 
         if (worldDiscovered)
+        {
             openPanelUI?.SetActive(true);
+        }
         else
+        {
             activateUI?.SetActive(true);
+        }
+
     }
 
     void OnTriggerExit(Collider other)
     {
         if (!IsLocalPlayer(other))
             return;
+
+        InteractionUI.Instance.HideUI();
 
         _localPlayerInRange = false;
 
@@ -443,6 +462,7 @@ public class Checkpoint : NetworkBehaviour, IInteractable
         {
             CheckpointMenuUI.Instance.Close();
         }
+
     }
 
     private bool IsLocalPlayer(Collider col)
