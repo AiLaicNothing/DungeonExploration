@@ -210,7 +210,7 @@ MonoBehaviour:
     m_Bits: 128
   baseGravity: -9.81
   fallGravityMultiplier: 2.5
-  dashDistance: 5
+  dashDistance: 8
   dashDuration: 0.3
   dashCost: 20
   isRange: 1
