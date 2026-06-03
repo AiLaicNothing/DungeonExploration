@@ -2,6 +2,7 @@ using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Video;
 
 public class UIPopUp : MonoBehaviour
 {
@@ -9,6 +10,7 @@ public class UIPopUp : MonoBehaviour
 
     [SerializeField] private GameObject popUpPanel;
     [SerializeField] private RawImage videoScreen;
+    [SerializeField] private VideoPlayer videoPlayer;
     [SerializeField] private TextMeshProUGUI tittleText;
     [SerializeField] private TextMeshProUGUI descriptionText;
 
@@ -22,9 +24,10 @@ public class UIPopUp : MonoBehaviour
         if (closeButton != null) closeButton.onClick.AddListener(ClosePopUp);
     }
 
-    public void SetUp(Texture video, string tittle, string description)
+    public void SetUp(Texture texture, VideoClip video, string tittle, string description)
     {
-        videoScreen.texture = video;
+        videoScreen.texture = texture;
+        videoPlayer.clip = video;
         tittleText.text = tittle;
         descriptionText.text = description;
     }

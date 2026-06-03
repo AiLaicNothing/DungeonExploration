@@ -1,5 +1,6 @@
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Video;
 
 public class TutorialPopUp : NetworkBehaviour
 {
@@ -7,7 +8,8 @@ public class TutorialPopUp : NetworkBehaviour
 
     [TextArea(5, 20)]
     [SerializeField] private string description;
-    [SerializeField] private Texture video;
+    [SerializeField] private Texture texture;
+    [SerializeField] private VideoClip video;
 
     private bool hasActivated = false;
     public UIPopUp UI;
@@ -31,7 +33,7 @@ public class TutorialPopUp : NetworkBehaviour
 
         if (UI != null)
         {
-            UI.SetUp(video, tittle, description);
+            UI.SetUp(texture, video, tittle, description);
             UI.ShowPopUp();
         }
 

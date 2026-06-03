@@ -8447,7 +8447,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 0}
+  m_Texture: {fileID: 8400000, guid: 6c654f01e07d9fe4b8a716b1d59c72b8, type: 2}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -11848,7 +11848,8 @@ MonoBehaviour:
   description: "Las palancas pueden ser interactuadas con \"E\", activalas para activar
     mecanismos. Ten en cuenta que algunos requieren de cierto patr\xF3n o simplemente
     activarlas."
-  video: {fileID: 0}
+  texture: {fileID: 8400000, guid: 6c654f01e07d9fe4b8a716b1d59c72b8, type: 2}
+  video: {fileID: 32900000, guid: b352433469198eb4c8d9187df40df49a, type: 3}
   UI: {fileID: 0}
 --- !u!114 &533411070
 MonoBehaviour:
@@ -12000,11 +12001,11 @@ VideoPlayer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 539489104}
   m_Enabled: 1
-  m_VideoClip: {fileID: 0}
+  m_VideoClip: {fileID: 32900000, guid: 7934d03829d2dca4188be9e57d4a0382, type: 3}
   m_TargetCameraAlpha: 1
   m_TargetCamera3DLayout: 0
   m_TargetCamera: {fileID: 0}
-  m_TargetTexture: {fileID: 0}
+  m_TargetTexture: {fileID: 8400000, guid: 6c654f01e07d9fe4b8a716b1d59c72b8, type: 2}
   m_TimeReference: 0
   m_TargetMaterialRenderer: {fileID: 0}
   m_TargetMaterialProperty: <noninit>
@@ -12020,11 +12021,11 @@ VideoPlayer:
   - 1
   m_Url: 
   m_EnabledAudioTracks: 01
-  m_DirectAudioMutes: 00
+  m_DirectAudioMutes: 01
   m_ControlledAudioTrackCount: 1
   m_PlayOnAwake: 1
   m_SkipOnDrop: 1
-  m_Looping: 0
+  m_Looping: 1
   m_WaitForFirstFrame: 1
   m_FrameReadyEventEnabled: 0
   m_VideoShaders: []
@@ -15237,7 +15238,8 @@ MonoBehaviour:
   tittle: "Placa de presi\xF3n"
   description: "Por los niveles podras encontrar placas de presi\xF3n que activan
     alg\xFAn mecanismo, pisalas tu mismo o encuentra cajas que puedan remplazarte."
-  video: {fileID: 0}
+  texture: {fileID: 8400000, guid: 6c654f01e07d9fe4b8a716b1d59c72b8, type: 2}
+  video: {fileID: 32900000, guid: b54180cb15fbd8a4bab0b85ab197192e, type: 3}
   UI: {fileID: 0}
 --- !u!114 &685299840
 MonoBehaviour:
@@ -15357,7 +15359,8 @@ MonoBehaviour:
   description: Estas estructuras se ecuentran por el mundo, interactua con la tecla
     "E" para poder cambiar tu punto de guardado, modificar tus estadisticas o equipar
     tus habilidades.
-  video: {fileID: 0}
+  texture: {fileID: 8400000, guid: 6c654f01e07d9fe4b8a716b1d59c72b8, type: 2}
+  video: {fileID: 32900000, guid: f73ff218f63350c40af66cddeb9552aa, type: 3}
   UI: {fileID: 0}
 --- !u!114 &685524781
 MonoBehaviour:
@@ -16585,8 +16588,8 @@ Transform:
   - {fileID: 1137619129}
   - {fileID: 685299838}
   - {fileID: 1257121899}
-  - {fileID: 685524778}
   - {fileID: 1422036373}
+  - {fileID: 685524778}
   - {fileID: 533411068}
   - {fileID: 539489105}
   m_Father: {fileID: 0}
@@ -19672,7 +19675,8 @@ MonoBehaviour:
   tittle: Movimiento #1
   description: "Con las teclas \"WASD\" puedes desplazarte en direcci\xF3n de la
     c\xE1mara"
-  video: {fileID: 0}
+  texture: {fileID: 8400000, guid: 6c654f01e07d9fe4b8a716b1d59c72b8, type: 2}
+  video: {fileID: 32900000, guid: 7934d03829d2dca4188be9e57d4a0382, type: 3}
   UI: {fileID: 0}
 --- !u!114 &930058763
 MonoBehaviour:
@@ -24825,7 +24829,8 @@ MonoBehaviour:
   tittle: Movimiento #2
   description: Con la tecla "Espacio", puedes saltar y con la tecla "Shift" puedes
     dashear
-  video: {fileID: 0}
+  texture: {fileID: 8400000, guid: 6c654f01e07d9fe4b8a716b1d59c72b8, type: 2}
+  video: {fileID: 32900000, guid: 54fff92d39530b34e8d52337f4cf0bf6, type: 3}
   UI: {fileID: 0}
 --- !u!114 &1137619132
 MonoBehaviour:
@@ -26927,7 +26932,8 @@ MonoBehaviour:
   description: "Con el \"bot\xF3n izquierdo del rat\xF3n\", puedes realizar tu ataque
     princinpal y con la tecla \"F\" puedes realizar golpes cuerpo a cuerpo para desatar
     una seria de combos al enemigo, ya sea en el suelo o aire."
-  video: {fileID: 0}
+  texture: {fileID: 8400000, guid: 6c654f01e07d9fe4b8a716b1d59c72b8, type: 2}
+  video: {fileID: 32900000, guid: 0a8cd8cdb85f3304d9582546324c9d1d, type: 3}
   UI: {fileID: 0}
 --- !u!114 &1257121902
 MonoBehaviour:
@@ -28160,7 +28166,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 565016732}
   m_Direction: 2
   m_Value: 0
-  m_Size: 1
+  m_Size: 0.9999766
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -29976,7 +29982,8 @@ MonoBehaviour:
   tittle: Habilidades
   description: Estos orbes pueden ser interactuados si tienen una habilidad de tu
     personaje, al hacerlo lo desbloqueara y podra equiparlo en los puntos de guardado.
-  video: {fileID: 0}
+  texture: {fileID: 8400000, guid: 6c654f01e07d9fe4b8a716b1d59c72b8, type: 2}
+  video: {fileID: 32900000, guid: f215c5300eda3b24e9ec441603ca0d77, type: 3}
   UI: {fileID: 0}
 --- !u!114 &1422036375
 MonoBehaviour:
@@ -31781,7 +31788,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.0010351237}
+  m_AnchoredPosition: {x: 0, y: 0.00009265786}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &1484627703
@@ -39304,6 +39311,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::UIPopUp
   popUpPanel: {fileID: 1419217850}
   videoScreen: {fileID: 365942946}
+  videoPlayer: {fileID: 539489106}
   tittleText: {fileID: 207786017}
   descriptionText: {fileID: 1690630760}
   closeButton: {fileID: 1448844226}
