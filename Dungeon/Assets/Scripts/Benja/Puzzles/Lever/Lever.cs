@@ -84,4 +84,11 @@ public class Lever : NetworkBehaviour, IInteractable, IActivator
     {
         receiver = r;
     }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        
+    }
+
+    private void OnTriggerExit(Collider other) {
 }
