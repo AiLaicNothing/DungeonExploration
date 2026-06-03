@@ -1,0 +1,32 @@
+using UnityEngine;
+
+public class TutorialPopUp : MonoBehaviour
+{
+    [SerializeField] private string tittle;
+
+    [TextArea(5, 20)]
+    [SerializeField] private string description;
+    [SerializeField] private Texture video;
+
+    private bool hasActivated = false;
+    public UIPopUp UI;
+
+    private void Awake()
+    {
+        UI = FindAnyObjectByType<UIPopUp>();
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if (!hasActivated)
+        {
+            hasActivated = true;
+
+            if (UI != null)
+            {
+                UI.SetUp(video, tittle, description);
+                UI.ShowPopUp();
+            }
+        }
+    }
+}

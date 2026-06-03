@@ -56,5 +56,11 @@ public class PlayerInputBridge : NetworkBehaviour
         {
             PauseMenuUI.Instance.OnPause(context);
         }
+
+        if  (UIPopUp.Instance != null)
+        {
+            UIPopUp.Instance.ClosePopUp();
+            return;
+        }
     }
 }   
