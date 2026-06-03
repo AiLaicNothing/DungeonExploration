@@ -40,6 +40,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
     [Header("Range")]
     [SerializeField] private Transform firePoint;
     [SerializeField] private ShootData shootData;
+    [SerializeField] private LayerMask hitPoints;
 
     // ─────────────────────────────────────────
     // SKILLS
@@ -467,7 +468,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
         Ray ray = cam.ScreenPointToRay( new Vector3(  Screen.width / 2f, Screen.height / 2f));
 
-        if (Physics.Raycast(ray, out RaycastHit hit, 100f))
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f, hitPoints))
         {
             return hit.point;
         }

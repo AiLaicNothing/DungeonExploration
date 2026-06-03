@@ -138,7 +138,7 @@ MonoBehaviour:
   - m_Height: 2.5
     m_Radius: 4
   - m_Height: 1
-    m_Radius: 6
+    m_Radius: 5
   - m_Height: -0.5
     m_Radius: 3.5
   m_LegacyHeadingBias: 3.4028235e+38
@@ -153,7 +153,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 638606761920322837}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44d70cc20219cd84593f67d248eafe36, type: 3}
   m_Name: 
@@ -872,12 +872,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8590058956370914991}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.5, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 125, y: 100, z: 0}
+  m_LocalScale: {x: 200, y: 200, z: 200}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 2475266143739573949}
+  m_Father: {fileID: 2467248667336571638}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8778673210740311897
 GameObject:
@@ -1007,7 +1007,6 @@ Transform:
   m_Children:
   - {fileID: 2467248667336571638}
   - {fileID: 2740845921135864463}
-  - {fileID: 4270806029677433665}
   - {fileID: 8624354114439468784}
   - {fileID: 8450744529129440767}
   m_Father: {fileID: 0}
@@ -1138,7 +1137,7 @@ MonoBehaviour:
   ShowTopMostFoldoutHeaderGroup: 1
   moveSpeed: 10
   jumpForce: 10
-  rotSpeed: 60
+  rotSpeed: 6
   moveMultiplier: 1
   whatIsGround:
     serializedVersion: 2
@@ -1153,6 +1152,9 @@ MonoBehaviour:
   airComboData: {fileID: 11400000, guid: 7a8e1b5267f86bf46ad3b01c2ac82ba3, type: 2}
   firePoint: {fileID: 8450744529129440767}
   shootData: {fileID: 0}
+  hitPoints:
+    serializedVersion: 2
+    m_Bits: 37248
   maxSkillSlots: 4
   skills:
   - {fileID: 11400000, guid: e44cbdc44a1a45a4c858140296414556, type: 2}
@@ -1820,7 +1822,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 826790752340326508, guid: 2e443613603c7b540a401d085bb0590a, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4270806029677433665}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 2e443613603c7b540a401d085bb0590a, type: 3}
 --- !u!4 &2467248667336571638 stripped
