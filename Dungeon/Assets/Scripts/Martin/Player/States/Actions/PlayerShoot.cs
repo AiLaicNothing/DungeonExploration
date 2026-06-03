@@ -9,7 +9,7 @@ public class PlayerShoot : PlayerStates
     float fireCooldown;
     bool hasShoot;
 
-    Vector3 saveTargetPoint;
+    private Vector3 saveTargetPoint;
 
     public override void OnEnter()
     {
@@ -19,7 +19,17 @@ public class PlayerShoot : PlayerStates
 
         player.isPerformingAction = true;
 
-        saveTargetPoint = player.GetViewPoint();
+        if (player.LockTarget != null &&
+            player.LockTarget.isTargeting &&
+            player.LockTarget.CurrentTarget != null)
+        {
+            saveTargetPoint = player.LockTarget.CurrentTarget.position;
+        }
+        else
+        {
+            saveTargetPoint = player.GetViewPoint();
+        }
+
         Debug.Log("Shoot State");
     }
 
@@ -31,15 +41,15 @@ public class PlayerShoot : PlayerStates
         if (!hasShoot && timer >= player.ShootData.shootTime)
         {
             Shoot();
-            hasShoot=true;
+            hasShoot = true;
         }
 
-        if(player.Input.AttackBuffered && fireCooldown <= 0f)
+        if (player.Input.AttackBuffered && fireCooldown <= 0f)
         {
             player.ChangeActionState(player.shoot_State);
         }
 
-        if(timer >= player.ShootData.shootTime + 0.1f)
+        if (timer >= player.ShootData.shootTime + 0.1f)
         {
             player.ChangeActionState(player.iddeAction_State);
         }
@@ -54,8 +64,6 @@ public class PlayerShoot : PlayerStates
     {
         fireCooldown = player.ShootData.timeBtwShot;
 
-        Vector3 dir = (saveTargetPoint - player.FirePoint.position).normalized;
-
-       player.RequestShoot(player.FirePoint.position, dir);
+        player.RequestShoot(saveTargetPoint);
     }
 }

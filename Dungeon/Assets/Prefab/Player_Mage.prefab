@@ -899,7 +899,7 @@ GameObject:
   - component: {fileID: 4750854592699356200}
   - component: {fileID: 8783674040647276068}
   m_Layer: 0
-  m_Name: FreeLook Camera
+  m_Name: Player Camera
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

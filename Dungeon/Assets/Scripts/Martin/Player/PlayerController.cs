@@ -2,6 +2,7 @@ using System.Collections;
 using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
+using static UnityEngine.Analytics.IAnalytic;
 
 public class PlayerController : NetworkBehaviour, IDamageable
 {
@@ -577,45 +578,62 @@ public class PlayerController : NetworkBehaviour, IDamageable
     // SHOOT
     // ─────────────────────────────────────────
 
-    public void RequestShoot(Vector3 spawnPosition, Vector3 direction)
+    public void RequestShoot(Vector3 targetPoint)
     {
         if (!IsOwner) return;
 
-        RequestShootServerRpc( spawnPosition, direction);
+        RequestShootServerRpc(targetPoint);
     }
 
     [ServerRpc]
-    private void RequestShootServerRpc(Vector3 spawnPosition, Vector3 direction)
+    private void RequestShootServerRpc(Vector3 targetPoint)
     {
-        SpawnProjectile( spawnPosition, direction);
-
-        ShootClientRpc( spawnPosition, direction);
+        ShootClientRpc(targetPoint);
     }
 
     [ClientRpc]
-    private void ShootClientRpc( Vector3 spawnPosition, Vector3 direction)
+    private void ShootClientRpc(Vector3 targetPoint)
     {
-        if (IsOwner) return;
-
-        SpawnProjectile(spawnPosition, direction);
+        SpawnProjectile(targetPoint);
     }
 
-    private void SpawnProjectile( Vector3 spawnPosition, Vector3 direction)
+    private void SpawnProjectile(Vector3 targetPoint)
     {
         if (shootData == null) return;
-
         if (shootData.proyectilePrefab == null) return;
+        if (firePoint == null) return;
 
-        GameObject projectile =Instantiate(shootData.proyectilePrefab, spawnPosition, Quaternion.LookRotation(direction));
+        Vector3 spawnPosition = firePoint.position;
+        Vector3 direction = (targetPoint - spawnPosition).normalized;
 
-        Rigidbody projectileRb =  projectile.GetComponent<Rigidbody>();
+        if (direction.sqrMagnitude < 0.0001f)
+            direction = playerModel != null ? playerModel.forward : transform.forward;
 
+        GameObject projectile = Instantiate(
+            shootData.proyectilePrefab,
+            spawnPosition,
+            Quaternion.LookRotation(direction)
+        );
+
+        Rigidbody projectileRb = projectile.GetComponent<Rigidbody>();
         if (projectileRb != null)
         {
-            projectileRb.linearVelocity = direction.normalized * shootData.proyectileSpeed;
+            projectileRb.linearVelocity = direction * shootData.proyectileSpeed;
+        }
+
+        PlayerProyectile proyectile = projectile.GetComponent<PlayerProyectile>();
+        if (proyectile != null)
+        {
+            proyectile.Initialize(
+                (Stats.PhysicalDamage.CurrentValue * shootData.hitData.physicalScale) +
+                (Stats.MagicalDamage.CurrentValue * shootData.hitData.magicalScale),
+                shootData.hitData,
+                direction,
+                shootData.proyectileSpeed,
+                Vector3.zero
+            );
         }
     }
-
     // ─────────────────────────────────────────
     // ATTACK VFX
     // ─────────────────────────────────────────

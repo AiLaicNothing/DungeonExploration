@@ -1,9 +1,6 @@
-using Cinemachine;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
-using UnityEditor.PackageManager.Requests;
-using UnityEditor.Rendering;
 using UnityEngine;
 
 public class TimedPlatformChallenge : NetworkBehaviour

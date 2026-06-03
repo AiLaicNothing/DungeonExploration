@@ -1,6 +1,7 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public class TutorialPopUp : MonoBehaviour
+public class TutorialPopUp : NetworkBehaviour
 {
     [SerializeField] private string tittle;
 
@@ -18,15 +19,21 @@ public class TutorialPopUp : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (!hasActivated)
-        {
-            hasActivated = true;
+        if (hasActivated) return;
 
-            if (UI != null)
-            {
-                UI.SetUp(video, tittle, description);
-                UI.ShowPopUp();
-            }
+        PlayerController player = other.GetComponent<PlayerController>();
+
+        if (player == null) return;
+
+        if (!player.IsOwner) return;
+
+        hasActivated = true;
+
+        if (UI != null)
+        {
+            UI.SetUp(video, tittle, description);
+            UI.ShowPopUp();
         }
+
     }
 }
