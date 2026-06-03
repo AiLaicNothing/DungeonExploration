@@ -1,6 +1,9 @@
+using Cinemachine;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
+using UnityEditor.PackageManager.Requests;
+using UnityEditor.Rendering;
 using UnityEngine;
 
 public class TimedPlatformChallenge : NetworkBehaviour
@@ -21,6 +24,11 @@ public class TimedPlatformChallenge : NetworkBehaviour
     [SerializeField]
     private List<ChallengePlatform> platforms =
         new();
+
+    [SerializeField] private int camStartID;
+    [SerializeField] private float duration1;
+    [SerializeField] private int camCompleteID;
+    [SerializeField] private float duration2;
 
     public float RemainingTime => _remainingTime.Value;
     public NetworkVariable<float> RemainingTimeNetwork =>
@@ -61,7 +69,7 @@ public class TimedPlatformChallenge : NetworkBehaviour
             return;
 
         _state.Value = ChallengeState.Running;
-        ShowUIClientRpc();
+        //ShowUIClientRpc();
 
         StartCoroutine(StartChallengeRoutine());
     }
@@ -79,6 +87,21 @@ public class TimedPlatformChallenge : NetworkBehaviour
     }
     private IEnumerator StartChallengeRoutine()
     {
+        CameraRequest request = new CameraRequest
+        {
+            cameraID = camStartID,
+            duration = duration1
+        };
+
+        if (CameraEventRelay.Instance != null)
+        {
+            CameraEventRelay.Instance.PlayForEveryone(request);
+        }
+        else
+        {
+            Debug.LogError("[PuzzleTest] CameraEventRelay missing.");
+        }
+
         foreach (var platform in platforms)
         {
             if (platform == null)
@@ -89,6 +112,10 @@ public class TimedPlatformChallenge : NetworkBehaviour
             yield return new WaitForSeconds(
                 platformSpawnDelay);
         }
+
+        yield return new WaitForSeconds(duration1 + 0.1f);
+
+        ShowUIClientRpc();
 
         _remainingTime.Value = challengeDuration;
 
@@ -137,7 +164,22 @@ public class TimedPlatformChallenge : NetworkBehaviour
 
         HideUIClientRpc();
 
-        StartCoroutine(HidePlatformsRoutine());
+        CameraRequest request = new CameraRequest
+        {
+            cameraID = camCompleteID,
+            duration = duration2
+        };
+
+        if (CameraEventRelay.Instance != null)
+        {
+            CameraEventRelay.Instance.PlayForEveryone(request);
+        }
+        else
+        {
+            Debug.LogError("[PuzzleTest] CameraEventRelay missing.");
+        }
+
+        //StartCoroutine(HidePlatformsRoutine());
 
         Debug.Log("[Challenge] Completed");
     }
