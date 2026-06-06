@@ -13,15 +13,27 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
     [Header("State")]
     protected bool isStunned;
     protected bool isStaggered;
+    protected bool isHitStunned;
+    protected bool isRevengeMode;
 
     [Header("Stagger")]
     NetworkVariable<float> currentStaggerBuild = new NetworkVariable<float>();
     protected bool isInStaggerCooldown;
 
+    [Header("Revenge")]
+    NetworkVariable<int> revengeCount = new NetworkVariable<int>();
+    private int revengeTreshold = 0;
+
     [Header("Vfx")]
     [SerializeField] private GameObject vfxHit;
     [SerializeField] private Vector3 hitVfxOffset = new Vector3(0f, 1.2f, 0f);
     [SerializeField] private float hitVfxDuration = 1.5f;
+
+    [Header("Ground")]
+    [SerializeField] protected LayerMask whatIsGround;
+    [SerializeField] protected Transform groundCheck;
+    [SerializeField] protected bool isGroundEnemy = true;
+    protected bool isGrounded;
 
     [Header("Components")]
     protected Rigidbody rb;
@@ -31,12 +43,9 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
     private EnemyStaggerBar staggerBar;
     private EnemyBarHolder enemyBarHolder;
 
-    [SerializeField] protected LayerMask whatIsGround;
-    [SerializeField] protected Transform groundCheck;
-    [SerializeField] protected bool isGroundEnemy = true;
-    protected bool isGrounded;
 
     protected Coroutine stunCourutine;
+    protected Coroutine hitStunCorutine;
     protected Coroutine staggerCourutine;
     protected Coroutine airRoutine;
 
@@ -51,6 +60,7 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
         if (IsServer)
         {
             currentHp.Value = stats.maxHp;
+            revengeCount.Value = 0;
         }
 
         if (!IsServer)
@@ -216,6 +226,47 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
         stunCourutine = null;
 
         if (!isStaggered) isStunned = false;
+    }
+
+    protected void ApplyHitStun(float duration)
+    {
+        if (isStaggered) return;
+
+        if (isRevengeMode) return;
+
+        if (hitStunCorutine != null)
+        {
+            StopCoroutine(hitStunCorutine);
+            hitStunCorutine = null;
+        }
+
+        hitStunCorutine = StartCoroutine(HitStunRoutine(duration));
+
+    }
+
+    protected IEnumerator HitStunRoutine (float duration)
+    {
+        //--> Check for revenge value
+        revengeCount.Value += 1;
+
+        //--> If revenge value surpass or equal to trehshold
+        //--> Enter revenge mode
+        if (revengeCount.Value >= revengeTreshold)
+        {
+            isRevengeMode = true;
+
+            hitStunCorutine = null;
+            isHitStunned = false;
+        }
+
+        //--> After checking all the revenge do hitStun
+        isHitStunned = true;
+
+        yield return new WaitForSeconds(duration);
+
+        hitStunCorutine = null;
+
+        isHitStunned = false;
     }
 
     //====PHYSIC RELATED=====

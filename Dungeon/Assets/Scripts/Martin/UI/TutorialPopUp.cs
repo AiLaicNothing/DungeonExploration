@@ -1,22 +1,18 @@
+using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Video;
 
 public class TutorialPopUp : NetworkBehaviour
 {
-    [SerializeField] private string tittle;
-
-    [TextArea(5, 20)]
-    [SerializeField] private string description;
-    [SerializeField] private Texture texture;
-    [SerializeField] private VideoClip video;
+    [SerializeField] private List<PopUpPage> pages = new List<PopUpPage>();
 
     private bool hasActivated = false;
-    public UIPopUp UI;
+    private UIPopUp ui;
 
     private void Awake()
     {
-        UI = FindAnyObjectByType<UIPopUp>();
+        ui = FindAnyObjectByType<UIPopUp>();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -31,11 +27,6 @@ public class TutorialPopUp : NetworkBehaviour
 
         hasActivated = true;
 
-        if (UI != null)
-        {
-            UI.SetUp(texture, video, tittle, description);
-            UI.ShowPopUp();
-        }
-
+        if (ui != null) ui.ShowPopUp(pages);
     }
 }
