@@ -232,11 +232,8 @@ public class PlayerController : NetworkBehaviour, IDamageable
 
         if (IsOwner)
         {
-            Debug.Log(
-                $"[PLAYER CONTROLLER] Registering LocalPlayer " +
-                $"Owner={OwnerClientId} " +
-                $"NetId={NetworkObjectId}"
-            );
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
 
             if (thirdCam != null)
                 thirdCam.SetActive(true);

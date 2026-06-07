@@ -103,20 +103,17 @@ public class CheckpointMenuUI : MonoBehaviour
 
     public void Close()
     {
+        if (UIBlockingManager.Instance != null)
+            UIBlockingManager.Instance.Unregister(this);
+
         if (panelRoot != null)
             panelRoot.SetActive(false);
 
         currentCheckpointName = string.Empty;
 
-        if (UIBlockingManager.Instance != null)
-            UIBlockingManager.Instance.Unregister(this);
-
         if (InteractionUI.Instance != null)
-        {
             InteractionUI.Instance.ShowUI();
-        }
     }
-
     // =========================================================
     // BUTTONS
     // =========================================================

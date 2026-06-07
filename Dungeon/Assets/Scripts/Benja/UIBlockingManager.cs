@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -24,24 +25,34 @@ public class UIBlockingManager : MonoBehaviour
         get
         {
             if (Instance == null) return false;
+
             Instance.CleanupDeadPanels();
             return Instance._openPanels.Count > 0;
         }
     }
 
-    void Awake()
+    private void Awake()
     {
-        if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
         Instance = this;
         DontDestroyOnLoad(gameObject);
+
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
     }
 
-    void OnDestroy()
+    private void OnDestroy()
     {
-        if (Instance == this) Instance = null;
+        if (Instance == this)
+            Instance = null;
     }
 
-    void Update()
+    private void Update()
     {
         CleanupDeadPanels();
     }
@@ -53,12 +64,15 @@ public class UIBlockingManager : MonoBehaviour
     private void CleanupDeadPanels()
     {
         int before = _openPanels.Count;
+
         _openPanels.RemoveWhere(p => p == null || !p.isActiveAndEnabled);
 
         if (verboseLogging && before != _openPanels.Count)
         {
-            Debug.Log($"[UIBlockingManager] Auto-limpieza: {before - _openPanels.Count} paneles 'fantasma' quitados. " +
-                      $"Restantes: {_openPanels.Count}. {ListPanels()}");
+            Debug.Log(
+                $"[UIBlockingManager] Auto-limpieza: {before - _openPanels.Count} paneles 'fantasma' quitados. " +
+                $"Restantes: {_openPanels.Count}. {ListPanels()}"
+            );
         }
     }
 
@@ -66,44 +80,71 @@ public class UIBlockingManager : MonoBehaviour
     {
         if (panel == null) return;
 
-        bool added = _openPanels.Add(panel);
+        _openPanels.Add(panel);
 
-        if (verboseLogging && added)
-            Debug.Log($"[UIBlockingManager] REGISTRADO: {panel.GetType().Name} ({panel.gameObject.name}). " +
-                      $"Total: {_openPanels.Count}. {ListPanels()}");
-
-        Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.None;
+
+        if (InteractionUI.Instance != null)
+            InteractionUI.Instance.HideUI();
     }
 
     public void Unregister(MonoBehaviour panel)
     {
         if (panel == null) return;
 
-        bool removed = _openPanels.Remove(panel);
-
-        if (verboseLogging && removed)
-            Debug.Log($"[UIBlockingManager] DESREGISTRADO: {panel.GetType().Name} ({panel.gameObject.name}). " +
-                      $"Restantes: {_openPanels.Count}. {ListPanels()}");
+        _openPanels.Remove(panel);
 
         if (_openPanels.Count == 0)
         {
-            Cursor.visible = true;
-            Cursor.lockState = CursorLockMode.None;
+            Cursor.lockState = CursorLockMode.Locked;
+            Cursor.visible = false;
+
+            if (InteractionUI.Instance != null)
+                InteractionUI.Instance.ShowUI();
         }
     }
 
-    /// <summary>Limpia todos los registros. Útil al cambiar de escena.</summary>
-    public void ClearAll()
+    private IEnumerator LockCursorNextFrame()
     {
-        if (verboseLogging && _openPanels.Count > 0)
-            Debug.Log($"[UIBlockingManager] ClearAll: forzando vaciado de {_openPanels.Count} paneles.");
-        _openPanels.Clear();
+        yield return null;
+
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
     }
+    //private void LateUpdate()
+    //{
+    //    if (_openPanels.Count == 0)
+    //    {
+    //        Cursor.lockState = CursorLockMode.Locked;
+    //        Cursor.visible = false;
+    //    }
+    //}
+
+    /// <summary>
+    /// Limpia todos los registros. Útil al cambiar de escena.
+    /// </summary>
+    //public void ClearAll()
+    //{
+    //    if (verboseLogging && _openPanels.Count > 0)
+    //    {
+    //        Debug.Log(
+    //            $"[UIBlockingManager] ClearAll: forzando vaciado de {_openPanels.Count} paneles."
+    //        );
+    //    }
+
+    //    _openPanels.Clear();
+
+    //    Cursor.visible = false;
+    //    Cursor.lockState = CursorLockMode.Locked;
+    //}
 
     private string ListPanels()
     {
-        if (_openPanels.Count == 0) return "[]";
-        return "[" + string.Join(", ", _openPanels.Select(p => p == null ? "<null>" : p.GetType().Name)) + "]";
+        if (_openPanels.Count == 0)
+            return "[]";
+
+        return "[" + string.Join(", ",
+            _openPanels.Select(p => p == null ? "<null>" : p.GetType().Name)) + "]";
     }
 }

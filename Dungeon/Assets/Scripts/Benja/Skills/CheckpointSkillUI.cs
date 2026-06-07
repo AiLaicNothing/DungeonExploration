@@ -125,11 +125,10 @@ public class CheckpointSkillUI : MonoBehaviour
         if (inventory != null)
             inventory.OnSkillsChanged -= Refresh;
 
-        panelRoot.SetActive(false);
-
-        // Registrar UI cerrada
         if (UIBlockingManager.Instance != null)
             UIBlockingManager.Instance.Unregister(this);
+
+        panelRoot.SetActive(false);
     }
 
     // =========================================================

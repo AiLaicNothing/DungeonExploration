@@ -22,6 +22,9 @@ public class InteractionUI : MonoBehaviour
 
     public void ShowUI()
     {
+        if (UIBlockingManager.IsAnyUIOpen)
+            return;
+
         panel.SetActive(true);
     }
 
