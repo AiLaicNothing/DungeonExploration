@@ -23,5 +23,11 @@ public class AttackSteps
     public Vector3 hitBoxSize = new Vector3(1, 1, 2);
     public Vector3 hitBoxOffSet = new Vector3(0, 0, 1);
 
+    [Header("Movement")]
+    public float moveDis = 0f;
+    public float moveStartTime = 0f;
+    public float moveDuration = 0.12f;
+    public AnimationCurve moveCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
     public HitData hitData;
 }

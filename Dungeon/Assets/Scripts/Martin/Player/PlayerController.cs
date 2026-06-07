@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Netcode.Components;
 using UnityEngine;
@@ -52,6 +53,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
     [SerializeField] private bool isRange;
     [SerializeField] private BasicComboData basicComboData;
     [SerializeField] private BasicComboData airComboData;
+    private Coroutine attackMoveRoutine;
 
     [Header("Range")]
     [SerializeField] private Transform firePoint;
@@ -616,6 +618,63 @@ public class PlayerController : NetworkBehaviour, IDamageable
         {
             ShowHitboxClientRpc(center, attack.hitBoxSize, PlayerModel.rotation);
         }
+    }
+
+    public void StartAttackMove(AttackSteps attack)
+    {
+        StopAttackMove();
+
+        if (attack == null) return;
+        if (attack.moveDis <= 0) return;
+        if (attack.moveDuration <= 0) return;
+
+        attackMoveRoutine = StartCoroutine(AttackMoveRoutine(attack));
+    }
+
+    public void StopAttackMove()
+    {
+        if (attackMoveRoutine != null)
+        {
+            StopCoroutine(attackMoveRoutine);
+            attackMoveRoutine = null;
+        }
+    }
+
+    private IEnumerator AttackMoveRoutine(AttackSteps attack)
+    {
+        if (attack.moveDis > 0f) yield return new WaitForSeconds(attack.moveStartTime);
+
+        if (rb == null || playerModel == null) yield break;
+
+        Vector3 dir = playerModel.forward;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.001f) dir = transform.forward;
+
+        dir.Normalize();
+
+        Vector3 startPos = rb.position;
+        Vector3 endPos = startPos + dir * attack.moveDis;
+
+        float elapsed = 0f;
+
+        while (elapsed < attack.moveDuration)
+        {
+            if (!isPerformingAction) yield break;
+
+            elapsed += Time.deltaTime;
+
+            float t = Mathf.Clamp01(elapsed / attack.moveDuration);
+            float easeT = attack.moveCurve != null ? attack.moveCurve.Evaluate(t) : t;
+
+            Vector3 nextPos = Vector3.Lerp(startPos , endPos, easeT);
+
+            rb.MovePosition(new Vector3(nextPos.x, rb.position.y, nextPos.z));
+
+            yield return new WaitForFixedUpdate();
+        }
+
+        attackMoveRoutine = null;
     }
     // ─────────────────────────────────────────
     // SHOOT

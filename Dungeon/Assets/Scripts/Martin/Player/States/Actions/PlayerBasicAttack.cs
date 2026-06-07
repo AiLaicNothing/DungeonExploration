@@ -73,6 +73,7 @@ public class PlayerBasicAttack : PlayerStates
     }
     public override void OnExit()
     {
+        
         player.isPerformingAction = false;
         player.blockVelocity = false;
     }
@@ -90,6 +91,8 @@ public class PlayerBasicAttack : PlayerStates
 
         player.PlayAttackVfxLocal(comboIndex, true);
         player.RequestAttackVfx(comboIndex, true);
+
+        player.StartAttackMove(attackSteps);
 
         //--> Play animation
         Debug.Log($"Player attacked with {attackSteps.name}");
