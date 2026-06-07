@@ -247,7 +247,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3195422587
+  GlobalObjectIdHash: 4006788714
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -320,6 +320,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GoblinMelee
   ShowTopMostFoldoutHeaderGroup: 1
   stats: {fileID: 11400000, guid: 8225036b6ba010f4e902cce41b711a0f, type: 2}
+  hitStunDuration: 0.35
+  revengeTreshold: 5
   vfxHit: {fileID: 1035977224672214417, guid: 057aa477789506a44bd206e9c5acad19, type: 3}
   hitVfxOffset: {x: 0, y: 0.5, z: 0}
   hitVfxDuration: 1

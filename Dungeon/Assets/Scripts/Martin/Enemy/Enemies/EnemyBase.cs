@@ -21,8 +21,9 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
     protected bool isInStaggerCooldown;
 
     [Header("Revenge")]
+    public float hitStunDuration;
     NetworkVariable<int> revengeCount = new NetworkVariable<int>();
-    private int revengeTreshold = 0;
+    public int revengeTreshold = 0;
 
     [Header("Vfx")]
     [SerializeField] private GameObject vfxHit;
@@ -112,6 +113,7 @@ public abstract class EnemyBase : NetworkBehaviour, IDamageable, IKillable
         if (keepOnAir) SustainAir(airLift);
 
         ApplyStun(stunDuration);
+        ApplyHitStun(hitStunDuration);
         BuildStagger(staggerBuild);
     }
 

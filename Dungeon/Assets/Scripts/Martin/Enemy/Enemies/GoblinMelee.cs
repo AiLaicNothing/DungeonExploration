@@ -368,6 +368,8 @@ public class GoblinMelee : EnemyBase
             isFollowingPlayer = false;
         }
 
+        isRevengeMode = false;
+
         agent.isStopped = false;
         isPerformingAction = false;
     }

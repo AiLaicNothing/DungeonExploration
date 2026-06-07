@@ -81,7 +81,8 @@ public class CharacterSelectionManager : NetworkBehaviour
     {
         if (!selectedCharacters.TryGetValue(clientId, out int selectedIndex))
         {
-            Debug.LogWarning($"[CharacterSelectionManager] No selected character for Client={clientId}"); return;
+            Debug.LogWarning($"[CharacterSelectionManager] No selected character for Client={clientId}");
+            return;
         }
 
         CharacterData data = characters[selectedIndex];
@@ -93,6 +94,7 @@ public class CharacterSelectionManager : NetworkBehaviour
         }
 
         PlayerSessionData session = FindSession(clientId);
+
         PlayerSaveEntry savedEntry = null;
         string playerId = null;
 
@@ -100,60 +102,101 @@ public class CharacterSelectionManager : NetworkBehaviour
         {
             playerId = session.PlayerId.Value.ToString();
 
-            Debug.Log($"[CharacterSelectionManager] Spawn decision " + $"Client={clientId} PlayerId={playerId} Selected={selectedIndex}");
+            Debug.Log(
+                $"[CharacterSelectionManager] Spawn decision " +
+                $"Client={clientId} PlayerId={playerId} Selected={selectedIndex}"
+            );
 
-            if (SaveSlotManager.Instance != null && SaveSlotManager.Instance.HasActiveSlot && !string.IsNullOrEmpty(playerId))
+            if (SaveSlotManager.Instance != null &&
+                SaveSlotManager.Instance.HasActiveSlot &&
+                !string.IsNullOrEmpty(playerId))
             {
-                if (!SaveSlotManager.Instance.TryGetActivePlayerEntry(playerId, out savedEntry))
-                {
-                    Debug.LogWarning($"[CharacterSelectionManager] No saved player entry for PlayerId={playerId}. Spawning at fallback point.");
-                }
+                SaveSlotManager.Instance.TryGetActivePlayerEntry(
+                    playerId,
+                    out savedEntry
+                );
             }
         }
-        else
-        {
-            Debug.LogWarning($"[CharacterSelectionManager] Session not found for Client={clientId}");
-        }
 
-        Transform fallbackSpawn = GetFallbackSpawnPoint();
-        Vector3 spawnPosition = fallbackSpawn.position;
-        Quaternion spawnRotation = fallbackSpawn.rotation;
+        Transform spawnPoint = GetFallbackSpawnPoint();
+
+        Vector3 spawnPosition = spawnPoint.position;
+        Quaternion spawnRotation = spawnPoint.rotation;
+
+        bool useSavedPosition = false;
 
         if (savedEntry != null)
         {
-            // CHANGE:
-            // Prefer the last known saved position instead of the fallback spawn point.
-            spawnPosition = savedEntry.lastKnownPosition.ToVector3().sqrMagnitude > 0.0001f ? savedEntry.lastKnownPosition.ToVector3() : savedEntry.position.ToVector3();
+            Vector3 savedPos = savedEntry.position.ToVector3();
 
-            Debug.Log($"[CharacterSelectionManager] Using saved spawn position " + $"Player={playerId} Pos={spawnPosition}");
+            // Only restore if this looks like a real gameplay save.
+            if (savedPos.sqrMagnitude > 0.001f)
+            {
+                useSavedPosition = true;
+                spawnPosition = savedPos;
+
+                Debug.Log(
+                    $"[CharacterSelectionManager] Restoring saved position " +
+                    $"Player={playerId} Pos={spawnPosition}"
+                );
+            }
         }
 
-        if (spawnedCharacters.TryGetValue(clientId, out NetworkObject oldCharacter) && oldCharacter != null)
+        if (!useSavedPosition)
         {
-            oldCharacter.Despawn(true);
+            Debug.Log(
+                $"[CharacterSelectionManager] Using spawn point " +
+                $"Player={playerId} Pos={spawnPosition}"
+            );
         }
 
-        GameObject obj = Instantiate(data.playerPrefab, spawnPosition, spawnRotation);
+        if (spawnedCharacters.TryGetValue(clientId, out NetworkObject oldCharacter))
+        {
+            if (oldCharacter != null && oldCharacter.IsSpawned)
+            {
+                oldCharacter.Despawn(true);
+            }
+        }
+
+        GameObject obj = Instantiate(
+            data.playerPrefab,
+            spawnPosition,
+            spawnRotation
+        );
+
         NetworkObject netObj = obj.GetComponent<NetworkObject>();
 
         if (netObj == null)
         {
-            Debug.LogError("[CharacterSelectionManager] Spawned prefab has no NetworkObject");
+            Debug.LogError(
+                "[CharacterSelectionManager] Spawned prefab has no NetworkObject"
+            );
+
             Destroy(obj);
             return;
         }
 
         netObj.SpawnWithOwnership(clientId);
 
-        Debug.Log($"[CharacterSelectionManager] Spawned prefab " + $"Character={data.characterName} Client={clientId} NetId={netObj.NetworkObjectId} SpawnPos={spawnPosition}");
+        Debug.Log(
+            $"[CharacterSelectionManager] Spawned prefab " +
+            $"Character={data.characterName} " +
+            $"Client={clientId} " +
+            $"NetId={netObj.NetworkObjectId} " +
+            $"Pos={spawnPosition}"
+        );
+
+        spawnedCharacters[clientId] = netObj;
 
         if (session != null)
         {
             session.NotifyCharacterSpawned(netObj.NetworkObjectId);
-            Debug.Log($"[CharacterSelectionManager] Session notified of spawned character " + $"Client={clientId} CharacterNetId={netObj.NetworkObjectId}");
-        }
 
-        spawnedCharacters[clientId] = netObj;
+            Debug.Log(
+                $"[CharacterSelectionManager] Session notified " +
+                $"Client={clientId} CharacterNetId={netObj.NetworkObjectId}"
+            );
+        }
 
         if (savedEntry != null &&
             SaveGameIntegration.Instance != null)
@@ -165,7 +208,7 @@ public class CharacterSelectionManager : NetworkBehaviour
         }
         else
         {
-            var stats = netObj.GetComponent<PlayerStats>();
+            PlayerStats stats = netObj.GetComponent<PlayerStats>();
 
             if (stats != null &&
                 WorldCheckpointState.Instance != null)
@@ -181,7 +224,6 @@ public class CharacterSelectionManager : NetworkBehaviour
                 );
             }
         }
-
     }
 
     private Transform GetFallbackSpawnPoint()
