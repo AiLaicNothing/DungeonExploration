@@ -52,7 +52,7 @@ public class SettingsManager : MonoBehaviour
 
     // ── Valores actuales ──────────────────────────────────────────────
     private float _sensitivity;
-    private bool _invertX, _invertY;
+    private bool _invertX, _invertY=true;
     private int _resolutionIndex;
     private bool _fullscreen;
     private bool _vsync;
@@ -74,7 +74,16 @@ public class SettingsManager : MonoBehaviour
     // ── Properties ────────────────────────────────────────────────────
     public float Sensitivity { get => _sensitivity; set { _sensitivity = Mathf.Clamp(value, minSensitivity, maxSensitivity); PlayerPrefs.SetFloat(KEY_SENSITIVITY, _sensitivity); OnSettingsChanged?.Invoke(); } }
     public bool InvertX { get => _invertX; set { _invertX = value; PlayerPrefs.SetInt(KEY_INVERT_X, value ? 1 : 0); OnSettingsChanged?.Invoke(); } }
-    public bool InvertY { get => _invertY; set { _invertY = value; PlayerPrefs.SetInt(KEY_INVERT_Y, value ? 1 : 0); OnSettingsChanged?.Invoke(); } }
+    public bool InvertY
+    {
+        get => _invertY;
+        set
+        {
+            _invertY = value;
+            PlayerPrefs.SetInt(KEY_INVERT_Y, value ? 1 : 0);
+            OnSettingsChanged?.Invoke();
+        }
+    }
     public int ResolutionIndex { get => _resolutionIndex; set { _resolutionIndex = value; PlayerPrefs.SetInt(KEY_RESOLUTION_INDEX, value); ApplyResolution(); } }
     public bool Fullscreen { get => _fullscreen; set { _fullscreen = value; PlayerPrefs.SetInt(KEY_FULLSCREEN, value ? 1 : 0); ApplyResolution(); } }
     public bool VSync { get => _vsync; set { _vsync = value; PlayerPrefs.SetInt(KEY_VSYNC, value ? 1 : 0); QualitySettings.vSyncCount = value ? 1 : 0; } }
@@ -124,8 +133,7 @@ public class SettingsManager : MonoBehaviour
     {
         _sensitivity = PlayerPrefs.GetFloat(KEY_SENSITIVITY, DEFAULT_SENSITIVITY);
         _invertX = PlayerPrefs.GetInt(KEY_INVERT_X, 0) == 1;
-        _invertY = PlayerPrefs.GetInt(KEY_INVERT_Y, 0) == 1;
-
+        _invertY = PlayerPrefs.GetInt(KEY_INVERT_Y, 1) == 1;
         int currentIdx = FindCurrentResolutionIndex();
         _resolutionIndex = PlayerPrefs.GetInt(KEY_RESOLUTION_INDEX, currentIdx);
         _resolutionIndex = Mathf.Clamp(_resolutionIndex, 0, AvailableResolutions.Length - 1);
@@ -196,7 +204,7 @@ public class SettingsManager : MonoBehaviour
     public void ResetToDefaults()
     {
         Sensitivity = DEFAULT_SENSITIVITY;
-        InvertX = false; InvertY = false;
+        InvertX = false; InvertY = true;
         ResolutionIndex = FindCurrentResolutionIndex();
         Fullscreen = true;
         VSync = false;
