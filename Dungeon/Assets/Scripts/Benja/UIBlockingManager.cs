@@ -99,9 +99,6 @@ public class UIBlockingManager : MonoBehaviour
         {
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
-
-            if (InteractionUI.Instance != null)
-                InteractionUI.Instance.ShowUI();
         }
     }
 

@@ -14,6 +14,13 @@ public class InteractionUI : MonoBehaviour
 
         if (panel != null) panel.SetActive(false);
     }
+    private void Update()
+    {
+        if (panel.activeSelf && UIBlockingManager.IsAnyUIOpen)
+        {
+            panel.SetActive(false);
+        }
+    }
 
     public void SetUp(string function)
     {
