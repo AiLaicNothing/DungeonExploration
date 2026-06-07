@@ -25,6 +25,33 @@ MonoBehaviour:
     hitTime: 0.2
     hitBoxSize: {x: 2, y: 2.5, z: 2}
     hitBoxOffSet: {x: 0, y: 0, z: 1}
+    moveDis: 0.5
+    moveStartTime: 0.05
+    moveDuration: 0.12
+    moveCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
     hitData:
       physicalScale: 1
       magicalScale: 1
@@ -46,6 +73,33 @@ MonoBehaviour:
     hitTime: 0.2
     hitBoxSize: {x: 2.5, y: 2.5, z: 2}
     hitBoxOffSet: {x: 0, y: 0, z: 1}
+    moveDis: 1
+    moveStartTime: 0.1
+    moveDuration: 0.12
+    moveCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
     hitData:
       physicalScale: 1
       magicalScale: 1
@@ -67,6 +121,33 @@ MonoBehaviour:
     hitTime: 0.3
     hitBoxSize: {x: 3, y: 3, z: 2.5}
     hitBoxOffSet: {x: 0, y: 0, z: 1.5}
+    moveDis: 5
+    moveStartTime: 0.2
+    moveDuration: 0.12
+    moveCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
     hitData:
       physicalScale: 1
       magicalScale: 1

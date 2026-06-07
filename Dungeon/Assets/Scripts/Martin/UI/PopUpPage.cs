@@ -2,7 +2,7 @@ using UnityEngine;
 using UnityEngine.Video;
 
 [System.Serializable]
-public class PopUpPage : MonoBehaviour
+public class PopUpPage 
 {
     public string title;
 

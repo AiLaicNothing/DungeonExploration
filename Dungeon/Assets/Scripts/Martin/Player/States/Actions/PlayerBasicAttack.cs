@@ -9,6 +9,7 @@ public class PlayerBasicAttack : PlayerStates
     float timer;
     bool canCombo;
     bool hasHit;
+    bool hasSpawnedVfx;
     public override void OnEnter()
     {
         comboIndex = 0;
@@ -31,6 +32,24 @@ public class PlayerBasicAttack : PlayerStates
         timer -= Time.deltaTime;
 
         float elapsed = attackSteps.duration - timer;
+
+        if (elapsed < attackSteps.hitTime)
+        {
+            Vector2 inputDir = player.Input.moveInput.normalized;
+            Vector3 moveDir = player.GetCameraRelativeMoveDirection(inputDir);
+
+            if (moveDir.sqrMagnitude > 0.0001f)
+            {
+                player.RotatePlayerModelToward(moveDir, attackSteps.turnSpeed);
+            }
+        }
+
+        if (!hasSpawnedVfx && elapsed >= attackSteps.vfxSpawnTime)
+        {
+            player.PlayAttackVfxLocal(comboIndex, true);
+            player.RequestAttackVfx(comboIndex, true);
+            hasSpawnedVfx = true;
+        }
 
         if (elapsed >= attackSteps.hitTime && !hasHit)
         {
@@ -85,12 +104,10 @@ public class PlayerBasicAttack : PlayerStates
         timer = attackSteps.duration;
         canCombo = false;
         hasHit = false;
+        hasSpawnedVfx = false;
 
         player.isPerformingAction = true;
         player.blockVelocity = true;
-
-        player.PlayAttackVfxLocal(comboIndex, true);
-        player.RequestAttackVfx(comboIndex, true);
 
         player.StartAttackMove(attackSteps);
 

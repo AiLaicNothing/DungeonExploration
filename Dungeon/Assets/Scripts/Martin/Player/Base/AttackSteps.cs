@@ -28,6 +28,7 @@ public class AttackSteps
     public float moveStartTime = 0f;
     public float moveDuration = 0.12f;
     public AnimationCurve moveCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+    public float turnSpeed = 100f;
 
     public HitData hitData;
 }

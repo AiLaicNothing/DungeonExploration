@@ -399,19 +399,7 @@ public class PlayerController : NetworkBehaviour, IDamageable
     {
         Vector2 inputDir = input.moveInput.normalized;
 
-        var cam = MainCam;
-
-        if (cam == null) return;
-
-        Vector3 camForward = cam.transform.forward;
-        camForward.y = 0f;
-        camForward.Normalize();
-
-        Vector3 camRight = cam.transform.right;
-        camRight.y = 0f;
-        camRight.Normalize();
-
-        Vector3 moveDir = camForward * inputDir.y + camRight * inputDir.x;
+        Vector3 moveDir = GetCameraRelativeMoveDirection(inputDir);
 
         Vector3 velocity = moveDir * moveSpeed * moveMultiplier;
 
@@ -485,6 +473,33 @@ public class PlayerController : NetworkBehaviour, IDamageable
         Quaternion targetRotation = Quaternion.LookRotation(lookDir);
 
         playerModel.rotation = Quaternion.Slerp( playerModel.rotation, targetRotation, rotSpeed * Time.deltaTime);
+    }
+
+    public Vector3 GetCameraRelativeMoveDirection(Vector2 inputDir)
+    {
+        var cam = MainCam;
+        if (cam == null) return Vector3.zero;
+
+        Vector3 camForward = cam.transform.forward;
+        camForward.y = 0f;
+        camForward.Normalize();
+
+        Vector3 camRight = cam.transform.right;
+        camRight.y = 0f;
+        camRight.Normalize();
+
+        Vector3 moveDir = camForward * inputDir.y + camRight * inputDir.x;
+        moveDir.y = 0f;
+
+        return moveDir.normalized;
+    }
+
+    public void RotatePlayerModelToward(Vector3 dir, float rotateSpeed)
+    {
+        if (dir.sqrMagnitude < 0.0001f) return;
+
+        Quaternion targetRotation = Quaternion.LookRotation(dir.normalized);
+        playerModel.rotation = Quaternion.Slerp(playerModel.rotation, targetRotation, rotateSpeed * Time.deltaTime);
     }
 
     private void CheckGround()
@@ -784,7 +799,6 @@ public class PlayerController : NetworkBehaviour, IDamageable
         Transform root = PlayerModel != null ? PlayerModel : transform;
 
         Vector3 spawnPos = root.TransformPoint(attack.vfxOffset);
-
         Quaternion spawnRot = root.rotation * Quaternion.Euler(attack.vfxRotOffset);
 
         GameObject vfx = Instantiate(attack.attackVfx, spawnPos, spawnRot);
