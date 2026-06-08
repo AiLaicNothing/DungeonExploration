@@ -30,11 +30,17 @@ public class LockOnTarget : MonoBehaviour
     public Transform CurrentTarget => currentTarget;
 
     private Transform currentTarget;
-    private float maxAngle = 90f;
 
     void Start()
     {
         mainCamera = GameObject.FindGameObjectWithTag("MainCamera").GetComponent<Camera>();
+
+        if (aimIcon == null)
+        {
+            PlayerUI hud = FindFirstObjectByType<PlayerUI>();
+            if (hud != null)
+                aimIcon = hud.aimIcon;
+        }
 
         // Disable default Cinemachine input
         freeLook.m_XAxis.m_InputAxisName = "";

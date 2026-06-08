@@ -201,6 +201,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerController
   ShowTopMostFoldoutHeaderGroup: 1
+  sfxSource: {fileID: 0}
+  movementSource: {fileID: 0}
+  dashClip: {fileID: 0}
+  footstepLoopClip: {fileID: 0}
   moveSpeed: 10
   jumpForce: 12
   rotSpeed: 6
@@ -895,7 +899,6 @@ GameObject:
   m_Component:
   - component: {fileID: 6308329692628934906}
   - component: {fileID: 8644750467369546798}
-  - component: {fileID: 141562045402671258}
   - component: {fileID: 1170842666804455518}
   - component: {fileID: 932029021893566922}
   - component: {fileID: 4750854592699356200}
@@ -943,7 +946,7 @@ MonoBehaviour:
   m_StreamingVersion: 20170927
   m_Priority: 10
   m_StandbyUpdate: 2
-  m_LookAt: {fileID: 5755382777071706998}
+  m_LookAt: {fileID: 6115546402600986329}
   m_Follow: {fileID: 6115546402600986329}
   m_CommonLens: 1
   m_Lens:
@@ -1019,32 +1022,17 @@ MonoBehaviour:
   m_BindingMode: 3
   m_SplineCurvature: 0.2
   m_Orbits:
-  - m_Height: 2.5
-    m_Radius: 4
-  - m_Height: 1
-    m_Radius: 6
+  - m_Height: 3
+    m_Radius: 2.5
+  - m_Height: 1.5
+    m_Radius: 5
   - m_Height: -0.5
-    m_Radius: 3.5
+    m_Radius: 2.5
   m_LegacyHeadingBias: 3.4028235e+38
   m_Rigs:
   - {fileID: 479416418347851459}
   - {fileID: 8785652987206138539}
   - {fileID: 6556904462587486545}
---- !u!114 &141562045402671258
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3620408723487565942}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 44d70cc20219cd84593f67d248eafe36, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Cinemachine::CinemachineCameraOffset
-  m_Offset: {x: 1.2, y: 0, z: 0}
-  m_ApplyAfter: 1
-  m_PreserveComposition: 0
 --- !u!114 &1170842666804455518
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1068,7 +1056,7 @@ MonoBehaviour:
   m_AvoidObstacles: 1
   m_DistanceLimit: 0
   m_MinimumOcclusionTime: 0
-  m_CameraRadius: 0.1
+  m_CameraRadius: 0.35
   m_Strategy: 0
   m_MaximumEffort: 4
   m_SmoothingTime: 0
