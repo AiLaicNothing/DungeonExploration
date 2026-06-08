@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: 1 - shader
-  m_Shader: {fileID: 4800000, guid: be891319084e9d147b09d89e80ce60e0, type: 3}
+  m_Shader: {fileID: 4800000, guid: e4468eb8a8320f7488ddbb0e591f9fbc, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
@@ -35,7 +35,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _1st_ShadeMap:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 825681b3ed0124b4bb6639e1939cfead, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _2nd_ShadeMap:
@@ -171,11 +171,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Set_1st_ShadePosition:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 825681b3ed0124b4bb6639e1939cfead, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Set_2nd_ShadePosition:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 2800000, guid: 8adfdfc3833a8184bb28527443d6c6ba, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Set_HighColorMask:
@@ -328,7 +328,7 @@ Material:
     - _HeightCenter: 0.5
     - _HeightMapParametrization: 0
     - _HeightOffset: 0
-    - _HighColor_Power: 0.082
+    - _HighColor_Power: 0.607
     - _HighlightOverridden: 0
     - _HighlightVisible: 1
     - _InvTilingScale: 1
@@ -348,7 +348,7 @@ Material:
     - _Is_Filter_HiCutPointLightColor: 1
     - _Is_Filter_LightColor: 1
     - _Is_LightColor_1st_Shade: 1
-    - _Is_LightColor_2nd_Shade: 1
+    - _Is_LightColor_2nd_Shade: 0
     - _Is_LightColor_AR: 1
     - _Is_LightColor_Ap_RimLight: 1
     - _Is_LightColor_Base: 1
@@ -435,6 +435,16 @@ Material:
     - _StepOffset: 0
     - _SubsurfaceMask: 1
     - _Surface: 0
+    - _TessEdgeLength: 5
+    - _TessExtrusionAmount: 0
+    - _TessPhongStrength: 0.5
+    - _TessellationBackFaceCullEpsilon: -0.25
+    - _TessellationFactor: 4
+    - _TessellationFactorMaxDistance: 50
+    - _TessellationFactorMinDistance: 20
+    - _TessellationFactorTriangleSize: 100
+    - _TessellationMode: 0
+    - _TessellationShapeFactor: 0.75
     - _TexWorldScale: 1
     - _TexWorldScaleEmissive: 1
     - _Thickness: 1
@@ -484,7 +494,7 @@ Material:
     - _EmissiveColor: {r: 0, g: 0, b: 0, a: 1}
     - _Emissive_Color: {r: 0, g: 0, b: 0, a: 1}
     - _FirstShadeMaskColor: {r: 0, g: 1, b: 1, a: 1}
-    - _HighColor: {r: 1, g: 1, b: 1, a: 1}
+    - _HighColor: {r: 0, g: 0, b: 0, a: 1}
     - _HighlightMaskColor: {r: 1, g: 1, b: 0, a: 1}
     - _InvPrimScale: {r: 1, g: 1, b: 0, a: 0}
     - _IridescenceThicknessRemap: {r: 0, g: 1, b: 0, a: 0}

@@ -59,12 +59,12 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
-    - Vector1_25A87481: 4.3
+    - Vector1_25A87481: 0.1
     - Vector1_2D2F8B59: 0.355
     - Vector1_41C335B8: 0.327
     - Vector1_523CF9F9: 0
     - Vector1_928B3B41: 1
-    - Vector1_D1DAD1FD: 0.168
+    - Vector1_D1DAD1FD: 0.1
     - Vector1_E285A04C: 0.299
     - Vector1_E649B5B1: 4
     - Vector1_F278FEE0: 0.197

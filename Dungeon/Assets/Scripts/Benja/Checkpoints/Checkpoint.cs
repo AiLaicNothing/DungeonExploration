@@ -20,9 +20,9 @@ public class Checkpoint : NetworkBehaviour, IInteractable
     [Tooltip("Punto donde respawnear/teletransportar al jugador.")]
     public Transform spawnPoint;
 
-    [Header("UI mundo")]
-    public GameObject activateUI;
-    public GameObject openPanelUI;
+    //[Header("UI mundo")]
+    //public GameObject activateUI;
+    //public GameObject openPanelUI;
 
     [Header("Recompensa")]
     public int upgradePointsReward = 5;
@@ -434,14 +434,14 @@ public class Checkpoint : NetworkBehaviour, IInteractable
             && WorldCheckpointState.Instance
                 .IsDiscoveredInWorld(checkpointName);
 
-        if (worldDiscovered)
-        {
-            openPanelUI?.SetActive(true);
-        }
-        else
-        {
-            activateUI?.SetActive(true);
-        }
+        //if (worldDiscovered)
+        //{
+        //    openPanelUI?.SetActive(true);
+        //}
+        //else
+        //{
+        //    activateUI?.SetActive(true);
+        //}
 
     }
 
@@ -454,8 +454,8 @@ public class Checkpoint : NetworkBehaviour, IInteractable
 
         _localPlayerInRange = false;
 
-        activateUI?.SetActive(false);
-        openPanelUI?.SetActive(false);
+        //activateUI?.SetActive(false);
+        //openPanelUI?.SetActive(false);
 
         if (CheckpointMenuUI.Instance != null
             && CheckpointMenuUI.Instance.IsOpen)
