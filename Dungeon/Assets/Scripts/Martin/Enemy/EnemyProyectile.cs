@@ -1,6 +1,7 @@
+using Unity.Netcode;
 using UnityEngine;
 
-public class EnemyProyectile : MonoBehaviour
+public class EnemyProyectile : NetworkBehaviour
 {
     [SerializeField] private float speed;
     private float damage;

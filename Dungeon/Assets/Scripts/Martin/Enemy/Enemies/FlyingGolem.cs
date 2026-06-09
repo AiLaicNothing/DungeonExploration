@@ -40,6 +40,19 @@ public class FlyingGolem : EnemyBase
     [SerializeField] private float attackAnimDuration = 1.2f;
     [SerializeField] private float recoveryTime = 0.5f;
 
+    [Header("Attack 1")]
+    [SerializeField] private GameObject magicCircleVfx;
+    [SerializeField] private Vector3 circleOffset;
+    [SerializeField] private GameObject magicBulletPrefab;
+    [SerializeField] private int bulletAmmount;
+    [SerializeField] private float timeBtwShoot;
+
+    [Header("Attack 2")]
+    [SerializeField] private GameObject chargeVfx;
+    [SerializeField] private Vector3 bombPosOffset;
+    [SerializeField] private GameObject bombPrefab;
+    [SerializeField] private float chargeTime;
+
     [Header("Detection")]
     [SerializeField] private float detectionRange = 18f;
     [SerializeField] private float maxChaseDistance = 28f;
@@ -107,11 +120,9 @@ public class FlyingGolem : EnemyBase
             visualBaseLocalPos = visualRoot.localPosition;
         }
 
-        if (bodyCapsule == null)
-            bodyCapsule = GetComponent<CapsuleCollider>();
+        if (bodyCapsule == null) bodyCapsule = GetComponent<CapsuleCollider>();
 
-        if (bodyBox == null)
-            bodyBox = GetComponent<BoxCollider>();
+        if (bodyBox == null) bodyBox = GetComponent<BoxCollider>();
 
         if (bodyCapsule != null)
         {
@@ -155,8 +166,7 @@ public class FlyingGolem : EnemyBase
 
         if (isStaggered)
         {
-            if (!isFalling)
-                EnterFallMode();
+            if (!isFalling) EnterFallMode();
 
             return;
         }
@@ -203,18 +213,13 @@ public class FlyingGolem : EnemyBase
     {
         List<PlayerController> validTargets = GetVisibleTargets();
 
-        if (validTargets.Count == 0)
-            return null;
+        if (validTargets.Count == 0) return null;
 
-        validTargets = validTargets
-            .OrderBy(t => HorizontalDistance(transform.position, t.transform.position))
-            .ToList();
+        validTargets = validTargets.OrderBy(t => HorizontalDistance(transform.position, t.transform.position)).ToList();
 
-        if (validTargets.Count == 1)
-            return validTargets[0];
+        if (validTargets.Count == 1) return validTargets[0];
 
-        if (Random.value <= closestTargetChance)
-            return validTargets[0];
+        if (Random.value <= closestTargetChance) return validTargets[0];
 
         int index = Random.Range(1, validTargets.Count);
         return validTargets[index];
@@ -222,8 +227,7 @@ public class FlyingGolem : EnemyBase
 
     private List<PlayerController> GetVisibleTargets()
     {
-        PlayerController[] players =
-            FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
+        PlayerController[] players = FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
 
         List<PlayerController> validTargets = new();
 
@@ -244,8 +248,7 @@ public class FlyingGolem : EnemyBase
 
             if (Physics.Raycast(origin, dir, out RaycastHit hit, rayDistance, obstacleLayer))
             {
-                if (hit.transform != player.transform &&
-                    hit.transform.root != player.transform.root)
+                if (hit.transform != player.transform && hit.transform.root != player.transform.root)
                 {
                     continue;
                 }
@@ -411,8 +414,7 @@ public class FlyingGolem : EnemyBase
 
     private void UpdateHoverVisual()
     {
-        if (visualRoot == null)
-            return;
+        if (visualRoot == null) return;
 
         hoverTimer += Time.deltaTime;
 
@@ -420,10 +422,7 @@ public class FlyingGolem : EnemyBase
         float offsetY = hoverHeight + bob;
 
         Vector3 targetVisualPos = visualBaseLocalPos + Vector3.up * offsetY;
-        visualRoot.localPosition = Vector3.Lerp(
-            visualRoot.localPosition,
-            targetVisualPos,
-            Time.deltaTime * hoverSmooth);
+        visualRoot.localPosition = Vector3.Lerp(visualRoot.localPosition, targetVisualPos, Time.deltaTime * hoverSmooth);
 
         SyncColliderToVisual(offsetY);
     }
@@ -447,8 +446,7 @@ public class FlyingGolem : EnemyBase
 
     private void HandleActions()
     {
-        if (isPerformingAction || !hasDetectedPlayer || currentTarget == null)
-            return;
+        if (isPerformingAction || !hasDetectedPlayer || currentTarget == null)return;
 
         float distance = HorizontalDistance(transform.position, currentTarget.transform.position);
 
@@ -500,8 +498,8 @@ public class FlyingGolem : EnemyBase
         }
 
         float remainingTime = attackAnimDuration - hitTime;
-        if (remainingTime > 0f)
-            yield return new WaitForSeconds(remainingTime);
+
+        if (remainingTime > 0f) yield return new WaitForSeconds(remainingTime);
 
         yield return new WaitForSeconds(recoveryTime);
 
@@ -513,8 +511,7 @@ public class FlyingGolem : EnemyBase
             isFollowingPlayer = false;
         }
 
-        if (agent != null)
-            agent.isStopped = false;
+        if (agent != null) agent.isStopped = false;
 
         isPerformingAction = false;
         attackRoutine = null;
@@ -527,12 +524,102 @@ public class FlyingGolem : EnemyBase
 
     private IEnumerator PerformAttackOne()
     {
-        yield break;
+        Debug.Log("Flying Golem: attack 1");
+
+        if (currentTarget == null) yield break;
+
+        Vector3 targetDir = GetFlatTargetDirection();
+        Quaternion lookRot = Quaternion.LookRotation(targetDir);
+
+        Vector3 right = transform.right;
+        right.y = 0f;
+        right.Normalize();
+
+        float sideOffset = Mathf.Abs(circleOffset.x);
+
+        Vector3 centerBase = transform.position + Vector3.up * circleOffset.y + transform.forward * circleOffset.z;
+
+        Vector3 leftCirclePos = centerBase - right * sideOffset;
+        Vector3 rightCirclePos = centerBase + right * sideOffset;
+
+        Quaternion leftRot = GetLookRotationToTarget(leftCirclePos);
+        Quaternion rightRot = GetLookRotationToTarget(rightCirclePos);
+
+        SpawnVfx(magicCircleVfx, leftCirclePos, leftRot);
+        SpawnVfx(magicCircleVfx, rightCirclePos, rightRot);
+
+        yield return new WaitForSeconds(0.15f);
+
+        for (int i = 0; i < bulletAmmount; i++)
+        {
+            if (currentTarget == null) yield break;
+
+            Vector3 leftBulletDir = (currentTarget.transform.position - leftCirclePos).normalized;
+            Vector3 rightBulletDir = (currentTarget.transform.position - rightCirclePos).normalized;
+
+            if (leftBulletDir.sqrMagnitude < 0.0001f) leftBulletDir = targetDir;
+
+            if (rightBulletDir.sqrMagnitude < 0.0001f) rightBulletDir = targetDir;
+
+            GameObject leftBullet = Instantiate(magicBulletPrefab, leftCirclePos, Quaternion.LookRotation(leftBulletDir));
+
+            GameObject rightBullet = Instantiate(magicBulletPrefab, rightCirclePos, Quaternion.LookRotation(rightBulletDir));
+
+            var leftProj = leftBullet.GetComponent<EnemyProyectile>();
+
+            if (leftProj != null)
+            {
+                leftProj.InitProj(stats.damage, leftBulletDir);
+            }
+
+            leftBullet.GetComponent<NetworkObject>().Spawn();
+
+            var rightProj = rightBullet.GetComponent<EnemyProyectile>();
+
+            if (rightProj != null)
+            {
+                rightProj.InitProj(stats.damage, rightBulletDir);
+            }
+            rightBullet.GetComponent<NetworkObject>().Spawn();
+
+            yield return new WaitForSeconds(timeBtwShoot);
+        }
+
+        yield return new WaitForSeconds(0.2f);
     }
 
     private IEnumerator PerformAttackTwo()
     {
-        yield break;
+        Debug.Log("Flying Golem: attack 2");
+
+        if (currentTarget == null) yield break;
+
+        Vector3 targetDir = GetFlatTargetDirection();
+        Vector3 spawnPos = transform.TransformPoint(bombPosOffset);
+
+        SpawnVfx(chargeVfx, spawnPos, Quaternion.LookRotation(targetDir));
+
+        yield return new WaitForSeconds(chargeTime);
+
+        if (currentTarget == null) yield break;
+
+        Vector3 bombDir = (currentTarget.transform.position - spawnPos).normalized;
+        bombDir.y = 0f;
+
+        if (bombDir.sqrMagnitude < 0.0001f) bombDir = targetDir;
+
+        GameObject bomb = Instantiate(bombPrefab, spawnPos, Quaternion.LookRotation(bombDir));
+
+        Rigidbody bombRb = bomb.GetComponent<Rigidbody>();
+
+        if (bombRb != null)
+        {
+            bombRb.linearVelocity = bombDir * stats.damage;
+        }
+
+        bomb.GetComponent<NetworkObject>().Spawn();
+
+        yield return new WaitForSeconds(0.2f);
     }
 
     // =========================================================
@@ -586,8 +673,7 @@ public class FlyingGolem : EnemyBase
 
     private void HandleFallRecovery()
     {
-        if (Time.time - fallStartedAt < minFallTimeBeforeRecovery)
-            return;
+        if (Time.time - fallStartedAt < minFallTimeBeforeRecovery) return;
 
         if (Time.time - fallStartedAt > maxFallTime)
         {
@@ -611,11 +697,9 @@ public class FlyingGolem : EnemyBase
 
     private void StartRecovery()
     {
-        if (isRecovering)
-            return;
+        if (isRecovering) return;
 
-        if (recoverRoutine != null)
-            StopCoroutine(recoverRoutine);
+        if (recoverRoutine != null) StopCoroutine(recoverRoutine);
 
         recoverRoutine = StartCoroutine(RecoverToHover());
     }
@@ -644,6 +728,7 @@ public class FlyingGolem : EnemyBase
         }
 
         float t = 0f;
+
         while (t < 1f)
         {
             t += Time.deltaTime / Mathf.Max(0.01f, recoverDuration);
@@ -664,8 +749,7 @@ public class FlyingGolem : EnemyBase
             agent.ResetPath();
         }
 
-        if (visualRoot != null)
-            visualRoot.localPosition = visualBaseLocalPos + Vector3.up * hoverHeight;
+        if (visualRoot != null) visualRoot.localPosition = visualBaseLocalPos + Vector3.up * hoverHeight;
 
         SyncColliderToVisual(hoverHeight);
 
@@ -709,11 +793,9 @@ public class FlyingGolem : EnemyBase
         Vector3 snappedPos = GetHoverSnapPosition(transform.position);
         transform.position = snappedPos;
 
-        if (agent != null)
-            agent.Warp(snappedPos);
+        if (agent != null) agent.Warp(snappedPos);
 
-        if (visualRoot != null)
-            visualRoot.localPosition = visualBaseLocalPos + Vector3.up * hoverHeight;
+        if (visualRoot != null) visualRoot.localPosition = visualBaseLocalPos + Vector3.up * hoverHeight;
 
         SyncColliderToVisual(hoverHeight);
     }
@@ -724,10 +806,7 @@ public class FlyingGolem : EnemyBase
 
         if (NavMesh.SamplePosition(samplePoint, out NavMeshHit hit, 30f, NavMesh.AllAreas))
         {
-            return new Vector3(
-                sourcePosition.x,
-                hit.position.y,
-                sourcePosition.z);
+            return new Vector3(sourcePosition.x, hit.position.y, sourcePosition.z);
         }
 
         return sourcePosition;
@@ -739,17 +818,14 @@ public class FlyingGolem : EnemyBase
 
     private void RotateToVelocity()
     {
-        if (isFalling || isRecovering || isPerformingAction)
-            return;
+        if (isFalling || isRecovering || isPerformingAction) return;
 
-        if (agent == null)
-            return;
+        if (agent == null) return;
 
         Vector3 vel = agent.velocity;
         vel.y = 0f;
 
-        if (vel.sqrMagnitude < 0.01f)
-            return;
+        if (vel.sqrMagnitude < 0.01f) return;
 
         Quaternion rot = Quaternion.LookRotation(vel.normalized);
         transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * turnSpeed);
@@ -757,20 +833,16 @@ public class FlyingGolem : EnemyBase
 
     private void RotateToTarget()
     {
-        if (isFalling || isRecovering || isPerformingAction)
-            return;
+        if (isFalling || isRecovering || isPerformingAction) return;
 
-        if (currentTarget == null)
-            return;
+        if (currentTarget == null) return;
 
-        if (!HasLineOfSight(currentTarget))
-            return;
+        if (!HasLineOfSight(currentTarget)) return;
 
         Vector3 dir = currentTarget.transform.position - transform.position;
         dir.y = 0f;
 
-        if (dir.sqrMagnitude < 0.01f)
-            return;
+        if (dir.sqrMagnitude < 0.01f) return;
 
         Quaternion rot = Quaternion.LookRotation(dir.normalized);
         transform.rotation = Quaternion.Slerp(transform.rotation, rot, Time.deltaTime * turnSpeed);
@@ -778,28 +850,24 @@ public class FlyingGolem : EnemyBase
 
     private void FaceTargetInstant()
     {
-        if (currentTarget == null)
-            return;
+        if (currentTarget == null) return;
 
         Vector3 dir = currentTarget.transform.position - transform.position;
         dir.y = 0f;
 
-        if (dir.sqrMagnitude < 0.01f)
-            return;
+        if (dir.sqrMagnitude < 0.01f) return;
 
         transform.rotation = Quaternion.LookRotation(dir.normalized);
     }
 
     private bool IsFacingTarget()
     {
-        if (currentTarget == null)
-            return false;
+        if (currentTarget == null) return false;
 
         Vector3 dir = currentTarget.transform.position - transform.position;
         dir.y = 0f;
 
-        if (dir.sqrMagnitude < 0.01f)
-            return false;
+        if (dir.sqrMagnitude < 0.01f) return false;
 
         float angle = Vector3.Angle(transform.forward, dir.normalized);
         return angle <= facingAngleThreshold;
@@ -811,8 +879,7 @@ public class FlyingGolem : EnemyBase
 
     private bool HasLineOfSight(PlayerController target)
     {
-        if (target == null)
-            return false;
+        if (target == null) return false;
 
         Vector3 origin = transform.position + Vector3.up * targetRayHeight;
         Vector3 targetPos = target.transform.position + Vector3.up * targetRayHeight;
@@ -840,5 +907,39 @@ public class FlyingGolem : EnemyBase
         a.y = 0f;
         b.y = 0f;
         return Vector3.Distance(a, b);
+    }
+
+    private Vector3 GetFlatTargetDirection()
+    {
+        if (currentTarget == null) return transform.forward;
+
+        Vector3 dir = currentTarget.transform.position - transform.position;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.0001f)
+            return transform.forward;
+
+        return dir.normalized;
+    }
+
+    private Quaternion GetLookRotationToTarget(Vector3 fromPosition)
+    {
+        if (currentTarget == null) return transform.rotation;
+
+        Vector3 dir = currentTarget.transform.position - fromPosition;
+        dir.y = 0f;
+
+        if (dir.sqrMagnitude < 0.0001f) dir = transform.forward;
+
+        return Quaternion.LookRotation(dir.normalized);
+    }
+
+    private void SpawnVfx(GameObject prefab, Vector3 position, Quaternion rotation)
+    {
+        if (prefab == null) return;
+
+        GameObject obj = Instantiate(prefab, position, rotation);
+
+        Destroy(obj, 5f);
     }
 }

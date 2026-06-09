@@ -32,7 +32,7 @@ Transform:
   m_GameObject: {fileID: 3555906603970811189}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 8.86339, y: 3.425, z: 46.7732}
+  m_LocalPosition: {x: 8.86339, y: 3, z: 46.7732}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -52,8 +52,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 2198860244
-  InScenePlacedSourceGlobalObjectIdHash: 0
+  GlobalObjectIdHash: 3395440793
+  InScenePlacedSourceGlobalObjectIdHash: 1411147299
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
@@ -130,10 +130,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.8
+  m_Radius: 1
   m_Height: 1
   m_Direction: 1
-  m_Center: {x: 0, y: 0.5, z: 0}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!54 &2901332612557975267
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -175,6 +175,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FlyingGolem
   ShowTopMostFoldoutHeaderGroup: 1
   stats: {fileID: 11400000, guid: bdb11252837e36a4188434df59eecc06, type: 2}
+  hitStunDuration: 0.2
+  revengeTreshold: 5
   vfxHit: {fileID: 1035977224672214417, guid: 057aa477789506a44bd206e9c5acad19, type: 3}
   hitVfxOffset: {x: 0, y: 1.2, z: 0}
   hitVfxDuration: 1.5
@@ -201,10 +203,19 @@ MonoBehaviour:
   hoverAcceleration: 40
   bodyCapsule: {fileID: 6638590801218841693}
   bodyBox: {fileID: 0}
-  firstAttackChance: 0.6
+  firstAttackChance: 0.65
   hitTime: 0.4
   attackAnimDuration: 1.2
   recoveryTime: 0.5
+  magicCircleVfx: {fileID: 0}
+  circleOffset: {x: 1.5, y: 4, z: -1.5}
+  magicBulletPrefab: {fileID: 6045340872100566797, guid: 6e906c62c2f26a74da8a445375a0bdd8, type: 3}
+  bulletAmmount: 2
+  timeBtwShoot: 0.3
+  chargeVfx: {fileID: 0}
+  bombPosOffset: {x: 0, y: 3.5, z: 0}
+  bombPrefab: {fileID: 2549698734028318311, guid: 13105971cc86fbb419b09e293ea572bc, type: 3}
+  chargeTime: 0.4
   detectionRange: 18
   maxChaseDistance: 28
   detectionDelay: 0.2
@@ -284,7 +295,7 @@ Transform:
   m_GameObject: {fileID: 7368817797302850376}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.73, z: 0}
+  m_LocalPosition: {x: 0, y: -0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -317,7 +328,7 @@ Transform:
   m_GameObject: {fileID: 8865950996223930878}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.5, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
