@@ -71,37 +71,34 @@ public class CheckpointUpgradeUI : MonoBehaviour
     public void Open()
     {
         if (panelRoot == null) return;
+
         panelRoot.SetActive(true);
 
-        // Indexar las filas de stats al abrir
         _rows.Clear();
+
         if (statRowsContainer != null)
             statRowsContainer.GetComponentsInChildren(true, _rows);
 
-        // Reset de deltas y suscripción a sus eventos
         foreach (var row in _rows)
         {
             row.ResetDelta();
+
             row.OnDeltaChanged -= UpdateHeader;
             row.OnDeltaChanged += UpdateHeader;
         }
 
         UpdateHeader();
         ClearError();
-
-        if (UIBlockingManager.Instance != null)
-            UIBlockingManager.Instance.Register(this);
     }
-
     public void Close()
     {
-        if (panelRoot != null) panelRoot.SetActive(false);
+        if (panelRoot != null)
+            panelRoot.SetActive(false);
 
-        // Cancelar todos los cambios pendientes
-        foreach (var row in _rows) row.ResetDelta();
+        foreach (var row in _rows)
+            row.ResetDelta();
 
-        if (UIBlockingManager.Instance != null)
-            UIBlockingManager.Instance.Unregister(this);
+        CheckpointMenuUI.Instance?.Reopen();
     }
 
     public bool IsOpen => panelRoot != null && panelRoot.activeSelf;

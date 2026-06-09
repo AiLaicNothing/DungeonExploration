@@ -1,13 +1,34 @@
 using UnityEngine;
+using System.Collections;
 
 public class SkillPickup : MonoBehaviour, IInteractable
 {
-    [SerializeField] private Skill skill;
+    [SerializeField] private CharacterSkillEntry[] skills = new CharacterSkillEntry[2];
+    private PlayerSkillInventory inventory;
+
+
+
+
+    private IEnumerator Start()
+    {
+        while (LocalPlayer.Controller == null)
+            yield return null;
+
+        inventory =
+            LocalPlayer.Controller.GetComponent<PlayerSkillInventory>();
+
+        if (inventory == null)
+            yield break;
+
+        inventory.OnSkillsChanged += RefreshVisibility;
+
+        RefreshVisibility();
+    }
+
+
+
     public void Interact()
     {
-        if (skill == null)
-            return;
-
         if (LocalPlayer.Controller == null)
             return;
 
@@ -19,33 +40,97 @@ public class SkillPickup : MonoBehaviour, IInteractable
         if (PlayerSessionData.local == null)
             return;
 
-        int currentCharacter = PlayerSessionData.local.SelectedCharacter.Value;
+        CharacterType currentCharacter =
+            (CharacterType)PlayerSessionData.local.SelectedCharacter.Value;
 
-        if ((int)skill.ownerCharacter != currentCharacter)
+        Skill skillToUnlock =
+            GetSkillForCharacter(currentCharacter);
+
+        if (skillToUnlock == null)
+            return;
+
+        if (inventory.HasSkillUnlocked(skillToUnlock))
         {
-            Debug.Log($"SkillPickUp: {(int)skill.ownerCharacter}");
-            Debug.Log("Esta skill no pertenece a este personaje.");
+            Debug.Log("Ya tienes esta habilidad.");
             return;
         }
 
-        inventory.RequestUnlockSkill(skill);
-
-        // If this pickup is networked, despawn it on the server instead of Destroy.
+        inventory.RequestUnlockSkill(skillToUnlock);
 
         InteractionUI.Instance.HideUI();
 
-        Destroy(gameObject);
+        // Si el objeto es networked, usa Despawn en el servidor.
+        gameObject.SetActive(false);
+    }
+
+    private void RefreshVisibility()
+    {
+        if (inventory == null)
+            return;
+
+        if (PlayerSessionData.local == null)
+            return;
+
+        CharacterType currentCharacter =
+            (CharacterType)PlayerSessionData.local.SelectedCharacter.Value;
+
+        Skill skill =
+            GetSkillForCharacter(currentCharacter);
+
+        if (skill == null)
+            return;
+
+        bool shouldShow =
+            !inventory.HasSkillUnlocked(skill);
+
+        gameObject.SetActive(shouldShow);
+    }
+
+    public static void RefreshAll()
+    {
+        var pickups =
+            FindObjectsByType<SkillPickup>(
+                FindObjectsSortMode.None);
+
+        foreach (var pickup in pickups)
+        {
+            pickup.RefreshVisibility();
+        }
+    }
+
+    private Skill GetSkillForCharacter(CharacterType character)
+    {
+        foreach (CharacterSkillEntry entry in skills)
+        {
+            if (entry == null)
+                continue;
+
+            if (entry.skill == null)
+                continue;
+
+            if (entry.character == character)
+                return entry.skill;
+        }
+
+        return null;
     }
 
     private void OnTriggerEnter(Collider other)
     {
         PlayerController player = other.GetComponent<PlayerController>();
 
-        if (player == null) return;
+        if (player == null || !player.IsOwner)
+            return;
 
-        if (!player.IsOwner) return;
+        CharacterType currentCharacter =
+            (CharacterType)PlayerSessionData.local.SelectedCharacter.Value;
 
-        InteractionUI.Instance.SetUp("Desbloquear habilidad");
+        Skill skill = GetSkillForCharacter(currentCharacter);
+
+        if (skill == null)
+            return;
+
+        InteractionUI.Instance.SetUp($"Desbloquear {skill.skillName}");
         InteractionUI.Instance.ShowUI();
     }
 
@@ -53,9 +138,8 @@ public class SkillPickup : MonoBehaviour, IInteractable
     {
         PlayerController player = other.GetComponent<PlayerController>();
 
-        if (player == null) return;
-
-        if (!player.IsOwner) return;
+        if (player == null || !player.IsOwner)
+            return;
 
         InteractionUI.Instance.HideUI();
     }

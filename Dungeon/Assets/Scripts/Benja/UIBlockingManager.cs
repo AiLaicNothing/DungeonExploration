@@ -82,11 +82,9 @@ public class UIBlockingManager : MonoBehaviour
 
         _openPanels.Add(panel);
 
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.None;
+        RefreshCursorState();
 
-        if (InteractionUI.Instance != null)
-            InteractionUI.Instance.HideUI();
+        InteractionUI.Instance?.HideUI();
     }
 
     public void Unregister(MonoBehaviour panel)
@@ -95,11 +93,18 @@ public class UIBlockingManager : MonoBehaviour
 
         _openPanels.Remove(panel);
 
-        if (_openPanels.Count == 0)
-        {
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
-        }
+        RefreshCursorState();
+    }
+
+    public void RefreshCursorState()
+    {
+        bool anyOpen = _openPanels.Count > 0;
+
+        Cursor.visible = anyOpen;
+        Cursor.lockState =
+            anyOpen
+            ? CursorLockMode.None
+            : CursorLockMode.Locked;
     }
 
     private IEnumerator LockCursorNextFrame()

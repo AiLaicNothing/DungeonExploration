@@ -14,7 +14,7 @@ public abstract class Skill : ScriptableObject
 
     public string skillName;
 
-    public CharacterType ownerCharacter;
+    public CharacterType ownerCharacter;    
 
     [Header("Cost")]
     public ResourceType resourceType;

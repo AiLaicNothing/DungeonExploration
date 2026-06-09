@@ -94,25 +94,36 @@ public class CheckpointMenuUI : MonoBehaviour
                 : checkpointName;
         }
 
+        panelRoot?.SetActive(true);
+
+        InteractionUI.Instance?.HideUI();
+
+        UIBlockingManager.Instance?.Register(this);
+    }
+    public void Reopen()
+    {
         if (panelRoot != null)
             panelRoot.SetActive(true);
-
-        if (UIBlockingManager.Instance != null)
-            UIBlockingManager.Instance.Register(this);
     }
+
+    private void Hide()
+    {
+        if (panelRoot != null)
+            panelRoot.SetActive(false);
+    }
+
+
 
     public void Close()
     {
-        if (UIBlockingManager.Instance != null)
-            UIBlockingManager.Instance.Unregister(this);
+        UIBlockingManager.Instance?.Unregister(this);
 
-        if (panelRoot != null)
-            panelRoot.SetActive(false);
+        Hide();
 
         currentCheckpointName = string.Empty;
 
-        if (InteractionUI.Instance != null)
-            InteractionUI.Instance.ShowUI();
+        if (!UIBlockingManager.IsAnyUIOpen)
+            InteractionUI.Instance?.ShowUI();
     }
     // =========================================================
     // BUTTONS
@@ -120,27 +131,25 @@ public class CheckpointMenuUI : MonoBehaviour
 
     private void OnTeleportClicked()
     {
-        Close();
-
         if (teleporterPanel != null)
             teleporterPanel.Open();
         else
             Debug.LogWarning("[CheckpointMenuUI] Missing TeleporterPanel.");
+
+        Hide();
     }
 
     private void OnUpgradeClicked()
     {
-        Close();
-
         if (upgradePanel != null)
             upgradePanel.Open();
-        else
-            Debug.LogWarning("[CheckpointMenuUI] Missing UpgradePanel.");
+
+        Hide();
     }
 
     private void OnSkillsClicked()
     {
-        Close(); // 👈 FIX IMPORTANTE
+        Hide();
 
         if (skillPanel != null)
             skillPanel.Open();

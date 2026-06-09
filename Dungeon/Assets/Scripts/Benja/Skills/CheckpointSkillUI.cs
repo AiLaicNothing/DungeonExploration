@@ -65,10 +65,6 @@ public class CheckpointSkillUI : MonoBehaviour
 
         if (inventory != null)
             inventory.OnSkillsChanged -= Refresh;
-
-        // Safety cleanup
-        if (UIBlockingManager.Instance != null)
-            UIBlockingManager.Instance.Unregister(this);
     }
 
     // =========================================================
@@ -111,10 +107,6 @@ public class CheckpointSkillUI : MonoBehaviour
         selectedSlotIndex = -1;
 
         Refresh();
-
-        // Registrar UI abierta
-        if (UIBlockingManager.Instance != null)
-            UIBlockingManager.Instance.Register(this);
     }
 
     public void Close()
@@ -125,10 +117,9 @@ public class CheckpointSkillUI : MonoBehaviour
         if (inventory != null)
             inventory.OnSkillsChanged -= Refresh;
 
-        if (UIBlockingManager.Instance != null)
-            UIBlockingManager.Instance.Unregister(this);
-
         panelRoot.SetActive(false);
+
+        CheckpointMenuUI.Instance?.Reopen();
     }
 
     // =========================================================

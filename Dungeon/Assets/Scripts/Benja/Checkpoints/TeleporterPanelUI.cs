@@ -55,19 +55,17 @@ public class    TeleporterPanelUI : MonoBehaviour
     }
     public void Open()
     {
-        if (panelRoot != null) panelRoot.SetActive(true);
+        if (panelRoot != null)
+            panelRoot.SetActive(true);
+
         Refresh();
-
-        if (UIBlockingManager.Instance != null)
-            UIBlockingManager.Instance.Register(this);
     }
-
     public void Close()
     {
-        if (panelRoot != null) panelRoot.SetActive(false);
+        if (panelRoot != null)
+            panelRoot.SetActive(false);
 
-        if (UIBlockingManager.Instance != null)
-            UIBlockingManager.Instance.Unregister(this);
+        CheckpointMenuUI.Instance?.Reopen();
     }
 
     private void Refresh()
