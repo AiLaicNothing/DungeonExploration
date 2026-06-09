@@ -102,10 +102,8 @@ public class SettingsManager : MonoBehaviour
     // ── Lifecycle ─────────────────────────────────────────────────────
     private void Awake()
     {
-        // Singleton con persistencia entre escenas
         if (Instance != null && Instance != this)
         {
-            Debug.LogWarning($"[SettingsManager] Ya existe una instancia (ID: {Instance.GetInstanceID()}), destruyendo duplicado de la escena {gameObject.scene.name} (ID: {GetInstanceID()}).");
             Destroy(gameObject);
             return;
         }
@@ -114,12 +112,14 @@ public class SettingsManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         AvailableResolutions = Screen.resolutions;
-        LoadFromPrefs();
-        ApplyAll();
 
-        Debug.Log($"[SettingsManager] Inicializado y persistente. ID: {GetInstanceID()}");
+        LoadFromPrefs();
     }
 
+    private void Start()
+    {
+        ApplyAll();
+    }
     private void OnDestroy()
     {
         if (Instance == this)
@@ -157,6 +157,7 @@ public class SettingsManager : MonoBehaviour
 
     private void ApplyAll()
     {
+
         ApplyResolution();
         QualitySettings.vSyncCount = _vsync ? 1 : 0;
         QualitySettings.SetQualityLevel(_qualityLevel, true);
@@ -183,8 +184,18 @@ public class SettingsManager : MonoBehaviour
 
     private void ApplyMixerVolume(string parameter, float linearValue)
     {
-        if (audioMixer == null) return;
-        float db = linearValue > 0.0001f ? Mathf.Log10(linearValue) * 20f : -80f;
+        if (audioMixer == null)
+        {
+            Debug.LogError($"AudioMixer NULL para {parameter}");
+            return;
+        }
+
+        float db = linearValue > 0.0001f
+            ? Mathf.Log10(linearValue) * 20f
+            : -80f;
+
+        Debug.Log($"{parameter} -> {linearValue} ({db} dB)");
+
         audioMixer.SetFloat(parameter, db);
     }
 
