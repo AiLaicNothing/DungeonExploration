@@ -592,7 +592,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 8701760987785459449, guid: bb9d448fbadc5b54ab5a32d824cd490f, type: 2}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
+  m_Resource: {fileID: 8300000, guid: 4f74f07e7432acd4da9d60783631085f, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -1935,8 +1935,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LocalCameraSetup
   ShowTopMostFoldoutHeaderGroup: 1
   virtualCamera: {fileID: 9128271964599962825}
-  followTarget: {fileID: 0}
-  lookAtTarget: {fileID: 0}
+  followTarget: {fileID: 2475266143739573949}
+  lookAtTarget: {fileID: 2475266143739573949}
   ownerPriority: 20
   remotePriority: 0
 --- !u!114 &3273879667671522

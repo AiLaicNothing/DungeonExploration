@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e80327ac66eec24488c0a8ca659a762a, type: 3}
   m_Name: ReAnimated
   m_EditorClassIdentifier: Assembly-CSharp::EnemyStats
-  maxHp: 250
+  maxHp: 380
   damage: 10
   moveSpeed: 10
-  hasStagger: 0
+  hasStagger: 1
   staggerTreshold: 100
-  staggerDuration: 3
+  staggerDuration: 2
   timeResetStagger: 6
   canStaggerMultiplesTimes: 1
   pushForce: 5
