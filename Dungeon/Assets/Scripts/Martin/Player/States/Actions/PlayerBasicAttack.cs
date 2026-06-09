@@ -109,9 +109,17 @@ public class PlayerBasicAttack : PlayerStates
         player.isPerformingAction = true;
         player.blockVelocity = true;
 
-        player.StartAttackMove(attackSteps);
+        Vector3? lockTargetPos = null;
 
-        //--> Play animation
+        if (player.LockTarget != null &&
+            player.LockTarget.isTargeting &&
+            player.LockTarget.CurrentTarget != null)
+        {
+            lockTargetPos = player.LockTarget.CurrentTarget.position;
+        }
+
+        player.StartAttackMove(attackSteps, lockTargetPos);
+
         Debug.Log($"Player attacked with {attackSteps.name}");
 
     }

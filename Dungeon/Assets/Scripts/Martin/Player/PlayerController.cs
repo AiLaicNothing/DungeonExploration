@@ -632,15 +632,15 @@ public class PlayerController : NetworkBehaviour, IDamageable
         }
     }
 
-    public void StartAttackMove(AttackSteps attack)
+    public void StartAttackMove(AttackSteps attack, Vector3? lockTargetPos = null)
     {
         StopAttackMove();
 
         if (attack == null) return;
-        if (attack.moveDis <= 0) return;
-        if (attack.moveDuration <= 0) return;
+        if (attack.moveDis <= 0f) return;
+        if (attack.moveDuration <= 0f) return;
 
-        attackMoveRoutine = StartCoroutine(AttackMoveRoutine(attack));
+        attackMoveRoutine = StartCoroutine(AttackMoveRoutine(attack, lockTargetPos));
     }
 
     public void StopAttackMove()
@@ -652,9 +652,49 @@ public class PlayerController : NetworkBehaviour, IDamageable
         }
     }
 
-    private IEnumerator AttackMoveRoutine(AttackSteps attack)
+    private Vector3 GetSafeAttackMove(Vector3 delta)
     {
-        if (attack.moveDis > 0f) yield return new WaitForSeconds(attack.moveStartTime);
+        float distance = delta.magnitude;
+
+        if (distance <= 0.0001f) return Vector3.zero;
+
+        Vector3 dir = delta / distance;
+
+        Collider coll = GetComponent<Collider>();
+
+        if (coll == null) return delta;
+
+        Vector3 center = rb.position + coll.bounds.center - transform.position;
+
+        float radius = Mathf.Min(coll.bounds.extents.x, coll.bounds.extents.z) * 0.9f;
+        float castDistance = distance;
+
+        if (Physics.SphereCast(center, radius, dir, out RaycastHit hit, castDistance, ~0, QueryTriggerInteraction.Ignore))
+        {
+            float safeDistance = Mathf.Max(hit.distance - 0.02f, 0f);
+            return dir * safeDistance;
+        }
+
+        return delta;
+    }
+
+    private float GetLockOnStopDistance(Transform target)
+    {
+        if (target == null) return 0f;
+
+        Collider targetCol = target.GetComponentInChildren<Collider>();
+        if (targetCol == null) return 0f;
+
+        // Use the target's horizontal size as stopping distance.
+        float radius = Mathf.Max(targetCol.bounds.extents.x, targetCol.bounds.extents.z);
+
+        // Add a small buffer so you do not clip into them.
+        return radius + 0.25f;
+    }
+
+    private IEnumerator AttackMoveRoutine(AttackSteps attack, Vector3? lockTargetPos)
+    {
+        if (attack.moveStartTime > 0f) yield return new WaitForSeconds(attack.moveStartTime);
 
         if (rb == null || playerModel == null) yield break;
 
@@ -666,7 +706,28 @@ public class PlayerController : NetworkBehaviour, IDamageable
         dir.Normalize();
 
         Vector3 startPos = rb.position;
-        Vector3 endPos = startPos + dir * attack.moveDis;
+
+        float finalMoveDistance = attack.moveDis;
+
+        if (lockTargetPos.HasValue && LockTarget != null && LockTarget.isTargeting)
+        {
+            Vector3 targetPos = lockTargetPos.Value;
+            Vector3 toTarget = targetPos - startPos;
+            toTarget.y = 0f;
+
+            float distToTarget = toTarget.magnitude;
+            float stopDistance = GetLockOnStopDistance(LockTarget.CurrentTarget);
+
+            float allowed = distToTarget - stopDistance;
+
+            if (allowed < 0f) allowed = 0f;
+
+            finalMoveDistance = Mathf.Min(finalMoveDistance, allowed);
+        }
+
+        if (finalMoveDistance <= 0f) yield break;
+
+        Vector3 desiredEnd = startPos + dir * finalMoveDistance;
 
         float elapsed = 0f;
 
@@ -679,15 +740,21 @@ public class PlayerController : NetworkBehaviour, IDamageable
             float t = Mathf.Clamp01(elapsed / attack.moveDuration);
             float easeT = attack.moveCurve != null ? attack.moveCurve.Evaluate(t) : t;
 
-            Vector3 nextPos = Vector3.Lerp(startPos , endPos, easeT);
+            Vector3 desiredPos = Vector3.Lerp(startPos, desiredEnd, easeT);
+            Vector3 delta = desiredPos - rb.position;
 
-            rb.MovePosition(new Vector3(nextPos.x, rb.position.y, nextPos.z));
+            if (delta.sqrMagnitude > 0.000001f)
+            {
+                Vector3 safeMove = GetSafeAttackMove(delta);
+                rb.MovePosition(rb.position + safeMove);
+            }
 
             yield return new WaitForFixedUpdate();
         }
 
         attackMoveRoutine = null;
     }
+
     // ─────────────────────────────────────────
     // SHOOT
     // ─────────────────────────────────────────

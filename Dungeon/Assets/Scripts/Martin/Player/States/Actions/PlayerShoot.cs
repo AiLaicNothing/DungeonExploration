@@ -17,7 +17,7 @@ public class PlayerShoot : PlayerStates
         fireCooldown = 0f;
         hasShoot = false;
 
-        player.isPerformingAction = true;
+        //player.isPerformingAction = true;
 
         if (player.LockTarget != null &&
             player.LockTarget.isTargeting &&
@@ -57,7 +57,7 @@ public class PlayerShoot : PlayerStates
 
     public override void OnExit()
     {
-        player.isPerformingAction = false;
+        //player.isPerformingAction = false;
     }
 
     private void Shoot()

@@ -30,5 +30,8 @@ public class AttackSteps
     public AnimationCurve moveCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
     public float turnSpeed = 100f;
 
+    [Header("Movement Lock-On")]
+    public float lockOnStopDistance = 1.5f;
+
     public HitData hitData;
 }
