@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Heal
   skillId: 106
   skillSprite: {fileID: 0}
-  skillName: 
+  skillName: Cura
   ownerCharacter: 1
   resourceType: 2
   cost: 10
@@ -23,5 +23,7 @@ MonoBehaviour:
   actionTime: 0
   castAnimation: 
   actionAnimation: 
+  castSound: {fileID: 0}
+  actionSound: {fileID: 0}
   HealPorcentage: 0.3
   sfx: {fileID: 0}

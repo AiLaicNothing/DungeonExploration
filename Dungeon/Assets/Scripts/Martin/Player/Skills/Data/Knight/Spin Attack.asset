@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SpinAttack
   skillId: 006
   skillSprite: {fileID: 0}
-  skillName: Spin Attack
+  skillName: Ataque giratorio
   ownerCharacter: 0
   resourceType: 1
   cost: 20
@@ -23,6 +23,8 @@ MonoBehaviour:
   actionTime: 2
   castAnimation: 
   actionAnimation: 
+  castSound: {fileID: 0}
+  actionSound: {fileID: 0}
   hitBoxSize: {x: 5, y: 2.5, z: 5}
   duration: 2
   tickRate: 0.2

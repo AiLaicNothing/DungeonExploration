@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MagicBullet
   skillId: 105
   skillSprite: {fileID: 0}
-  skillName: Magic bullet
+  skillName: "Balas M\xE1gicas"
   ownerCharacter: 1
   resourceType: 2
   cost: 10
@@ -23,6 +23,8 @@ MonoBehaviour:
   actionTime: 0
   castAnimation: 
   actionAnimation: 
+  castSound: {fileID: 0}
+  actionSound: {fileID: 0}
   vfxPrefab: {fileID: 0}
   proyectilePrefab: {fileID: 1862193953970959967, guid: f557299d8bbf7674d9336988669b6dee, type: 3}
   backOffset: 1.5

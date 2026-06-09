@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Freeze
   skillId: 102
   skillSprite: {fileID: 0}
-  skillName: 
+  skillName: Congelar
   ownerCharacter: 1
   resourceType: 0
   cost: 0
@@ -23,6 +23,8 @@ MonoBehaviour:
   actionTime: 0
   castAnimation: 
   actionAnimation: 
+  castSound: {fileID: 0}
+  actionSound: {fileID: 0}
   hitBoxSize: {x: 0, y: 0, z: 0}
   startOffset: {x: 0, y: 0, z: 0}
   hitData:

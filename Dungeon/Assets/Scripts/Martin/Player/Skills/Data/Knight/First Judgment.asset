@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FirstJudgment
   skillId: 003
   skillSprite: {fileID: 0}
-  skillName: First Judgment
+  skillName: Primer Juicio
   ownerCharacter: 0
   resourceType: 2
   cost: 30
@@ -23,6 +23,8 @@ MonoBehaviour:
   actionTime: 0
   castAnimation: 
   actionAnimation: 
+  castSound: {fileID: 0}
+  actionSound: {fileID: 0}
   swordPrefab: {fileID: 4001187048571639140, guid: a8b2f8815fd4a1b42add7c63a43d01df, type: 3}
   hitData:
     physicalScale: 1.5

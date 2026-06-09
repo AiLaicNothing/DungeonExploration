@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FireSlashSkill
   skillId: 002
   skillSprite: {fileID: 312370646, guid: dd872b2952bec8f4b8191dd2615972ec, type: 3}
-  skillName: Fire slash
+  skillName: Corte de fuego
   ownerCharacter: 0
   resourceType: 2
   cost: 10
@@ -23,6 +23,8 @@ MonoBehaviour:
   actionTime: 0
   castAnimation: 
   actionAnimation: 
+  castSound: {fileID: 0}
+  actionSound: {fileID: 0}
   proyectilePrefab: {fileID: 7664227392648269801, guid: b2865a1976e633e429bc16f9bb0d919c, type: 3}
   proyectileSpeed: 15
   spawnOffset: {x: 0, y: 1, z: 1.5}

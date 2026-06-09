@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NightVeil
   skillId: 107
   skillSprite: {fileID: 0}
-  skillName: 
+  skillName: Velo de noche
   ownerCharacter: 1
   resourceType: 0
   cost: 0
@@ -23,6 +23,8 @@ MonoBehaviour:
   actionTime: 0
   castAnimation: 
   actionAnimation: 
+  castSound: {fileID: 0}
+  actionSound: {fileID: 0}
   increasePorcentage: 0
   duration: 0
   timer: 0
