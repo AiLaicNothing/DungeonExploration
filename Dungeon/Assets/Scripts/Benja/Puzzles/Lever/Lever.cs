@@ -1,6 +1,5 @@
 using Unity.Netcode;
 using UnityEngine;
-
 public class Lever : NetworkBehaviour, IInteractable, IActivator
 {
     [Header("Configuración")]
@@ -8,11 +7,23 @@ public class Lever : NetworkBehaviour, IInteractable, IActivator
 
     public PuzzleReceiver receiver;
 
+    [Header("Save")]
+    [SerializeField] private bool persistent = false;
+
+    [SerializeField] private string leverID;
+
+    public bool Persistent => persistent;
+
+    public string LeverID => leverID;
+
     [Header("Visual")]
     public Animator animator;
 
     private NetworkVariable<bool> _isActive =
         new NetworkVariable<bool>(false);
+
+
+
 
     public bool IsActive => _isActive.Value;
 
@@ -23,6 +34,12 @@ public class Lever : NetworkBehaviour, IInteractable, IActivator
 
     public override void OnNetworkSpawn()
     {
+        Debug.Log(
+            $"[Lever] OnNetworkSpawn -> {name} | " +
+            $"LeverID={LeverID} | " +
+            $"IsServer={IsServer} | " +
+            $"Value={_isActive.Value}");
+
         _isActive.OnValueChanged += OnLeverStateChanged;
 
         animator?.SetBool("IsActive", _isActive.Value);
@@ -71,9 +88,12 @@ public class Lever : NetworkBehaviour, IInteractable, IActivator
     }
 
     private void SetStateInternal(bool state)
-    {
+    { 
         Debug.Log(
-            $"[Lever] SetStateInternal -> {name} | Nuevo estado: {state}");
+            $"[Lever] SetStateInternal -> {name} | " +
+            $"LeverID={LeverID} | " +
+            $"Anterior={_isActive.Value} | " +
+            $"Nuevo={state}");
 
         _isActive.Value = state;
 

@@ -11,6 +11,17 @@ public class TimedPlatformChallenge : NetworkBehaviour
         Running,
         Completed
     }
+    [Header("Persistence")]
+    [SerializeField] private bool persistent = true;
+
+    [SerializeField] private string challengeID;
+
+    public bool Persistent => persistent;
+
+    public string ChallengeID => challengeID;
+
+    public bool IsCompleted =>
+        _state.Value == ChallengeState.Completed;
 
     [Header("Challenge")]
     [SerializeField] private float challengeDuration = 30f;
@@ -44,29 +55,61 @@ public class TimedPlatformChallenge : NetworkBehaviour
     public bool IsRunning =>
         _state.Value == ChallengeState.Running;
 
+    public void RestoreCompletedState()
+    {
+        if (!IsServer)
+            return;
+
+        Debug.Log(
+            $"[Challenge] Restaurando desafío completado: {challengeID}");
+
+        if (_timerRoutine != null)
+            StopCoroutine(_timerRoutine);
+
+        _remainingTime.Value = 0f;
+
+        _state.Value = ChallengeState.Completed;
+
+        HideUIClientRpc();
+
+        foreach (var platform in platforms)
+        {
+            if (platform == null)
+                continue;
+
+            platform.Show();
+        }
+    }
 
     private IEnumerator HidePlatformsRoutine()
-{
-    yield return new WaitForSeconds(platformHideDelay);
-
-    foreach (var platform in platforms)
     {
-        if (platform == null)
-            continue;
+        yield return new WaitForSeconds(platformHideDelay);
 
-        platform.Hide();
+        foreach (var platform in platforms)
+        {
+            if (platform == null)
+                continue;
+
+            platform.Hide();
+        }
     }
-}
     public void StartChallenge()
     {
         if (!IsServer)
             return;
 
+        if (_state.Value == ChallengeState.Completed)
+        {
+            Debug.Log(
+                $"[Challenge] {challengeID} ya fue completado.");
+
+            return;
+        }
+
         if (_state.Value != ChallengeState.Idle)
             return;
 
         _state.Value = ChallengeState.Running;
-        //ShowUIClientRpc();
 
         StartCoroutine(StartChallengeRoutine());
     }

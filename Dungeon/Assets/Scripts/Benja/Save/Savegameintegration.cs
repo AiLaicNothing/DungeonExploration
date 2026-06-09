@@ -69,15 +69,54 @@ public class SaveGameIntegration : NetworkBehaviour
         if (SaveSlotManager.Instance != null &&
             SaveSlotManager.Instance.HasActiveSlot)
         {
-            SaveSlotManager.Instance.DebugDumpActiveSlot("SaveGameIntegration.OnNetworkSpawn");
-            RestoreWorldFromActiveSlot();
+            SaveSlotManager.Instance.DebugDumpActiveSlot(
+                "SaveGameIntegration.OnNetworkSpawn");
+
+            StartCoroutine(DelayedRestoreWorld());
         }
         else
         {
-            Debug.LogWarning("[SaveGameIntegration] No active slot when network spawned.");
+            Debug.LogWarning(
+                "[SaveGameIntegration] No active slot when network spawned.");
         }
     }
+    private System.Collections.IEnumerator DelayedRestoreWorld()
+    {
+        Debug.Log(
+            "[SaveGameIntegration] Esperando NetworkObjects para restaurar mundo...");
 
+        yield return new WaitUntil(() =>
+        {
+            var levers =
+                FindObjectsByType<Lever>(FindObjectsSortMode.None);
+
+            if (levers.Length == 0)
+            {
+                Debug.LogWarning(
+                    "[SaveGameIntegration] No se encontraron palancas.");
+
+                return false;
+            }
+
+            foreach (var lever in levers)
+            {
+                if (!lever.IsSpawned)
+                {
+                    Debug.Log(
+                        $"[SaveGameIntegration] Esperando spawn de LeverID={lever.LeverID}");
+
+                    return false;
+                }
+            }
+
+            return true;
+        });
+
+        Debug.Log(
+            "[SaveGameIntegration] Todos los NetworkObjects listos.");
+
+        RestoreWorldFromActiveSlot();
+    }
     public override void OnNetworkDespawn()
     {
         if (NetworkManager.Singleton != null)

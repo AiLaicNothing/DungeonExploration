@@ -14,6 +14,12 @@ public class ChallengeGoal : NetworkBehaviour, IInteractable
     [ServerRpc(RequireOwnership = false)]
     private void CompleteChallengeServerRpc()
     {
+        if (challenge == null)
+            return;
+
+        if (challenge.IsCompleted)
+            return;
+
         challenge.CompleteChallenge();
     }
 }

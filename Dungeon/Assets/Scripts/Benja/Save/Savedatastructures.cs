@@ -37,18 +37,30 @@ public class SaveSlotData
 public class WorldSaveData
 {
     public List<string> discoveredCheckpoints = new();
+
     public int globalUpgradePointsGenerated;
+
     public List<string> defeatedBosses = new();
+
+    // Palancas persistentes
     public List<PuzzleStateEntry> puzzleStates = new();
+
+    // Desafíos completados
+    public List<PuzzleCompletionEntry> completedChallenges = new();
 }
 
 [Serializable]
 public class PuzzleStateEntry
 {
-    public string puzzleId;
-    public bool isSolved;
+    public string activatorId;
+    public bool isActive;
 }
-
+[Serializable]
+public class PuzzleCompletionEntry
+{
+    public string puzzleId;
+    public bool completed;
+}
 // ══════════════════════════════════════════════════════════════════════
 // PLAYER
 // ══════════════════════════════════════════════════════════════════════

@@ -60,35 +60,65 @@ public class WorldSaveManager : MonoBehaviour
                 data.discoveredCheckpoints.Add(cp.ToString());
             }
 
-            data.globalUpgradePointsGenerated = WorldCheckpointState.Instance.WorldPointsGenerated.Value;
+            data.globalUpgradePointsGenerated =
+                WorldCheckpointState.Instance.WorldPointsGenerated.Value;
         }
 
-        // Bosses derrotados (si tienes un BossManager, aquí lo capturas)
-        // Ejemplo:
+        // Bosses derrotados
         // if (BossManager.Instance != null)
         // {
         //     foreach (var bossId in BossManager.Instance.DefeatedBosses)
         //         data.defeatedBosses.Add(bossId);
         // }
 
-        // Puzzles resueltos
-        var puzzleReceivers = FindObjectsByType<PuzzleReceiver>(FindObjectsSortMode.None);
-        foreach (var receiver in puzzleReceivers)
+        // Estado de palancas persistentes
+        var levers = FindObjectsByType<Lever>(FindObjectsSortMode.None);
+
+        foreach (var lever in levers)
         {
-            if (!string.IsNullOrEmpty(receiver.ReceiverID))
+            if (!lever.Persistent)
+                continue;
+
+            Debug.Log(
+                $"GUARDANDO -> {lever.LeverID} = {lever.IsActive}");
+
+            data.puzzleStates.Add(new PuzzleStateEntry
             {
-                data.puzzleStates.Add(new PuzzleStateEntry
-                {
-                    puzzleId = receiver.ReceiverID,
-                    isSolved = receiver.IsActive
-                });
-            }
+                activatorId = lever.LeverID,
+                isActive = lever.IsActive
+            });
         }
 
-        Debug.Log($"[WorldSaveManager] Estado del mundo capturado: " +
-                  $"{data.discoveredCheckpoints.Count} checkpoints, " +
-                  $"{data.defeatedBosses.Count} bosses, " +
-                  $"{data.puzzleStates.Count} puzzles.");
+        // Desafíos completados
+        var challenges =
+            FindObjectsByType<TimedPlatformChallenge>(
+                FindObjectsSortMode.None);
+
+        foreach (var challenge in challenges)
+        {
+            if (!challenge.Persistent)
+                continue;
+
+            if (!challenge.IsCompleted)
+                continue;
+
+            Debug.Log(
+                $"GUARDANDO CHALLENGE -> {challenge.ChallengeID}");
+
+            data.completedChallenges.Add(
+                new PuzzleCompletionEntry
+                {
+                    puzzleId = challenge.ChallengeID,
+                    completed = true
+                });
+        }
+
+        Debug.Log(
+            $"[WorldSaveManager] Estado del mundo capturado: " +
+            $"{data.discoveredCheckpoints.Count} checkpoints, " +
+            $"{data.defeatedBosses.Count} bosses, " +
+            $"{data.puzzleStates.Count} activadores persistentes, " +
+            $"{data.completedChallenges.Count} desafíos completados.");
 
         return data;
     }
@@ -139,32 +169,64 @@ public class WorldSaveManager : MonoBehaviour
         // }
 
         // Restaurar puzzles
-        var puzzleReceivers = FindObjectsByType<PuzzleReceiver>(FindObjectsSortMode.None);
+        var levers = FindObjectsByType<Lever>(FindObjectsSortMode.None);
+
+        Debug.Log($"RESTORE -> Entries: {data.puzzleStates.Count}");
+
         foreach (var entry in data.puzzleStates)
         {
-            foreach (var receiver in puzzleReceivers)
+            Debug.Log(
+                $"RESTORE ENTRY -> {entry.activatorId} = {entry.isActive}");
+
+            foreach (var lever in levers)
             {
-                if (receiver.ReceiverID == entry.puzzleId)
+                if (lever.LeverID == entry.activatorId)
                 {
-                    receiver.SetStateDirectly(entry.isSolved);
+                    Debug.Log(
+                        $"APLICANDO -> {lever.LeverID} = {entry.isActive}");
+
+                    lever.SetState(entry.isActive);
+
+                    break;
                 }
             }
         }
 
-        Debug.Log($"[WorldSaveManager] Estado del mundo restaurado: " +
-                  $"{data.discoveredCheckpoints.Count} checkpoints, " +
-                  $"{data.defeatedBosses.Count} bosses, " +
-                  $"{data.puzzleStates.Count} puzzles.");
+        var challenges =
+    FindObjectsByType<TimedPlatformChallenge>(
+        FindObjectsSortMode.None);
+
+        Debug.Log(
+            $"RESTORE CHALLENGES -> {data.completedChallenges.Count}"); 
+
+        foreach (var entry in data.completedChallenges)
+        {
+            Debug.Log(
+                $"RESTORE CHALLENGE -> {entry.puzzleId}");
+
+            foreach (var challenge in challenges)
+            {
+                if (challenge.ChallengeID != entry.puzzleId)
+                    continue;
+
+                challenge.RestoreCompletedState();
+
+                Debug.Log(
+                    $"CHALLENGE RESTAURADO -> {challenge.ChallengeID}");
+
+                break;
+            }
+        }
     }
 
     // ══════════════════════════════════════════════════════════════════
     // HELPERS PÚBLICOS (para integración)
     // ══════════════════════════════════════════════════════════════════
 
-    /// <summary>
-    /// Captura el mundo Y actualiza el slot activo en SaveSlotManager.
-    /// Conveniente para autosave.
-    /// </summary>
+        /// <summary>
+        /// Captura el mundo Y actualiza el slot activo en SaveSlotManager.
+        /// Conveniente para autosave.
+        /// </summary>
     public void CaptureAndUpdateActiveSlot()
     {
         if (!NetworkManager.Singleton.IsServer) return;
